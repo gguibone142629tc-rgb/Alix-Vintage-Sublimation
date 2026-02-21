@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alix Vintage | Upload Custom Design</title>
+    <style>
+        :root {
+            --bg: #f1f1f1;
+            --panel: #ffffff;
+            --ink: #3a3a3a;
+            --ink-strong: #1f1f1f;
+            --line: #d0d0d0;
+            --dark: #3f3f3f;
+            --muted: #6b6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+
+        header {
+            background: var(--dark);
+            color: #ffffff;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            font-size: 13px;
+        }
+
+        .logo-wrap img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #f1f1f1;
+            padding: 8px 2px;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        nav a:hover {
+            border-color: #f1f1f1;
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 14px;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .nav-icon:hover {
+            transform: translateY(-1px);
+            opacity: 0.85;
+        }
+
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 24px 48px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+            gap: 24px;
+        }
+
+        .page-title {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .page-title h1 {
+            font-size: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-strong);
+        }
+
+        .page-title span {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+            padding: 22px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-strong);
+            margin: 24px 0 12px;
+        }
+
+        .section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        .helper-text {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .info-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            background: #fafafa;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .info-card strong {
+            display: block;
+            color: var(--ink-strong);
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .upload-area {
+            border: 2px dashed #bdbdbd;
+            border-radius: 10px;
+            padding: 36px 24px;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .upload-mini {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .upload-mini strong {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: var(--ink-strong);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .upload-mini p {
+            font-size: 10px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .upload-area strong {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: var(--ink-strong);
+            letter-spacing: 1px;
+        }
+
+        .upload-area p {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: 1px solid #5a5a5a;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            cursor: pointer;
+            background: #4a4a4a;
+            color: #ffffff;
+        }
+
+        .btn.secondary {
+            background: #f8f8f8;
+            border-color: #6a6a6a;
+            color: #333;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 22px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--ink-strong);
+            text-transform: uppercase;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 12px;
+            background: #ffffff;
+            color: var(--ink);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            grid-column: 1 / -1;
+        }
+
+        .roster-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .roster-table th,
+        .roster-table td {
+            border: 1px solid var(--line);
+            padding: 8px;
+            text-align: left;
+        }
+
+        .roster-table th {
+            background: #f4f4f4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+
+        .roster-table input,
+        .roster-table select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 11px;
+        }
+
+        .choice-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .choice-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--ink-strong);
+        }
+
+        .reference-note {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--muted);
+            display: none;
+        }
+
+        .reference-note.active {
+            display: block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .roster-name.hidden-field {
+            display: none;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 12px;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .badge {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            background: #ffffff;
+        }
+
+        .side-panel h3 {
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            color: var(--ink-strong);
+        }
+
+        .tip-list {
+            list-style: none;
+            display: grid;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .tip-list li {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #fafafa;
+        }
+
+        .cta-box {
+            margin-top: 18px;
+            border-top: 1px solid var(--line);
+            padding-top: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        footer {
+            background: #3f3f3f;
+            color: #f1f1f1;
+            text-align: center;
+            padding: 22px 16px 28px;
+            font-size: 11px;
+        }
+
+        footer span {
+            display: block;
+            margin-top: 4px;
+            color: #cfcfcf;
+            font-size: 10px;
+        }
+
+        @media (max-width: 980px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            nav ul {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <div class="logo-wrap">
+                <img src="../assets/logo.jpg" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="categories.html">Categories</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                    <path d="M4 20a8 8 0 0 1 16 0" />
+                </svg>
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6h14l-2 9H8L6 6z" />
+                    <path d="M6 6H4" />
+                    <circle cx="9" cy="19" r="1" />
+                    <circle cx="17" cy="19" r="1" />
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="page-title">
+            <h1>Upload Custom Design</h1>
+            <span>PNG, JPG, SVG up to 25MB</span>
+        </div>
+
+        <section class="panel">
+            <div class="info-cards">
+                <div class="info-card">
+                    <strong>Admin Approval Gate</strong>
+                    All custom requests are reviewed before pricing and payment.
+                </div>
+                <div class="info-card">
+                    <strong>Payment Gate</strong>
+                    50% downpayment is required for COD and optional for GCash.
+                </div>
+            </div>
+            <div class="badge-row">
+                <span class="badge">Manual Quote</span>
+                <span class="badge">Design Proofing</span>
+                <span class="badge">Roster Required</span>
+            </div>
+
+            <div class="section-title">Upload Design Files</div>
+            <div class="choice-row" style="margin-bottom:12px;">
+                <label class="choice-item"><input type="radio" name="design-type" checked> I have a final design file</label>
+                <label class="choice-item"><input type="radio" name="design-type" id="reference-only"> Reference image only</label>
+            </div>
+            <div class="upload-area" id="main-upload">
+                <strong>Drop your main design file here</strong>
+                <p>PNG, JPG, or SVG. High-resolution files recommended.</p>
+                <button class="btn" type="button">Choose File</button>
+            </div>
+
+            <div class="upload-grid" style="margin-top:16px;">
+                <div class="upload-mini">
+                    <strong>Logo / Emblem</strong>
+                    <p>Upload team logo or badge for placement.</p>
+                    <button class="btn secondary" type="button">Upload Logo</button>
+                </div>
+                <div class="upload-mini">
+                    <strong>Reference Images</strong>
+                    <p>Optional inspiration or sample layout.</p>
+                    <button class="btn secondary" type="button">Upload Reference</button>
+                </div>
+            </div>
+            <p class="reference-note" id="reference-note">Reference-only requests are allowed. Please upload a clear sample image and describe colors, placements, and text in Design Notes. Admin will send a proof for approval.</p>
+
+            <div class="section-title">Order Details</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="design-name">Design Name</label>
+                    <input id="design-name" type="text" placeholder="Team jersey concept">
+                </div>
+                <div class="form-group">
+                    <label for="product-type">Product Type</label>
+                    <select id="product-type">
+                        <option>Jersey</option>
+                        <option>T-shirt</option>
+                        <option>Shorts</option>
+                        <option>Polo-shirt</option>
+                        <option>Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input id="quantity" type="number" min="1" placeholder="Auto-calculated" readonly>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="notes">Design Notes</label>
+                    <textarea id="notes" placeholder="Add your preferred colors, placements, and sizing notes."></textarea>
+                </div>
+            </div>
+
+            <div class="section-title">Personalization</div>
+            <div class="choice-row">
+                <label class="choice-item"><input type="radio" name="personalization" id="personalization-on" checked> With names & numbers (roster required)</label>
+                <label class="choice-item"><input type="radio" name="personalization" id="personalization-number-only"> Number only</label>
+                <label class="choice-item"><input type="radio" name="personalization" id="personalization-off"> No personalization (plain shirts)</label>
+            </div>
+            <p class="helper-text" id="personalization-note">If no personalization is needed, enter quantity manually.</p>
+
+            <div id="roster-section">
+                <div class="section-title">Roster Management</div>
+                <p class="helper-text">Enter player names, numbers, and sizes for bulk orders.</p>
+                <p class="helper-text">Quantity updates automatically based on filled roster rows.</p>
+                <div class="action-row" style="margin-top:10px;">
+                    <button class="btn secondary" type="button" id="add-player">Add Player</button>
+                    <button class="btn secondary" type="button" id="remove-player">Remove Last</button>
+                </div>
+                <div style="overflow-x:auto; margin-top:10px;">
+                    <table class="roster-table" aria-label="Roster grid" id="roster-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Number</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><input type="text" placeholder="Player name" class="roster-name"></td>
+                                <td><input type="text" placeholder="00"></td>
+                                <td>
+                                    <select>
+                                        <option>XS</option>
+                                        <option>S</option>
+                                        <option>M</option>
+                                        <option>L</option>
+                                        <option>XL</option>
+                                        <option>2XL</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><input type="text" placeholder="Player name" class="roster-name"></td>
+                                <td><input type="text" placeholder="00"></td>
+                                <td>
+                                    <select>
+                                        <option>XS</option>
+                                        <option>S</option>
+                                        <option>M</option>
+                                        <option>L</option>
+                                        <option>XL</option>
+                                        <option>2XL</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td><input type="text" placeholder="Player name" class="roster-name"></td>
+                                <td><input type="text" placeholder="00"></td>
+                                <td>
+                                    <select>
+                                        <option>XS</option>
+                                        <option>S</option>
+                                        <option>M</option>
+                                        <option>L</option>
+                                        <option>XL</option>
+                                        <option>2XL</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-title">Payment Preference</div>
+            <div class="choice-row">
+                <label class="choice-item"><input type="radio" name="payment" checked> GCash (50% or 100%)</label>
+                <label class="choice-item"><input type="radio" name="payment"> COD (50% downpayment required)</label>
+            </div>
+            <p class="helper-text">Payment will be collected after Admin approval and manual quote.</p>
+
+            <div class="section-title">Design Proofing</div>
+            <p class="helper-text">You will receive a digital mockup to Approve or Request Revision before production.</p>
+
+            <label class="check-row">
+                <input type="checkbox">
+                <span>I acknowledge the obligation to pay the required downpayment after Admin approval and agree to the Terms and Conditions.</span>
+            </label>
+        </section>
+
+        <aside class="panel side-panel">
+            <h3>Design Tips</h3>
+            <ul class="tip-list">
+                <li>Upload high-resolution files for sharper prints.</li>
+                <li>Keep text as vectors or outlines for clarity.</li>
+                <li>Include team logo and preferred placements.</li>
+                <li>Add roster details to avoid misprints.</li>
+            </ul>
+            <div class="cta-box">
+                <div>
+                    <strong style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-strong);">Process Flow</strong>
+                    <p style="font-size:11px;color:var(--muted);margin-top:6px;">Request → Admin Review → Quote → Payment → Proof Approval → Production</p>
+                </div>
+                <div>
+                    <strong style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-strong);">Need help?</strong>
+                    <p style="font-size:11px;color:var(--muted);margin-top:6px;">Send your draft and we will refine the layout.</p>
+                </div>
+                <div class="action-row">
+                    <button class="btn" type="button">Submit Request</button>
+                    <button class="btn secondary" type="button">Save Draft</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <footer>
+        © 2026 ALIX VINTAGE
+        <span>Taguig City, Philippines</span>
+    </footer>
+
+    <script>
+        const rosterTable = document.getElementById("roster-table");
+        const quantityInput = document.getElementById("quantity");
+        const addPlayerBtn = document.getElementById("add-player");
+        const removePlayerBtn = document.getElementById("remove-player");
+        const referenceOnly = document.getElementById("reference-only");
+        const referenceNote = document.getElementById("reference-note");
+        const mainUpload = document.getElementById("main-upload");
+        const personalizationOn = document.getElementById("personalization-on");
+        const personalizationNumberOnly = document.getElementById("personalization-number-only");
+        const personalizationOff = document.getElementById("personalization-off");
+        const rosterSection = document.getElementById("roster-section");
+        const personalizationNote = document.getElementById("personalization-note");
+
+        const updateQuantity = () => {
+            const names = rosterTable.querySelectorAll(".roster-name");
+            const count = Array.from(names).filter((input) => input.value.trim().length > 0).length;
+            if (quantityInput.readOnly) {
+                quantityInput.value = count > 0 ? count : "";
+            }
+        };
+
+        const createRosterRow = (index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index}</td>
+                <td><input type="text" placeholder="Player name" class="roster-name"></td>
+                <td><input type="text" placeholder="00"></td>
+                <td>
+                    <select>
+                        <option>XS</option>
+                        <option>S</option>
+                        <option>M</option>
+                        <option>L</option>
+                        <option>XL</option>
+                        <option>2XL</option>
+                    </select>
+                </td>
+            `;
+            return row;
+        };
+
+        const updateRowNumbers = () => {
+            const rows = rosterTable.querySelectorAll("tbody tr");
+            rows.forEach((row, index) => {
+                const cell = row.querySelector("td");
+                if (cell) {
+                    cell.textContent = String(index + 1);
+                }
+            });
+        };
+
+        const updateReferenceNote = () => {
+            if (referenceOnly && referenceNote) {
+                referenceNote.classList.toggle("active", referenceOnly.checked);
+            }
+            if (mainUpload) {
+                mainUpload.classList.toggle("hidden", referenceOnly && referenceOnly.checked);
+            }
+        };
+
+        const updatePersonalization = () => {
+            const withRoster = personalizationOn && personalizationOn.checked;
+            const numberOnly = personalizationNumberOnly && personalizationNumberOnly.checked;
+            const noPersonalization = personalizationOff && personalizationOff.checked;
+
+            if (rosterSection) {
+                rosterSection.classList.toggle("hidden", noPersonalization);
+            }
+
+            if (personalizationNote) {
+                if (numberOnly) {
+                    personalizationNote.textContent = "Number-only selected. Leave names blank; quantity will still follow roster rows.";
+                } else if (noPersonalization) {
+                    personalizationNote.textContent = "If no personalization is needed, enter quantity manually.";
+                } else {
+                    personalizationNote.textContent = "Roster required for names and numbers.";
+                }
+            }
+
+            quantityInput.readOnly = !noPersonalization;
+            quantityInput.placeholder = noPersonalization ? "Enter quantity" : "Auto-calculated";
+
+            const nameFields = rosterTable.querySelectorAll(".roster-name");
+            nameFields.forEach((field) => {
+                if (numberOnly) {
+                    field.classList.add("hidden-field");
+                    field.value = "";
+                } else {
+                    field.classList.remove("hidden-field");
+                }
+            });
+
+            if (!noPersonalization) {
+                updateQuantity();
+            }
+        };
+
+        addPlayerBtn.addEventListener("click", () => {
+            const body = rosterTable.querySelector("tbody");
+            const rowCount = body.querySelectorAll("tr").length;
+            body.appendChild(createRosterRow(rowCount + 1));
+        });
+
+        removePlayerBtn.addEventListener("click", () => {
+            const body = rosterTable.querySelector("tbody");
+            const rows = body.querySelectorAll("tr");
+            if (rows.length > 1) {
+                body.removeChild(rows[rows.length - 1]);
+                updateRowNumbers();
+                updateQuantity();
+            }
+        });
+
+        rosterTable.addEventListener("input", updateQuantity);
+        updateQuantity();
+        updateReferenceNote();
+        updatePersonalization();
+
+        document.querySelectorAll('input[name="design-type"]').forEach((input) => {
+            input.addEventListener("change", updateReferenceNote);
+        });
+
+        document.querySelectorAll('input[name="personalization"]').forEach((input) => {
+            input.addEventListener("change", updatePersonalization);
+        });
+    </script>
+</body>
+</html>

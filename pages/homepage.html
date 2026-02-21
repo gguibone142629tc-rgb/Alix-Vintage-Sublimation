@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alix Vintage | Home</title>
+    <style>
+        :root {
+            --bg: #f1f1f1;
+            --panel: #ffffff;
+            --ink: #3a3a3a;
+            --ink-strong: #1f1f1f;
+            --line: #d0d0d0;
+            --dark: #3f3f3f;
+            --muted: #6b6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+
+        header {
+            background: var(--dark);
+            color: #ffffff;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            font-size: 13px;
+        }
+
+        .logo-wrap img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #f1f1f1;
+            padding: 8px 2px;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        nav a:hover {
+            border-color: #f1f1f1;
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 14px;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .nav-icon:hover {
+            transform: translateY(-1px);
+            opacity: 0.85;
+        }
+
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 24px 0;
+        }
+
+        .banner {
+            border: 1px solid var(--line);
+            margin-bottom: 28px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #d9d9d9;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .banner img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            border: 1px solid var(--line);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-card.dark {
+            background: #3f3f3f;
+            color: #ffffff;
+            border-color: #3a3a3a;
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--line);
+            display: grid;
+            place-items: center;
+            font-size: 14px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+
+        .action-card.dark .action-icon {
+            background: #4a4a4a;
+            border-color: #5a5a5a;
+        }
+
+        .action-text h3 {
+            font-size: 12px;
+            margin-bottom: 6px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .action-text p {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .action-card.dark .action-text p {
+            color: #e0e0e0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding: 0 2px;
+        }
+
+        .section-header h2 {
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .see-all {
+            font-size: 10px;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .product-card {
+            border: 1px solid var(--line);
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 18px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .product-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .product-image {
+            background: #d9d9d9;
+            height: 140px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .product-label {
+            text-align: center;
+            font-size: 10px;
+            padding: 12px 0;
+            color: var(--ink-strong);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .process {
+            border: 1px solid var(--line);
+            padding: 20px;
+            background: #ffffff;
+            margin-bottom: 36px;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .process-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 18px;
+            text-transform: uppercase;
+        }
+
+        .process-steps {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .process-step h4 {
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .process-step p {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        footer {
+            background: #3f3f3f;
+            color: #f1f1f1;
+            text-align: center;
+            padding: 22px 16px 28px;
+            font-size: 11px;
+            margin-top: 20px;
+        }
+
+        footer span {
+            display: block;
+            margin-top: 4px;
+            color: #cfcfcf;
+            font-size: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .action-row,
+            .products,
+            .process-steps {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <div class="logo-wrap">
+                <img src="../assets/logo.jpg" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="categories.html">Categories</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                    <path d="M4 20a8 8 0 0 1 16 0" />
+                </svg>
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6h14l-2 9H8L6 6z" />
+                    <path d="M6 6H4" />
+                    <circle cx="9" cy="19" r="1" />
+                    <circle cx="17" cy="19" r="1" />
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="banner">
+            <img src="../assets/banner.jpg" alt="Alix Vintage banner">
+        </section>
+
+        <section class="action-row">
+            <a class="action-card" href="categories.html">
+                <div class="action-icon">🛒</div>
+                <div class="action-text">
+                    <h3>ORDER FROM CATALOG</h3>
+                    <p>Select designs below and turn an idea to product.</p>
+                </div>
+            </a>
+            <a class="action-card dark" href="upload-custom-design.html">
+                <div class="action-icon">⬆</div>
+                <div class="action-text">
+                    <h3>UPLOAD CUSTOM DESIGN</h3>
+                    <p>Upload your own design or reference image for custom order.</p>
+                </div>
+            </a>
+        </section>
+
+        <section>
+            <div class="section-header">
+                <h2>OUR PRODUCTS</h2>
+                <a class="see-all" href="categories.html">SEE ALL</a>
+            </div>
+            <div class="products">
+                <a class="product-link" href="categories.html">
+                    <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-label">JERSEYS</div>
+                    </div>
+                </a>
+                <a class="product-link" href="categories.html">
+                    <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-label">T-SHIRTS</div>
+                    </div>
+                </a>
+                <a class="product-link" href="categories.html">
+                    <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-label">SHORTS</div>
+                    </div>
+                </a>
+                <a class="product-link" href="categories.html">
+                    <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-label">POLO-SHIRTS</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section class="process">
+            <div class="process-header">
+                <span>🗂️</span>
+                <span>ORDERING PROCESS</span>
+            </div>
+            <div class="process-steps">
+                <div class="process-step">
+                    <h4>1. Select Design</h4>
+                    <p>Choose from catalog or upload custom.</p>
+                </div>
+                <div class="process-step">
+                    <h4>2. Enter Roster</h4>
+                    <p>Names, numbers, sizes.</p>
+                </div>
+                <div class="process-step">
+                    <h4>3. Admin Review</h4>
+                    <p>Wait for quote approval.</p>
+                </div>
+                <div class="process-step">
+                    <h4>4. Payment</h4>
+                    <p>50% downpayment required.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        © 2026 ALIX VINTAGE
+        <span>Taguig City, Philippines</span>
+    </footer>
+</body>
+</html>
