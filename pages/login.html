@@ -405,17 +405,23 @@
         </section>
     </main>
     <script>
-        document.querySelectorAll('.toggle-password').forEach((button) => {
-            button.addEventListener('click', () => {
-                const inputId = button.getAttribute('data-target');
-                const input = document.getElementById(inputId);
-                if (!input) {
-                    return;
-                }
+        const passwordToggleButtons = document.querySelectorAll('.toggle-password');
 
-                const isPassword = input.type === 'password';
-                input.type = isPassword ? 'text' : 'password';
-                button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        const handlePasswordToggleClick = (buttonElement) => {
+            const targetInputId = buttonElement.getAttribute('data-target');
+            const targetInputElement = document.getElementById(targetInputId);
+            if (!targetInputElement) {
+                return;
+            }
+
+            const isPasswordField = targetInputElement.type === 'password';
+            targetInputElement.type = isPasswordField ? 'text' : 'password';
+            buttonElement.setAttribute('aria-label', isPasswordField ? 'Hide password' : 'Show password');
+        };
+
+        passwordToggleButtons.forEach((buttonElement) => {
+            buttonElement.addEventListener('click', () => {
+                handlePasswordToggleClick(buttonElement);
             });
         });
     </script>

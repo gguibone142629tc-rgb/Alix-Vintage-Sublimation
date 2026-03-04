@@ -694,24 +694,24 @@
     </footer>
 
     <script>
-        const rosterTable = document.getElementById("roster-table");
-        const quantityInput = document.getElementById("quantity");
-        const addPlayerBtn = document.getElementById("add-player");
-        const removePlayerBtn = document.getElementById("remove-player");
-        const referenceOnly = document.getElementById("reference-only");
-        const referenceNote = document.getElementById("reference-note");
-        const mainUpload = document.getElementById("main-upload");
-        const personalizationOn = document.getElementById("personalization-on");
-        const personalizationNumberOnly = document.getElementById("personalization-number-only");
-        const personalizationOff = document.getElementById("personalization-off");
-        const rosterSection = document.getElementById("roster-section");
-        const personalizationNote = document.getElementById("personalization-note");
+        const rosterTableElement = document.getElementById("roster-table");
+        const quantityInputElement = document.getElementById("quantity");
+        const addPlayerButton = document.getElementById("add-player");
+        const removePlayerButton = document.getElementById("remove-player");
+        const referenceOnlyInput = document.getElementById("reference-only");
+        const referenceNoteElement = document.getElementById("reference-note");
+        const mainUploadElement = document.getElementById("main-upload");
+        const personalizationOnInput = document.getElementById("personalization-on");
+        const personalizationNumberOnlyInput = document.getElementById("personalization-number-only");
+        const personalizationOffInput = document.getElementById("personalization-off");
+        const rosterSectionElement = document.getElementById("roster-section");
+        const personalizationNoteElement = document.getElementById("personalization-note");
 
-        const updateQuantity = () => {
-            const names = rosterTable.querySelectorAll(".roster-name");
-            const count = Array.from(names).filter((input) => input.value.trim().length > 0).length;
-            if (quantityInput.readOnly) {
-                quantityInput.value = count > 0 ? count : "";
+        const updateQuantityFromRoster = () => {
+            const rosterNameInputs = rosterTableElement.querySelectorAll(".roster-name");
+            const filledNameCount = Array.from(rosterNameInputs).filter((input) => input.value.trim().length > 0).length;
+            if (quantityInputElement.readOnly) {
+                quantityInputElement.value = filledNameCount > 0 ? filledNameCount : "";
             }
         };
 
@@ -736,7 +736,7 @@
         };
 
         const updateRowNumbers = () => {
-            const rows = rosterTable.querySelectorAll("tbody tr");
+            const rows = rosterTableElement.querySelectorAll("tbody tr");
             rows.forEach((row, index) => {
                 const cell = row.querySelector("td");
                 if (cell) {
@@ -745,40 +745,40 @@
             });
         };
 
-        const updateReferenceNote = () => {
-            if (referenceOnly && referenceNote) {
-                referenceNote.classList.toggle("active", referenceOnly.checked);
+        const toggleReferenceNoteVisibility = () => {
+            if (referenceOnlyInput && referenceNoteElement) {
+                referenceNoteElement.classList.toggle("active", referenceOnlyInput.checked);
             }
-            if (mainUpload) {
-                mainUpload.classList.toggle("hidden", referenceOnly && referenceOnly.checked);
+            if (mainUploadElement) {
+                mainUploadElement.classList.toggle("hidden", referenceOnlyInput && referenceOnlyInput.checked);
             }
         };
 
-        const updatePersonalization = () => {
-            const withRoster = personalizationOn && personalizationOn.checked;
-            const numberOnly = personalizationNumberOnly && personalizationNumberOnly.checked;
-            const noPersonalization = personalizationOff && personalizationOff.checked;
+        const updatePersonalizationState = () => {
+            const isWithRoster = personalizationOnInput && personalizationOnInput.checked;
+            const isNumberOnly = personalizationNumberOnlyInput && personalizationNumberOnlyInput.checked;
+            const isNoPersonalization = personalizationOffInput && personalizationOffInput.checked;
 
-            if (rosterSection) {
-                rosterSection.classList.toggle("hidden", noPersonalization);
+            if (rosterSectionElement) {
+                rosterSectionElement.classList.toggle("hidden", isNoPersonalization);
             }
 
-            if (personalizationNote) {
-                if (numberOnly) {
-                    personalizationNote.textContent = "Number-only selected. Leave names blank; quantity will still follow roster rows.";
-                } else if (noPersonalization) {
-                    personalizationNote.textContent = "If no personalization is needed, enter quantity manually.";
+            if (personalizationNoteElement) {
+                if (isNumberOnly) {
+                    personalizationNoteElement.textContent = "Number-only selected. Leave names blank; quantity will still follow roster rows.";
+                } else if (isNoPersonalization) {
+                    personalizationNoteElement.textContent = "If no personalization is needed, enter quantity manually.";
                 } else {
-                    personalizationNote.textContent = "Roster required for names and numbers.";
+                    personalizationNoteElement.textContent = "Roster required for names and numbers.";
                 }
             }
 
-            quantityInput.readOnly = !noPersonalization;
-            quantityInput.placeholder = noPersonalization ? "Enter quantity" : "Auto-calculated";
+            quantityInputElement.readOnly = !isNoPersonalization;
+            quantityInputElement.placeholder = isNoPersonalization ? "Enter quantity" : "Auto-calculated";
 
-            const nameFields = rosterTable.querySelectorAll(".roster-name");
+            const nameFields = rosterTableElement.querySelectorAll(".roster-name");
             nameFields.forEach((field) => {
-                if (numberOnly) {
+                if (isNumberOnly) {
                     field.classList.add("hidden-field");
                     field.value = "";
                 } else {
@@ -786,38 +786,41 @@
                 }
             });
 
-            if (!noPersonalization) {
-                updateQuantity();
+            if (!isNoPersonalization) {
+                updateQuantityFromRoster();
             }
         };
 
-        addPlayerBtn.addEventListener("click", () => {
-            const body = rosterTable.querySelector("tbody");
+        const handleAddPlayerClick = () => {
+            const body = rosterTableElement.querySelector("tbody");
             const rowCount = body.querySelectorAll("tr").length;
             body.appendChild(createRosterRow(rowCount + 1));
-        });
+        };
 
-        removePlayerBtn.addEventListener("click", () => {
-            const body = rosterTable.querySelector("tbody");
+        const handleRemovePlayerClick = () => {
+            const body = rosterTableElement.querySelector("tbody");
             const rows = body.querySelectorAll("tr");
             if (rows.length > 1) {
                 body.removeChild(rows[rows.length - 1]);
                 updateRowNumbers();
-                updateQuantity();
+                updateQuantityFromRoster();
             }
-        });
+        };
 
-        rosterTable.addEventListener("input", updateQuantity);
-        updateQuantity();
-        updateReferenceNote();
-        updatePersonalization();
+        addPlayerButton.addEventListener("click", handleAddPlayerClick);
+        removePlayerButton.addEventListener("click", handleRemovePlayerClick);
+
+        rosterTableElement.addEventListener("input", updateQuantityFromRoster);
+        updateQuantityFromRoster();
+        toggleReferenceNoteVisibility();
+        updatePersonalizationState();
 
         document.querySelectorAll('input[name="design-type"]').forEach((input) => {
-            input.addEventListener("change", updateReferenceNote);
+            input.addEventListener("change", toggleReferenceNoteVisibility);
         });
 
         document.querySelectorAll('input[name="personalization"]').forEach((input) => {
-            input.addEventListener("change", updatePersonalization);
+            input.addEventListener("change", updatePersonalizationState);
         });
     </script>
 </body>

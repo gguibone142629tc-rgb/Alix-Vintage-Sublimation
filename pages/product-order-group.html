@@ -513,9 +513,9 @@
     </footer>
 
     <script>
-        const groupRoster = document.getElementById("group-roster");
-        const addGroupRow = document.getElementById("add-group-row");
-        const removeGroupRow = document.getElementById("remove-group-row");
+        const groupRosterTableElement = document.getElementById("group-roster");
+        const addGroupRowButton = document.getElementById("add-group-row");
+        const removeGroupRowButton = document.getElementById("remove-group-row");
 
         const createGroupRow = () => {
             const row = document.createElement("tr");
@@ -534,18 +534,21 @@
             return row;
         };
 
-        addGroupRow.addEventListener("click", () => {
-            const body = groupRoster.querySelector("tbody");
+        const handleAddGroupRowClick = () => {
+            const body = groupRosterTableElement.querySelector("tbody");
             body.appendChild(createGroupRow());
-        });
+        };
 
-        removeGroupRow.addEventListener("click", () => {
-            const body = groupRoster.querySelector("tbody");
+        const handleRemoveGroupRowClick = () => {
+            const body = groupRosterTableElement.querySelector("tbody");
             const rows = body.querySelectorAll("tr");
             if (rows.length > 1) {
                 body.removeChild(rows[rows.length - 1]);
             }
-        });
+        };
+
+        addGroupRowButton.addEventListener("click", handleAddGroupRowClick);
+        removeGroupRowButton.addEventListener("click", handleRemoveGroupRowClick);
     </script>
 </body>
 </html>

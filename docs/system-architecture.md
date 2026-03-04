@@ -103,3 +103,7 @@ Hybrid Layered N-Tier Client-Server Architecture
 4. Implement order and payment workflow.
 5. Add admin review and status transitions.
 6. Add observability, hardening, and production deployment.
+
+## Engineering Standards
+
+- Naming conventions: see `docs/naming-conventions.md`

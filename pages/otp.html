@@ -367,47 +367,60 @@
         </section>
     </main>
     <script>
-        const otpInputs = Array.from(document.querySelectorAll('.otp-input'));
+        const otpInputElements = Array.from(document.querySelectorAll('.otp-input'));
 
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('input', (event) => {
-                const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 1);
-                event.target.value = digitsOnly;
+        const handleOtpInput = (event, index) => {
+            const inputElement = event.target;
+            const digitsOnlyValue = inputElement.value.replace(/\D/g, '').slice(0, 1);
+            inputElement.value = digitsOnlyValue;
 
-                if (digitsOnly && index < otpInputs.length - 1) {
-                    otpInputs[index + 1].focus();
-                    otpInputs[index + 1].select();
-                }
+            if (digitsOnlyValue && index < otpInputElements.length - 1) {
+                otpInputElements[index + 1].focus();
+                otpInputElements[index + 1].select();
+            }
+        };
+
+        const handleOtpKeydown = (event, inputElement, index) => {
+            if (event.key === 'Backspace' && !inputElement.value && index > 0) {
+                otpInputElements[index - 1].focus();
+                otpInputElements[index - 1].value = '';
+            }
+
+            if (event.key === 'ArrowLeft' && index > 0) {
+                otpInputElements[index - 1].focus();
+            }
+
+            if (event.key === 'ArrowRight' && index < otpInputElements.length - 1) {
+                otpInputElements[index + 1].focus();
+            }
+        };
+
+        const handleOtpPaste = (event) => {
+            event.preventDefault();
+            const pastedDigits = (event.clipboardData || window.clipboardData)
+                .getData('text')
+                .replace(/\D/g, '')
+                .slice(0, otpInputElements.length);
+
+            pastedDigits.split('').forEach((digit, digitIndex) => {
+                otpInputElements[digitIndex].value = digit;
             });
 
-            input.addEventListener('keydown', (event) => {
-                if (event.key === 'Backspace' && !input.value && index > 0) {
-                    otpInputs[index - 1].focus();
-                    otpInputs[index - 1].value = '';
-                }
+            const focusIndex = Math.min(pastedDigits.length, otpInputElements.length - 1);
+            otpInputElements[focusIndex].focus();
+        };
 
-                if (event.key === 'ArrowLeft' && index > 0) {
-                    otpInputs[index - 1].focus();
-                }
-
-                if (event.key === 'ArrowRight' && index < otpInputs.length - 1) {
-                    otpInputs[index + 1].focus();
-                }
+        otpInputElements.forEach((inputElement, index) => {
+            inputElement.addEventListener('input', (event) => {
+                handleOtpInput(event, index);
             });
 
-            input.addEventListener('paste', (event) => {
-                event.preventDefault();
-                const pastedDigits = (event.clipboardData || window.clipboardData)
-                    .getData('text')
-                    .replace(/\D/g, '')
-                    .slice(0, otpInputs.length);
+            inputElement.addEventListener('keydown', (event) => {
+                handleOtpKeydown(event, inputElement, index);
+            });
 
-                pastedDigits.split('').forEach((digit, digitIndex) => {
-                    otpInputs[digitIndex].value = digit;
-                });
-
-                const focusIndex = Math.min(pastedDigits.length, otpInputs.length - 1);
-                otpInputs[focusIndex].focus();
+            inputElement.addEventListener('paste', (event) => {
+                handleOtpPaste(event);
             });
         });
     </script>
