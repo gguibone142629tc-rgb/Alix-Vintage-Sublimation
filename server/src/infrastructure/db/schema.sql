@@ -1,8 +1,6 @@
--- PostgreSQL schema generated from the provided ERD.
+-- PostgreSQL schema 
 -- Notes:
--- - Uses plural table names to avoid reserved words (e.g., "user").
--- - Uses PostgreSQL enums for ERD "ENUM" fields. Adjust enum values as your app defines them.
--- - Uses BIGINT identity columns for *_id INT PKs.
+
 
 BEGIN;
 
