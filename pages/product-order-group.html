@@ -368,12 +368,14 @@
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6h14l-2 9H8L6 6z" />
-                    <path d="M6 6H4" />
-                    <circle cx="9" cy="19" r="1" />
-                    <circle cx="17" cy="19" r="1" />
-                </svg>
+                <a href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
             </div>
         </div>
     </header>
@@ -551,6 +553,61 @@
 
         addGroupRowButton.addEventListener("click", handleAddGroupRowClick);
         removeGroupRowButton.addEventListener("click", handleRemoveGroupRowClick);
+
+        // Add to cart functionality
+        function addOrderToHistory() {
+            const nameEl = document.querySelector('.order-panel h1');
+            const priceEl = document.querySelector('.order-panel .price');
+            const name = nameEl ? nameEl.textContent.trim() : 'Jersey Item';
+            let price = 0;
+            if (priceEl) {
+                price = parseFloat(priceEl.textContent.replace(/[₱,]/g, '')) || 0;
+            }
+
+            const item = { id: Date.now(), name, price, quantity: 1 };
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = {
+                id: `ORD-${Date.now()}`,
+                date: new Date().toISOString(),
+                items: [item],
+                status: 'active',
+                total: price
+            };
+            orders.push(order);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            console.log('Order saved:', order);
+
+            window.dispatchEvent(new Event('cartItemAdded'));
+            showNotification('✓ Order added! View it in Order History');
+        }
+
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: #388e3c;
+                color: white;
+                padding: 16px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                font-weight: 600;
+                animation: slideInRight 0.3s ease;
+            `;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btns = document.querySelectorAll('.order-panel .btn[type="button"]');
+            btns.forEach(btn => {
+                btn.onclick = addOrderToHistory;
+            });
+        });
+    </script>
     </script>
 </body>
 </html>
