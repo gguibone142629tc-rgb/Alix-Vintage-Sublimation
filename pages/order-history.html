@@ -169,6 +169,8 @@
         let orders = JSON.parse(localStorage.getItem('orders')) || [];
         let currentFilter = 'all';
 
+        let pendingReceiptOrderId = null;
+
         // Load and display orders
         function loadAndDisplay() {
             orders = JSON.parse(localStorage.getItem('orders')) || [];
@@ -291,7 +293,40 @@
                 return;
             }
 
-            tbody.innerHTML = ordersToDisplay.map(order => `
+            tbody.innerHTML = ordersToDisplay.map(order => {
+                const admin = order && typeof order.admin === 'object' && order.admin ? order.admin : null;
+                const workflow = admin && admin.workflowStatus ? String(admin.workflowStatus) : '';
+                const isAwaitingPayment = workflow === 'Awaiting Payment';
+                const isProofing = workflow === 'Proofing';
+                const receiptDataUrl = admin && admin.payment && admin.payment.receiptDataUrl ? String(admin.payment.receiptDataUrl) : '';
+                const hasReceipt = Boolean(receiptDataUrl);
+
+                const proofDataUrl = admin && admin.proof && admin.proof.mockupDataUrl ? String(admin.proof.mockupDataUrl) : '';
+                const hasProof = Boolean(proofDataUrl);
+                const proofStatus = admin && admin.proof && admin.proof.status ? String(admin.proof.status) : 'Not Sent';
+                const canRespondToProof = isProofing && proofStatus === 'Sent';
+
+                const actionButtons = `
+                    <button class="action-btn" onclick="viewOrderDetails('${order.id}')">VIEW</button>
+                    ${isAwaitingPayment ? `
+                        <button class="action-btn" onclick="${hasReceipt ? `viewReceipt('${order.id}')` : `uploadReceipt('${order.id}')`}">
+                            ${hasReceipt ? 'VIEW RECEIPT' : 'UPLOAD RECEIPT'}
+                        </button>
+                    ` : ''}
+                    ${isProofing ? `
+                        <button class="action-btn" onclick="viewProof('${order.id}')" ${hasProof ? '' : 'disabled'}>
+                            ${hasProof ? 'VIEW PROOF' : 'NO PROOF YET'}
+                        </button>
+                        <button class="action-btn" onclick="requestProofRevision('${order.id}')" ${canRespondToProof ? '' : 'disabled'}>
+                            REQUEST REVISION
+                        </button>
+                        <button class="action-btn" onclick="approveDesignProof('${order.id}')" ${canRespondToProof ? '' : 'disabled'}>
+                            APPROVE PROOF
+                        </button>
+                    ` : ''}
+                `;
+
+                return `
                 <tr>
                     <td><strong>${order.id}</strong></td>
                     <td>${formatDate(order.date)}</td>
@@ -311,12 +346,11 @@
                     </td>
                     <td><strong>₱${order.total.toLocaleString('en-PH')}</strong></td>
                     <td>
-                        <button class="action-btn" onclick="viewOrderDetails('${order.id}')">
-                            VIEW
-                        </button>
+                        ${actionButtons}
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function updateStats() {
@@ -343,6 +377,115 @@
             }
         }
 
+        function ensureAdminShape(order) {
+            if (!order.admin || typeof order.admin !== 'object') order.admin = {};
+            if (!order.admin.payment || typeof order.admin.payment !== 'object') order.admin.payment = {};
+            if (!order.admin.payment.receiptMeta || typeof order.admin.payment.receiptMeta !== 'object') order.admin.payment.receiptMeta = {};
+            if (!order.admin.proof || typeof order.admin.proof !== 'object') order.admin.proof = {};
+            if (!order.admin.proof.status) order.admin.proof.status = 'Not Sent';
+            if (!('mockupDataUrl' in order.admin.proof)) order.admin.proof.mockupDataUrl = null;
+            return order;
+        }
+
+        function saveOrders() {
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+
+        function uploadReceipt(orderId) {
+            pendingReceiptOrderId = orderId;
+            const input = document.getElementById('receiptUploadInput');
+            if (input) {
+                input.value = '';
+                input.click();
+            }
+        }
+
+        function viewReceipt(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            const url = order?.admin?.payment?.receiptDataUrl;
+            if (!url) {
+                alert('No receipt uploaded yet.');
+                return;
+            }
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        function viewProof(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            const url = order?.admin?.proof?.mockupDataUrl;
+            if (!url) {
+                alert('No design proof yet. Please wait for admin.');
+                return;
+            }
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        function requestProofRevision(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            ensureAdminShape(order);
+
+            const wf = String(order.admin.workflowStatus || '');
+            const proofStatus = String(order.admin.proof.status || 'Not Sent');
+            if (wf !== 'Proofing') {
+                alert('Revisions are only available during the Proofing stage.');
+                return;
+            }
+            if (proofStatus !== 'Sent') {
+                alert('Please wait for the admin to send the proof first.');
+                return;
+            }
+
+            order.admin.proof.status = 'Revision Requested';
+            saveOrders();
+            loadAndDisplay();
+            alert('Revision request sent to admin. Please wait for the updated proof.');
+        }
+
+        function approveDesignProof(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            ensureAdminShape(order);
+
+            const wf = String(order.admin.workflowStatus || '');
+            const proofStatus = String(order.admin.proof.status || 'Not Sent');
+            if (wf !== 'Proofing') {
+                alert('Approval is only available during the Proofing stage.');
+                return;
+            }
+            if (proofStatus !== 'Sent') {
+                alert('Please wait for the admin to send the proof first.');
+                return;
+            }
+
+            if (!confirm('Approve this design proof? Once approved, production will start.')) return;
+
+            order.admin.proof.status = 'Approved';
+            order.admin.workflowStatus = 'In Progress';
+            saveOrders();
+            loadAndDisplay();
+            alert('Design proof approved! Your order is now in production.');
+        }
+
+        function handleReceiptFileSelected(file) {
+            if (!pendingReceiptOrderId) return;
+            const order = orders.find(o => o.id === pendingReceiptOrderId);
+            if (!order) return;
+            ensureAdminShape(order);
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                order.admin.payment.receiptDataUrl = String(reader.result || '');
+                order.admin.payment.receiptMeta.fileName = file?.name || null;
+                order.admin.payment.receiptMeta.uploadedAt = new Date().toISOString();
+                saveOrders();
+                pendingReceiptOrderId = null;
+                loadAndDisplay();
+                alert('Receipt uploaded! Admin will verify it soon.');
+            };
+            reader.readAsDataURL(file);
+        }
+
         // Function to add a cart item to orders (called from other pages)
         window.addToOrderHistory = function(item) {
             const orderId = `ORD-${Date.now()}`;
@@ -362,6 +505,15 @@
             // Dispatch custom event for real-time updates
             window.dispatchEvent(new CustomEvent('orderAdded', { detail: newOrder }));
         };
+    </script>
+
+    <input id="receiptUploadInput" type="file" accept="image/*" style="display:none">
+    <script>
+        document.getElementById('receiptUploadInput')?.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            handleReceiptFileSelected(file);
+        });
     </script>
     <script src="../js/nav-auth.js"></script>
 </body>

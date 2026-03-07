@@ -262,12 +262,31 @@
 
             const item = { id: Date.now(), name, price, quantity: 1 };
             let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            const groupName = (document.getElementById('group-name')?.value || '').trim();
+            const rosterRows = Array.from(document.querySelectorAll('#group-roster tbody tr'));
+            const roster = rosterRows
+                .map((tr) => {
+                    const tds = tr.querySelectorAll('td');
+                    const personName = (tds[0]?.querySelector('input')?.value || '').trim();
+                    const personNumber = (tds[1]?.querySelector('input')?.value || '').trim();
+                    const size = (tds[2]?.querySelector('select')?.value || '').trim();
+                    return { name: personName, number: personNumber, size };
+                })
+                .filter((r) => r.name || r.number || r.size);
+
+            const quantity = Math.max(1, roster.length || 1);
+            item.quantity = quantity;
             const order = {
                 id: `ORD-${Date.now()}`,
                 date: new Date().toISOString(),
                 items: [item],
                 status: 'active',
-                total: price
+                total: price * quantity,
+                details: {
+                    groupName,
+                    roster
+                }
             };
             orders.push(order);
             localStorage.setItem('orders', JSON.stringify(orders));

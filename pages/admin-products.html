@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Product Management</title>
+    <link rel="stylesheet" href="../css/admin-homepage.css">
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Admin sidebar">
+            <div class="sidebar-brand">
+                <img class="brand-logo" src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <div class="brand-text">
+                    <div class="brand-name">Alix Vintage</div>
+                    <div class="brand-sub">Admin Dashboard</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Main Menu</div>
+                <nav class="sidebar-nav" aria-label="Main menu">
+                    <a href="admin-homepage.html" class="nav-item">Dashboard</a>
+                    <a href="admin-orders.html" class="nav-item">Order Management</a>
+                    <a href="#" class="nav-item">Transactions</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Product</div>
+                <nav class="sidebar-nav" aria-label="Product menu">
+                    <a href="admin-products.html" class="nav-item active">Add / Manage Products</a>
+                    <a href="#" class="nav-item">Products Media</a>
+                    <a href="categories.html" class="nav-item">Product List (Store)</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">System</div>
+                <nav class="sidebar-nav" aria-label="System menu">
+                    <a href="#" class="nav-item">Customers</a>
+                    <a href="#" class="nav-item">Activity Logs</a>
+                    <a href="#" class="nav-item">Settings</a>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <div class="topbar" role="banner">
+                <div class="topbar-title">Product Management</div>
+
+                <div class="topbar-right">
+                    <div class="topbar-search" role="search">
+                        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="M20 20l-3.5-3.5"></path>
+                        </svg>
+                        <input class="search-input" id="productSearch" type="search" placeholder="Search products..." aria-label="Search products">
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <section class="panel panel-wide" aria-label="Add or update product">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Add / Update Product</h2>
+                    </div>
+
+                    <form class="admin-form" id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="form-row">
+                            <div class="field">
+                                <label class="field-label" for="productName">Product Name</label>
+                                <input class="field-input" id="productName" type="text" placeholder="e.g., Sublimation Jersey" required>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="productCategory">Category</label>
+                                <input class="field-input" id="productCategory" type="text" placeholder="e.g., Jerseys" required>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="productPrice">Price (₱)</label>
+                                <input class="field-input" id="productPrice" type="number" min="0" step="1" placeholder="1200" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="field">
+                                <label class="field-label" for="productImage">Image</label>
+                                <input class="field-input" id="productImage" type="file" accept="image/*">
+                                <div class="image-preview" id="imagePreview" aria-label="Image preview"></div>
+                                <input type="hidden" id="productImageDataUrl">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="table-btn" type="submit" id="saveProductBtn">Save Product</button>
+                            <button class="table-btn" type="button" id="resetProductBtn">Reset</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel panel-wide" aria-label="Product list">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Products</h2>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table" id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/admin-store.js"></script>
+    <script src="../js/admin-products.js"></script>
+</body>
+</html>

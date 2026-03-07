@@ -200,7 +200,7 @@
             <p class="helper-text">You will receive a digital mockup to Approve or Request Revision before production.</p>
 
             <label class="check-row">
-                <input type="checkbox">
+                <input type="checkbox" id="termsAck">
                 <span>I acknowledge the obligation to pay the required downpayment after Admin approval and agree to the Terms and Conditions.</span>
             </label>
         </section>
@@ -223,8 +223,8 @@
                     <p class="mini-note">Send your draft and we will refine the layout.</p>
                 </div>
                 <div class="action-row">
-                    <button class="btn" type="button">Submit Request</button>
-                    <button class="btn secondary" type="button">Save Draft</button>
+                    <button class="btn" type="button" id="submitRequestBtn">Submit Request</button>
+                    <button class="btn secondary" type="button" id="saveDraftBtn">Save Draft</button>
                 </div>
             </div>
         </aside>
@@ -274,6 +274,151 @@
         const personalizationOffInput = document.getElementById("personalization-off");
         const rosterSectionElement = document.getElementById("roster-section");
         const personalizationNoteElement = document.getElementById("personalization-note");
+
+        const designNameInput = document.getElementById("design-name");
+        const productTypeSelect = document.getElementById("product-type");
+        const notesInput = document.getElementById("notes");
+        const termsAckInput = document.getElementById("termsAck");
+        const submitRequestBtn = document.getElementById("submitRequestBtn");
+        const saveDraftBtn = document.getElementById("saveDraftBtn");
+
+        const DRAFT_KEY = "alix_custom_design_draft";
+
+        const isLoggedIn = () => {
+            const loginFlag = localStorage.getItem("alix_is_logged_in") === "true";
+            const loginAt = Number(localStorage.getItem("alix_logged_in_at"));
+            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
+            return loginFlag && hasValidTimestamp;
+        };
+
+        const showToast = (message) => {
+            const notif = document.createElement("div");
+            notif.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: #388e3c;
+                color: white;
+                padding: 16px 20px;
+                border-radius: 10px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 600;
+            `;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3500);
+        };
+
+        const safeJsonParse = (value, fallback) => {
+            try {
+                return JSON.parse(value);
+            } catch {
+                return fallback;
+            }
+        };
+
+        const getPaymentPreference = () => {
+            const selected = document.querySelector('input[name="payment"]:checked');
+            const labelText = selected?.closest("label")?.textContent || "";
+            return labelText.toLowerCase().includes("cod") ? "COD" : "GCash";
+        };
+
+        const getDesignType = () => (referenceOnlyInput && referenceOnlyInput.checked ? "reference" : "final");
+
+        const getPersonalization = () => {
+            if (personalizationOffInput && personalizationOffInput.checked) return "none";
+            if (personalizationNumberOnlyInput && personalizationNumberOnlyInput.checked) return "number_only";
+            return "names_numbers";
+        };
+
+        const readRoster = () => {
+            const bodyRows = rosterTableElement?.querySelectorAll("tbody tr") || [];
+            const rows = Array.from(bodyRows)
+                .map((tr) => {
+                    const tds = tr.querySelectorAll("td");
+                    const name = (tds[1]?.querySelector("input")?.value || "").trim();
+                    const number = (tds[2]?.querySelector("input")?.value || "").trim();
+                    const size = (tds[3]?.querySelector("select")?.value || "").trim();
+                    return { name, number, size };
+                })
+                .filter((r) => r.name || r.number || r.size);
+            return rows;
+        };
+
+        const buildDraftPayload = () => {
+            const qtyRaw = quantityInputElement?.value;
+            const qty = qtyRaw === "" ? null : Number(qtyRaw);
+            return {
+                designName: String(designNameInput?.value || ""),
+                productType: String(productTypeSelect?.value || ""),
+                quantity: Number.isFinite(qty) ? qty : null,
+                notes: String(notesInput?.value || ""),
+                designType: getDesignType(),
+                personalization: getPersonalization(),
+                roster: readRoster(),
+                paymentPreference: getPaymentPreference(),
+                termsAck: Boolean(termsAckInput?.checked),
+            };
+        };
+
+        const restoreDraft = () => {
+            const draft = safeJsonParse(localStorage.getItem(DRAFT_KEY), null);
+            if (!draft) return;
+
+            if (designNameInput && draft.designName != null) designNameInput.value = String(draft.designName);
+            if (productTypeSelect && draft.productType != null) productTypeSelect.value = String(draft.productType);
+            if (notesInput && draft.notes != null) notesInput.value = String(draft.notes);
+            if (termsAckInput && typeof draft.termsAck === "boolean") termsAckInput.checked = draft.termsAck;
+
+            if (typeof draft.designType === "string" && referenceOnlyInput) {
+                referenceOnlyInput.checked = draft.designType === "reference";
+            }
+
+            if (typeof draft.personalization === "string") {
+                if (draft.personalization === "none" && personalizationOffInput) personalizationOffInput.checked = true;
+                if (draft.personalization === "number_only" && personalizationNumberOnlyInput) personalizationNumberOnlyInput.checked = true;
+                if (draft.personalization === "names_numbers" && personalizationOnInput) personalizationOnInput.checked = true;
+            }
+
+            // Rebuild roster table from draft (simple overwrite)
+            if (Array.isArray(draft.roster) && rosterTableElement) {
+                const body = rosterTableElement.querySelector("tbody");
+                if (body) {
+                    body.innerHTML = "";
+                    const rosterRows = draft.roster.length ? draft.roster : [{ name: "", number: "", size: "S" }];
+                    rosterRows.forEach((r, idx) => {
+                        const row = createRosterRow(idx + 1);
+                        const tds = row.querySelectorAll("td");
+                        const nameInput = tds[1]?.querySelector("input");
+                        const numberInput = tds[2]?.querySelector("input");
+                        const sizeSelect = tds[3]?.querySelector("select");
+                        if (nameInput) nameInput.value = String(r.name || "");
+                        if (numberInput) numberInput.value = String(r.number || "");
+                        if (sizeSelect && r.size) sizeSelect.value = String(r.size);
+                        body.appendChild(row);
+                    });
+                }
+            }
+
+            updateQuantityFromRoster();
+            toggleReferenceNoteVisibility();
+            updatePersonalizationState();
+
+            if (quantityInputElement && draft.quantity != null && !quantityInputElement.readOnly) {
+                quantityInputElement.value = String(draft.quantity);
+            }
+
+            // Restore payment radio by label match
+            if (typeof draft.paymentPreference === "string") {
+                const radios = document.querySelectorAll('input[name="payment"]');
+                radios.forEach((r) => {
+                    const text = r.closest("label")?.textContent || "";
+                    if (draft.paymentPreference === "COD" && text.toLowerCase().includes("cod")) r.checked = true;
+                    if (draft.paymentPreference === "GCash" && text.toLowerCase().includes("gcash")) r.checked = true;
+                });
+            }
+        };
 
         const updateQuantityFromRoster = () => {
             const rosterNameInputs = rosterTableElement.querySelectorAll(".roster-name");
@@ -390,6 +535,73 @@
         document.querySelectorAll('input[name="personalization"]').forEach((input) => {
             input.addEventListener("change", updatePersonalizationState);
         });
+
+        const submitCustomRequest = () => {
+            if (!isLoggedIn()) {
+                alert("Please log in first before submitting a custom request.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            if (!termsAckInput?.checked) {
+                alert("Please acknowledge the payment obligation and terms before submitting.");
+                return;
+            }
+
+            const draft = buildDraftPayload();
+
+            const qty = Number(draft.quantity || 0);
+            const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
+
+            const rawOrders = safeJsonParse(localStorage.getItem("orders"), []);
+            const orders = Array.isArray(rawOrders) ? rawOrders : [];
+            const orderId = `ORD-${Date.now()}`;
+
+            const itemName = `Custom ${draft.productType || "Product"} — ${draft.designName || "Design"}`;
+            const order = {
+                id: orderId,
+                date: new Date().toISOString(),
+                items: [{ id: Date.now(), name: itemName, price: 0, quantity: effectiveQty }],
+                status: "active",
+                total: 0,
+                customRequest: {
+                    designName: draft.designName,
+                    productType: draft.productType,
+                    quantity: effectiveQty,
+                    notes: draft.notes,
+                    designType: draft.designType,
+                    personalization: draft.personalization,
+                    roster: draft.roster,
+                    paymentPreference: draft.paymentPreference,
+                    submittedAt: new Date().toISOString(),
+                },
+                admin: {
+                    payment: {
+                        method: draft.paymentPreference,
+                    },
+                },
+            };
+
+            orders.push(order);
+            localStorage.setItem("orders", JSON.stringify(orders));
+            localStorage.removeItem(DRAFT_KEY);
+
+            showToast("✓ Custom request submitted! Admin will review it.");
+            setTimeout(() => {
+                window.location.href = "order-history.html";
+            }, 600);
+        };
+
+        const saveDraft = () => {
+            const payload = buildDraftPayload();
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+            showToast("Draft saved.");
+        };
+
+        submitRequestBtn?.addEventListener("click", submitCustomRequest);
+        saveDraftBtn?.addEventListener("click", saveDraft);
+
+        restoreDraft();
     </script>
     <script src="../js/nav-auth.js"></script>
 </body>

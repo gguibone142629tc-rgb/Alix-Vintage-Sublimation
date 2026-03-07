@@ -179,12 +179,22 @@
 
             const item = { id: Date.now(), name, price, quantity: 1 };
             let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            const groupName = (document.getElementById('group-name')?.value || '').trim();
+            const customerNumber = (document.getElementById('number')?.value || '').trim();
+            const customerName = (document.getElementById('name')?.value || '').trim();
+
             const order = {
                 id: `ORD-${Date.now()}`,
                 date: new Date().toISOString(),
                 items: [item],
                 status: 'active',
-                total: price
+                total: price,
+                details: {
+                    groupName,
+                    customerName,
+                    customerNumber
+                }
             };
             orders.push(order);
             localStorage.setItem('orders', JSON.stringify(orders));
