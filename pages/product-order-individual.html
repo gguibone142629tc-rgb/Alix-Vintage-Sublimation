@@ -159,7 +159,10 @@
     <script>
         // Add to cart functionality
         function addOrderToHistory() {
-            const isLoggedIn = localStorage.getItem('alix_is_logged_in') === 'true';
+            const loginFlag = localStorage.getItem('alix_is_logged_in') === 'true';
+            const loginAt = Number(localStorage.getItem('alix_logged_in_at'));
+            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
+            const isLoggedIn = loginFlag && hasValidTimestamp;
             if (!isLoggedIn) {
                 alert('Please log in first before adding items to cart/order history.');
                 window.location.href = 'login.html';
