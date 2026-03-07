@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alix Vintage | Contact Us</title>
+    <link rel="stylesheet" href="../css/contact-us.css">
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <div class="logo-wrap">
+                <img src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="categories.html">Categories</a></li>
+                    <li><a href="contact-us.html" class="active">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                        <path d="M4 20a8 8 0 0 1 16 0" />
+                    </svg>
+                </a>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z"></path>
+                        <path d="M6 6H4"></path>
+                        <circle cx="9" cy="19" r="1"></circle>
+                        <circle cx="17" cy="19" r="1"></circle>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="contact-page">
+        <section class="contact-hero">
+            <h1>Contact Us</h1>
+            <p>Have questions about custom designs, bulk orders, or pricing? Send us a message and we will get back to you as soon as possible.</p>
+        </section>
+
+        <section class="contact-layout">
+            <article class="contact-card">
+                <h2>Send a Message</h2>
+                <form class="contact-form" action="#" method="post">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input id="name" name="name" type="text" placeholder="Juan Dela Cruz" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input id="email" name="email" type="email" placeholder="juan@email.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input id="phone" name="phone" type="tel" placeholder="+63 9XX XXX XXXX">
+                        </div>
+                        <div class="form-group">
+                            <label for="topic">Inquiry Type</label>
+                            <select id="topic" name="topic" required>
+                                <option value="">Select one</option>
+                                <option>Custom Design Inquiry</option>
+                                <option>Bulk Team Order</option>
+                                <option>Order Follow-up</option>
+                                <option>Payment Concern</option>
+                                <option>General Question</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="6" placeholder="Type your message here..." required></textarea>
+                    </div>
+
+                    <button class="btn" type="submit">Send Inquiry</button>
+                </form>
+            </article>
+
+            <aside class="contact-card">
+                <h2>Business Info</h2>
+                <ul class="info-list">
+                    <li><strong>Phone:</strong> +63 9XX XXX XXXX</li>
+                    <li><strong>Email:</strong> hello@alixvintage.com</li>
+                    <li><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</li>
+                    <li><strong>Hours:</strong> Mon-Fri 9:00 AM - 6:00 PM, Sat 9:00 AM - 4:00 PM</li>
+                </ul>
+                <a class="fb-link" href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Visit our Facebook Page</a>
+            </aside>
+        </section>
+    </main>
+
+    <footer id="contact-us" class="site-footer">
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+                <p><a href="#">Instagram (dummy)</a></p>
+                <p><a href="#">TikTok (dummy)</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
+    </footer>
+    <script src="../js/nav-auth.js"></script>
+</body>
+</html>
+
+
+
+
+

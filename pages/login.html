@@ -4,332 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alix Vintage | Login</title>
-    <style>
-        :root {
-            --bg: #f1f1f1;
-            --panel: #ffffff;
-            --ink: #3a3a3a;
-            --line: #d0d0d0;
-            --dark: #3f3f3f;
-            --muted: #6b6b6b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-            min-height: 100vh;
-        }
-
-        header {
-            background: var(--dark);
-            color: #ffffff;
-            padding: 16px 24px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-        }
-
-        .nav {
-            max-width: 1180px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-
-        .logo-wrap {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            font-size: 18px;
-        }
-
-        .logo-wrap img {
-            width: 68px;
-            height: 68px;
-            object-fit: contain;
-            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #f5f5f5;
-            padding: 10px 4px;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-        }
-
-        nav a:hover {
-            color: #ffffff;
-            border-color: #ffffff;
-        }
-
-        .nav-icons {
-            display: flex;
-            gap: 18px;
-            font-size: 14px;
-            opacity: 0.98;
-            align-items: center;
-        }
-
-        .icon-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .nav-icon {
-            width: 22px;
-            height: 22px;
-            fill: none;
-            stroke: #ffffff;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .nav-icon:hover {
-            transform: translateY(-1px);
-            opacity: 0.85;
-        }
-
-        main {
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 56px 24px 72px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .login-panel {
-            width: 100%;
-            max-width: 640px;
-            text-align: center;
-        }
-
-        .brand-mark {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .brand-mark img {
-            width: 52px;
-            height: 52px;
-            object-fit: contain;
-        }
-
-        .brand-mark span {
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 1.8px;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            font-size: 20px;
-            font-weight: 600;
-            letter-spacing: 1.3px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-        }
-
-        .title-line {
-            width: 240px;
-            height: 1px;
-            background: #cecece;
-            margin: 0 auto 32px;
-        }
-
-        .form-card {
-            border: 1px solid #dfdfdf;
-            border-radius: 14px;
-            padding: 34px 30px 26px;
-            text-align: left;
-            background: var(--panel);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
-        }
-
-        .field-group {
-            margin-bottom: 20px;
-        }
-
-        .password-wrap {
-            position: relative;
-        }
-
-        .password-wrap input {
-            padding-right: 42px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: 0;
-            background: transparent;
-            cursor: pointer;
-            width: 26px;
-            height: 26px;
-            display: grid;
-            place-items: center;
-            color: #7a7a7a;
-        }
-
-        .toggle-password svg {
-            width: 18px;
-            height: 18px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 1.8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .toggle-password:hover {
-            color: #3f3f3f;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: #1f1f1f;
-            font-weight: 600;
-        }
-
-        input[type="email"],
-        .password-wrap input {
-            width: 100%;
-            height: 44px;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            background: #fbfbfb;
-            padding: 10px 12px;
-            font-size: 14px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        input[type="email"]:focus,
-        .password-wrap input:focus {
-            outline: none;
-            border-color: #bcbcbc;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
-            background: #ffffff;
-        }
-
-        input[type="email"]::placeholder,
-        .password-wrap input::placeholder {
-            color: #9a9a9a;
-        }
-
-        input[type="password"]::-ms-reveal,
-        input[type="password"]::-ms-clear {
-            display: none;
-        }
-
-        .input-hint {
-            margin-top: 6px;
-            font-size: 11px;
-            color: var(--muted);
-            line-height: 1.4;
-        }
-
-        .helper-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 2px;
-            margin-bottom: 22px;
-            font-size: 12px;
-        }
-
-        .remember {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #2f2f2f;
-            font-weight: 500;
-        }
-
-        .forgot {
-            color: #3f3f3f;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-        }
-
-        .login-btn {
-            width: 100%;
-            height: 48px;
-            border: 1px solid #3f3f3f;
-            border-radius: 10px;
-            background: #3f3f3f;
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            margin-bottom: 26px;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-
-        .login-btn:hover {
-            opacity: 0.92;
-            transform: translateY(-1px);
-        }
-
-        .foot-line {
-            border-top: 1px solid #cecece;
-            padding-top: 14px;
-            text-align: center;
-            font-size: 12px;
-            color: #2f2f2f;
-        }
-
-        .foot-line a {
-            color: #1f1f1f;
-            font-weight: 700;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-        }
-
-        @media (max-width: 900px) {
-            nav ul {
-                display: none;
-            }
-
-            .form-card {
-                padding: 28px 18px 22px;
-            }
-
-            .login-panel {
-                max-width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/login.css">
 </head>
 <body>
     <header>
@@ -340,24 +15,27 @@
             </div>
             <nav>
                 <ul>
-                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="homepage.html" class="active">Home</a></li>
                     <li><a href="categories.html">Categories</a></li>
-                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                <a class="icon-link" href="login.html" aria-label="Account login">
+                                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6h14l-2 9H8L6 6z" />
-                    <path d="M6 6H4" />
-                    <circle cx="9" cy="19" r="1" />
-                    <circle cx="17" cy="19" r="1" />
-                </svg>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
             </div>
         </div>
     </header>
@@ -406,8 +84,47 @@
             </form>
         </section>
     </main>
+    <footer id="contact-us" class="site-footer">
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+                <p><a href="#">Instagram (dummy)</a></p>
+                <p><a href="#">TikTok (dummy)</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
+    </footer>
+
     <script>
+        const loginFormElement = document.querySelector('.form-card');
         const passwordToggleButtons = document.querySelectorAll('.toggle-password');
+
+        if (loginFormElement) {
+            loginFormElement.addEventListener('submit', () => {
+                localStorage.setItem('alix_is_logged_in', 'true');
+            });
+        }
 
         const handlePasswordToggleClick = (buttonElement) => {
             const targetInputId = buttonElement.getAttribute('data-target');
@@ -427,5 +144,16 @@
             });
         });
     </script>
+    <script src="../js/nav-auth.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

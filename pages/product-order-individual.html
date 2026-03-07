@@ -4,297 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alix Vintage | Individual Order</title>
-    <style>
-        :root {
-            --bg: #f1f1f1;
-            --panel: #ffffff;
-            --ink: #3a3a3a;
-            --ink-strong: #1f1f1f;
-            --line: #d0d0d0;
-            --dark: #3f3f3f;
-            --muted: #6b6b6b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-        }
-
-        header {
-            background: var(--dark);
-            color: #ffffff;
-            padding: 16px 24px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-        }
-
-        .nav {
-            max-width: 1180px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-
-        .logo-wrap {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            font-size: 18px;
-        }
-
-        .logo-wrap img {
-            width: 68px;
-            height: 68px;
-            object-fit: contain;
-            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #f5f5f5;
-            padding: 10px 4px;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-        }
-
-        nav a:hover {
-            color: #ffffff;
-            border-color: #ffffff;
-        }
-
-        .nav-icons {
-            display: flex;
-            gap: 18px;
-            font-size: 14px;
-            opacity: 0.98;
-        }
-
-        .nav-icon {
-            width: 22px;
-            height: 22px;
-            fill: none;
-            stroke: #ffffff;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        main {
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 28px 24px 48px;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-            gap: 24px;
-        }
-
-        .product-preview {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
-        }
-
-        .image-placeholder {
-            background: #d9d9d9;
-            height: 320px;
-            border-radius: 8px;
-            margin-bottom: 18px;
-        }
-
-        .description h3 {
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .description p {
-            font-size: 11px;
-            color: var(--muted);
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-
-        .order-panel {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
-        }
-
-        .order-panel h1 {
-            font-size: 16px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-            color: var(--ink-strong);
-        }
-
-        .price {
-            font-size: 13px;
-            margin-bottom: 16px;
-            color: var(--muted);
-        }
-
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .toggle-btn {
-            flex: 1;
-            text-align: center;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid #3f3f3f;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: 600;
-            text-decoration: none;
-            color: #3f3f3f;
-            background: #ffffff;
-        }
-
-        .toggle-btn.active {
-            background: #3f3f3f;
-            color: #ffffff;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--ink-strong);
-        }
-
-        .form-group input {
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            padding: 8px 10px;
-            font-size: 12px;
-        }
-
-        .upload-box {
-            border: 1px dashed #bdbdbd;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            font-size: 11px;
-            color: var(--muted);
-            margin-bottom: 12px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 999px;
-            border: 1px solid #3f3f3f;
-            background: #3f3f3f;
-            color: #ffffff;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .size-chart {
-            grid-column: 1 / -1;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 16px;
-        }
-
-        .size-chart h4 {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-        }
-
-        th, td {
-            border: 1px solid var(--line);
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background: #3f3f3f;
-            color: #ffffff;
-            font-size: 10px;
-            letter-spacing: 1px;
-        }
-
-        footer {
-            background: #3f3f3f;
-            color: #f1f1f1;
-            text-align: center;
-            padding: 22px 16px 28px;
-            font-size: 11px;
-            margin-top: 30px;
-        }
-
-        footer span {
-            display: block;
-            margin-top: 4px;
-            color: #cfcfcf;
-            font-size: 10px;
-        }
-
-        @media (max-width: 980px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 900px) {
-            nav ul {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/product-order-individual.css">
 </head>
 <body>
     <header>
@@ -306,18 +16,19 @@
             <nav>
                 <ul>
                     <li><a href="homepage.html">Home</a></li>
-                    <li><a href="categories.html">Categories</a></li>
-                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="categories.html" class="active">Categories</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                <a href="login.html" aria-label="Account login">
+                                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
-                <a href="order-history.html" aria-label="Order history">
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 6h14l-2 9H8L6 6z" />
                         <path d="M6 6H4" />
@@ -413,15 +124,48 @@
             </table>
         </section>
     </main>
-
-    <footer>
-        © 2026 ALIX VINTAGE
-        <span>Tagum City, Philippines</span>
+    <footer id="contact-us" class="site-footer">
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+                <p><a href="#">Instagram (dummy)</a></p>
+                <p><a href="#">TikTok (dummy)</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
     </footer>
 
     <script>
         // Add to cart functionality
         function addOrderToHistory() {
+            const isLoggedIn = localStorage.getItem('alix_is_logged_in') === 'true';
+            if (!isLoggedIn) {
+                alert('Please log in first before adding items to cart/order history.');
+                window.location.href = 'login.html';
+                return;
+            }
+
             const nameEl = document.querySelector('.order-panel h1');
             const priceEl = document.querySelector('.order-panel .price');
             const name = nameEl ? nameEl.textContent.trim() : 'Jersey Item';
@@ -476,5 +220,16 @@
             });
         });
     </script>
+    <script src="../js/nav-auth.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

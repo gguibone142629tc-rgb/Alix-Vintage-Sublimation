@@ -4,477 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order History | Alix Vintage</title>
-    <style>
-        :root {
-            --bg: #f1f1f1;
-            --panel: #ffffff;
-            --ink: #3a3a3a;
-            --ink-strong: #1f1f1f;
-            --line: #d0d0d0;
-            --dark: #3f3f3f;
-            --muted: #6b6b6b;
-            --accent: #333333;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-            line-height: 1.5;
-        }
-
-        /* Header Styles */
-        header {
-            background: var(--dark);
-            color: #ffffff;
-            padding: 16px 24px;
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-        }
-
-        .nav {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-
-        .logo-wrap {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            font-size: 18px;
-        }
-
-        .logo-wrap img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #f5f5f5;
-            padding: 10px 4px;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.2s ease, color 0.2s ease;
-        }
-
-        nav a:hover {
-            color: #ffffff;
-            border-color: #ffffff;
-        }
-
-        .nav-icons {
-            display: flex;
-            gap: 18px;
-            font-size: 14px;
-            opacity: 0.98;
-        }
-
-        .nav-icon {
-            width: 22px;
-            height: 22px;
-            fill: none;
-            stroke: #ffffff;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .nav-icon:hover {
-            transform: translateY(-1px);
-            opacity: 0.85;
-        }
-
-        /* Main Layout */
-        main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0;
-            display: flex;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 250px;
-            background: #ffffff;
-            border-right: 1px solid var(--line);
-            padding: 24px 0;
-            position: sticky;
-            top: 60px;
-            height: calc(100vh - 60px);
-        }
-
-        .sidebar-item {
-            padding: 14px 24px;
-            text-decoration: none;
-            color: var(--ink);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 15px;
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
-        }
-
-        .sidebar-item:hover {
-            background: var(--bg);
-            color: var(--ink-strong);
-        }
-
-        .sidebar-item.active {
-            background: var(--bg);
-            color: var(--accent);
-            border-left-color: var(--accent);
-            font-weight: 600;
-        }
-
-        .sidebar-item svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        /* Content Area */
-        .content {
-            flex: 1;
-            padding: 32px;
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid var(--line);
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: #ffffff;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            transition: all 0.2s ease;
-        }
-
-        .stat-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
-        }
-
-        .stat-label {
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--ink-strong);
-        }
-
-        /* Search and Filter Section */
-        .search-section {
-            background: #ffffff;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .search-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            font-size: 14px;
-            background: #f8f8f8;
-            color: var(--ink);
-            transition: all 0.2s ease;
-        }
-
-        .search-input::placeholder {
-            color: var(--muted);
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--ink-strong);
-            background: #ffffff;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: 1px solid var(--accent);
-            background: #ffffff;
-            color: var(--accent);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-        }
-
-        .btn:hover {
-            background: var(--accent);
-            color: #ffffff;
-        }
-
-        /* Filter Tabs */
-        .filter-tabs {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 10px 16px;
-            border: 1px solid var(--line);
-            background: #ffffff;
-            color: var(--ink);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .tab-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .tab-btn.active {
-            background: var(--accent);
-            color: #ffffff;
-            border-color: var(--accent);
-        }
-
-        /* Table Styles */
-        .table-container {
-            background: #ffffff;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #f8f8f8;
-            border-bottom: 1px solid var(--line);
-        }
-
-        th {
-            padding: 16px 20px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--ink-strong);
-        }
-
-        td {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--line);
-            font-size: 14px;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        tbody tr:hover {
-            background: #f9f9f9;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-badge.active {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-badge.completed {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .status-badge.pending {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-badge.cancelled {
-            background: #ffebee;
-            color: #d32f2f;
-        }
-
-        .action-btn {
-            padding: 8px 12px;
-            border: 1px solid var(--line);
-            background: #ffffff;
-            color: var(--ink);
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: #f9f9f9;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--muted);
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-            color: var(--ink);
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--line);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive */
-
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 200px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            main {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--line);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            table {
-                font-size: 12px;
-            }
-
-            td, th {
-                padding: 12px 10px;
-            }
-
-            .search-row {
-                flex-direction: column;
-            }
-
-            .filter-tabs {
-                flex-direction: column;
-            }
-
-            .tab-btn {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/order-history.css">
 </head>
 <body>
     <!-- Header -->
@@ -486,19 +16,20 @@
             </div>
             <nav>
                 <ul>
-                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="homepage.html" class="active">Home</a></li>
                     <li><a href="categories.html">Categories</a></li>
-                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                <a href="login.html" aria-label="Account login">
+                                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
-                <a href="order-history.html" aria-label="Order history">
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 6h14l-2 9H8L6 6z" />
                         <path d="M6 6H4" />
@@ -563,7 +94,7 @@
                     >
                     <button class="btn" id="filterBtn">FILTER</button>
                     <button class="btn" id="dateRangeBtn">DATE RANGE</button>
-                    <button class="btn" id="clearBtn" style="background: #d32f2f; border-color: #d32f2f; color: white;">CLEAR ALL</button>
+                    <button class="btn btn-danger" id="clearBtn">CLEAR ALL</button>
                 </div>
 
                 <!-- Filter Tabs -->
@@ -601,6 +132,37 @@
             </div>
         </section>
     </main>
+    <footer id="contact-us" class="site-footer">
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+                <p><a href="#">Instagram (dummy)</a></p>
+                <p><a href="#">TikTok (dummy)</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
+    </footer>
 
     <script>
         // Order data storage
@@ -734,9 +296,9 @@
                     <td><strong>${order.id}</strong></td>
                     <td>${formatDate(order.date)}</td>
                     <td>
-                        <div style="max-width: 200px;">
+                        <div class="order-items-wrap">
                             ${order.items.map(item => `
-                                <div style="font-size: 13px; margin-bottom: 4px;">
+                                <div class="order-item-line">
                                     ${item.name} (x${item.quantity})
                                 </div>
                             `).join('')}
@@ -801,5 +363,16 @@
             window.dispatchEvent(new CustomEvent('orderAdded', { detail: newOrder }));
         };
     </script>
+    <script src="../js/nav-auth.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
