@@ -58,6 +58,27 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- =========
+-- Activity logs
+-- =========
+CREATE TABLE IF NOT EXISTS activity_logs (
+  log_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  actor_user_id BIGINT NULL REFERENCES users(user_id) ON DELETE SET NULL,
+  actor_role VARCHAR(50),
+  action VARCHAR(120) NOT NULL,
+  description TEXT,
+
+  ip_address INET,
+  user_agent TEXT,
+
+  meta JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs (action);
+
 CREATE TABLE IF NOT EXISTS products (
   product_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   product_name VARCHAR(255) NOT NULL,

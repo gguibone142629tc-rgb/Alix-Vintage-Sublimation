@@ -268,6 +268,25 @@
             const item = { id: Date.now(), name, price, quantity: 1 };
             let orders = JSON.parse(localStorage.getItem('orders')) || [];
 
+            let profileName = '';
+            let profilePhone = '';
+            try {
+                const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
+                if (u && typeof u === 'object') {
+                    const fn = String(u.firstname || '').trim();
+                    const ln = String(u.lastname || '').trim();
+                    const full = `${fn} ${ln}`.trim();
+                    profileName = full || String(u.email || '').trim();
+                    profilePhone = String(u.phone_number || '').trim();
+                }
+            } catch {}
+
+            if (!profileName) {
+                alert('Your session profile is missing. Please log in again to continue.');
+                window.location.href = 'login.html';
+                return;
+            }
+
             const groupName = (document.getElementById('group-name')?.value || '').trim();
             const rosterRows = Array.from(document.querySelectorAll('#group-roster tbody tr'));
             const roster = rosterRows
@@ -290,7 +309,9 @@
                 total: price * quantity,
                 details: {
                     groupName,
-                    roster
+                    roster,
+                    customerName: profileName,
+                    customerMobile: profilePhone
                 }
             };
             orders.push(order);

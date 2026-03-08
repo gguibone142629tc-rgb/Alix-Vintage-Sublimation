@@ -66,7 +66,7 @@
         localStorage.removeItem(TOKEN_KEY);
     }
 
-    const isProtectedPage = /(order-history|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
+    const isProtectedPage = /(order-history|order-tracking|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
         window.location.pathname
     );
     const loginButtons = document.querySelectorAll(".nav-login-btn-link");

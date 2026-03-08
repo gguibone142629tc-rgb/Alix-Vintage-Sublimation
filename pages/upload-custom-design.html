@@ -562,6 +562,25 @@
             const orders = Array.isArray(rawOrders) ? rawOrders : [];
             const orderId = `ORD-${Date.now()}`;
 
+            let profileName = '';
+            let profilePhone = '';
+            try {
+                const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
+                if (u && typeof u === 'object') {
+                    const fn = String(u.firstname || '').trim();
+                    const ln = String(u.lastname || '').trim();
+                    const full = `${fn} ${ln}`.trim();
+                    profileName = full || String(u.email || '').trim();
+                    profilePhone = String(u.phone_number || '').trim();
+                }
+            } catch {}
+
+            if (!profileName) {
+                alert('Your session profile is missing. Please log in again to continue.');
+                window.location.href = 'login.html';
+                return;
+            }
+
             const itemName = `Custom ${draft.productType || "Product"} — ${draft.designName || "Design"}`;
             const order = {
                 id: orderId,
@@ -569,6 +588,10 @@
                 items: [{ id: Date.now(), name: itemName, price: 0, quantity: effectiveQty }],
                 status: "active",
                 total: 0,
+                details: {
+                    customerName: profileName,
+                    customerMobile: profilePhone,
+                },
                 customRequest: {
                     designName: draft.designName,
                     productType: draft.productType,

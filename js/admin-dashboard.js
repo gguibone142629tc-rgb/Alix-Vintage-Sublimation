@@ -5,6 +5,8 @@
 
     const qs = (sel) => document.querySelector(sel);
 
+    const getApiBaseUrl = () => window.ALIX_API_BASE_URL || "http://localhost:8000";
+
     const setText = (sel, value) => {
         const el = qs(sel);
         if (el) el.textContent = String(value);
@@ -14,6 +16,18 @@
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return "-";
         return d.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "2-digit" });
+    };
+
+    const formatDateTime = (iso) => {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "-";
+        return d.toLocaleString("en-PH", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     };
 
     const getWorkflowCounts = (orders) => {
@@ -66,7 +80,7 @@
                         <td>${escapeHtml(getCustomerLabel(o))}</td>
                         <td>${escapeHtml(formatDate(o.date))}</td>
                         <td><span class="status-pill">${escapeHtml(status)}</span></td>
-                        <td><a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.id))}">Open</a></td>
+                        <td><a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.id))}">View</a></td>
                     </tr>
                 `;
             })
@@ -74,11 +88,28 @@
     };
 
     const getCustomerLabel = (order) => {
-        // Customer identity isn't stored yet in the current project.
-        // If you add it later (e.g. order.customer.name), this can display it.
         const details = order.details || {};
-        const name = details.customerName || details.groupName || order.customRequest?.designName || "-";
-        return name;
+        const legacyCustomer = order.customer && typeof order.customer === "object" ? order.customer : {};
+
+        const name =
+            details.customerName ||
+            details.customer_fullname ||
+            details.customer ||
+            order.customerName ||
+            order.customer_fullname ||
+            order.customer ||
+            legacyCustomer.name ||
+            legacyCustomer.fullName ||
+            legacyCustomer.fullname ||
+            details.groupName ||
+            (Array.isArray(details.roster) && details.roster.length > 0
+                ? String(details.roster[0]?.name || "").trim() || "Group Order"
+                : "") ||
+            order.customRequest?.designName ||
+            (order.customRequest ? "Custom Request" : "") ||
+            "-";
+
+        return String(name).trim() || "-";
     };
 
     const escapeHtml = (s) =>
@@ -88,6 +119,59 @@
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
+
+    const renderRecentActivity = (logs) => {
+        const list = qs(".activity-list");
+        if (!list) return;
+
+        const items = Array.isArray(logs) ? logs : [];
+        if (items.length === 0) {
+            list.innerHTML = `
+                <li class="activity-item">
+                    <span class="activity-dot" aria-hidden="true"></span>
+                    <span>No recent activity yet.</span>
+                </li>
+            `;
+            return;
+        }
+
+        list.innerHTML = items
+            .slice(0, 5)
+            .map((l) => {
+                const when = formatDateTime(l.created_at);
+                const action = String(l.action || "activity");
+                const desc = String(l.description || action);
+                const who = l.actor_role ? `(${String(l.actor_role)})` : "";
+                return `
+                    <li class="activity-item">
+                        <span class="activity-dot" aria-hidden="true"></span>
+                        <span><strong>${escapeHtml(when)}</strong> ${escapeHtml(who)} ${escapeHtml(desc)}</span>
+                    </li>
+                `;
+            })
+            .join("");
+    };
+
+    const loadRecentActivity = async () => {
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/api/admin/activity-logs?limit=5&offset=0`, {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                },
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data || data.ok !== true) {
+                renderRecentActivity([]);
+                return;
+            }
+
+            renderRecentActivity(Array.isArray(data.logs) ? data.logs : []);
+        } catch {
+            renderRecentActivity([]);
+        }
+    };
 
     const renderAll = () => {
         const orders = window.AdminStore.getOrders();
@@ -100,4 +184,5 @@
     });
 
     renderAll();
+    loadRecentActivity();
 })();

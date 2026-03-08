@@ -50,7 +50,7 @@
     <main>
         <!-- Sidebar -->
         <aside class="sidebar">
-            <a href="order-history.html" class="sidebar-item">
+            <a href="order-tracking.html" class="sidebar-item">
                 <span>📦</span>
                 Orders
             </a>
@@ -104,10 +104,8 @@
 
                 <!-- Filter Tabs -->
                 <div class="filter-tabs">
-                    <button class="tab-btn active" data-status="all">All Orders</button>
-                    <button class="tab-btn" data-status="active">Active</button>
-                    <button class="tab-btn" data-status="completed">Completed</button>
-                    <button class="tab-btn" data-status="cancelled">Cancelled</button>
+                    <button class="tab-btn active" data-workflow="all">All</button>
+                    <button class="tab-btn" data-workflow="Completed">Completed</button>
                 </div>
             </div>
 
@@ -172,9 +170,7 @@
     <script>
         // Order data storage
         let orders = JSON.parse(localStorage.getItem('orders')) || [];
-        let currentFilter = 'all';
-
-        let pendingReceiptOrderId = null;
+        let currentWorkflowFilter = 'all';
 
         // Load and display orders
         function loadAndDisplay() {
@@ -224,7 +220,7 @@
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
-                    currentFilter = e.target.dataset.status;
+                    currentWorkflowFilter = e.target.dataset.workflow;
                     renderOrders();
                 });
             });
@@ -257,19 +253,30 @@
             });
         }
 
-        function getFilteredOrders(searchTerm = '') {
-            let filtered = orders;
+        function getWorkflowDisplay(workflowStatus) {
+            const wf = String(workflowStatus || 'Pending');
+            if (wf === 'Pending' || wf === 'Revision Requested') return 'Pending Review';
+            return wf;
+        }
 
-            // Filter by status
-            if (currentFilter !== 'all') {
-                filtered = filtered.filter(order => order.status === currentFilter);
+        function isCompletedOrder(order) {
+            const wf = getWorkflowDisplay(order?.admin?.workflowStatus);
+            return wf === 'Completed';
+        }
+
+        function getFilteredOrders(searchTerm = '') {
+            // History page shows COMPLETED orders only.
+            let filtered = orders.filter(isCompletedOrder);
+
+            if (currentWorkflowFilter !== 'all') {
+                filtered = filtered.filter(order => getWorkflowDisplay(order?.admin?.workflowStatus) === currentWorkflowFilter);
             }
 
             // Filter by search term
             if (searchTerm) {
                 filtered = filtered.filter(order =>
-                    order.id.toLowerCase().includes(searchTerm) ||
-                    order.items.some(item => item.name.toLowerCase().includes(searchTerm))
+                    String(order.id || '').toLowerCase().includes(searchTerm) ||
+                    (Array.isArray(order.items) ? order.items : []).some(item => String(item.name || '').toLowerCase().includes(searchTerm))
                 );
             }
 
@@ -291,7 +298,7 @@
                         <td colspan="6" class="empty-state">
                             <div class="empty-state-icon">📭</div>
                             <h3>No Orders</h3>
-                            <p>${currentFilter !== 'all' ? `No ${currentFilter} orders found` : 'Start shopping to see your orders here'}</p>
+                            <p>No completed orders found</p>
                         </td>
                     </tr>
                 `;
@@ -299,36 +306,9 @@
             }
 
             tbody.innerHTML = ordersToDisplay.map(order => {
-                const admin = order && typeof order.admin === 'object' && order.admin ? order.admin : null;
-                const workflow = admin && admin.workflowStatus ? String(admin.workflowStatus) : '';
-                const isAwaitingPayment = workflow === 'Awaiting Payment';
-                const isProofing = workflow === 'Proofing';
-                const receiptDataUrl = admin && admin.payment && admin.payment.receiptDataUrl ? String(admin.payment.receiptDataUrl) : '';
-                const hasReceipt = Boolean(receiptDataUrl);
-
-                const proofDataUrl = admin && admin.proof && admin.proof.mockupDataUrl ? String(admin.proof.mockupDataUrl) : '';
-                const hasProof = Boolean(proofDataUrl);
-                const proofStatus = admin && admin.proof && admin.proof.status ? String(admin.proof.status) : 'Not Sent';
-                const canRespondToProof = isProofing && proofStatus === 'Sent';
-
+                const workflow = getWorkflowDisplay(order?.admin?.workflowStatus);
                 const actionButtons = `
-                    <button class="action-btn" onclick="viewOrderDetails('${order.id}')">VIEW</button>
-                    ${isAwaitingPayment ? `
-                        <button class="action-btn" onclick="${hasReceipt ? `viewReceipt('${order.id}')` : `uploadReceipt('${order.id}')`}">
-                            ${hasReceipt ? 'VIEW RECEIPT' : 'UPLOAD RECEIPT'}
-                        </button>
-                    ` : ''}
-                    ${isProofing ? `
-                        <button class="action-btn" onclick="viewProof('${order.id}')" ${hasProof ? '' : 'disabled'}>
-                            ${hasProof ? 'VIEW PROOF' : 'NO PROOF YET'}
-                        </button>
-                        <button class="action-btn" onclick="requestProofRevision('${order.id}')" ${canRespondToProof ? '' : 'disabled'}>
-                            REQUEST REVISION
-                        </button>
-                        <button class="action-btn" onclick="approveDesignProof('${order.id}')" ${canRespondToProof ? '' : 'disabled'}>
-                            APPROVE PROOF
-                        </button>
-                    ` : ''}
+                    <button class="action-btn" onclick="viewOrder('${order.id}')">VIEW</button>
                 `;
 
                 return `
@@ -345,8 +325,8 @@
                         </div>
                     </td>
                     <td>
-                        <span class="status-badge ${order.status}">
-                            ${order.status}
+                        <span class="status-badge completed">
+                            ${workflow}
                         </span>
                     </td>
                     <td><strong>₱${order.total.toLocaleString('en-PH')}</strong></td>
@@ -359,12 +339,12 @@
         }
 
         function updateStats() {
-            const allOrders = orders;
-            const activeOrders = allOrders.filter(o => o.status === 'active').length;
-            const completedOrders = allOrders.filter(o => o.status === 'completed').length;
-            const totalSpent = allOrders.reduce((sum, o) => sum + o.total, 0);
+            const completed = orders.filter(isCompletedOrder);
+            const activeOrders = 0;
+            const completedOrders = completed.length;
+            const totalSpent = completed.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-            document.getElementById('totalOrdersCount').textContent = allOrders.length;
+            document.getElementById('totalOrdersCount').textContent = completed.length;
             document.getElementById('activeOrdersCount').textContent = activeOrders;
             document.getElementById('completedOrdersCount').textContent = completedOrders;
             document.getElementById('totalSpentAmount').textContent = `₱${totalSpent.toLocaleString('en-PH')}`;
@@ -375,120 +355,8 @@
             return new Date(dateString).toLocaleDateString('en-PH', options);
         }
 
-        function viewOrderDetails(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            if (order) {
-                alert(`Order Details for ${orderId}:\n\nItems: ${order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}\nTotal: ₱${order.total}\nStatus: ${order.status}`);
-            }
-        }
-
-        function ensureAdminShape(order) {
-            if (!order.admin || typeof order.admin !== 'object') order.admin = {};
-            if (!order.admin.payment || typeof order.admin.payment !== 'object') order.admin.payment = {};
-            if (!order.admin.payment.receiptMeta || typeof order.admin.payment.receiptMeta !== 'object') order.admin.payment.receiptMeta = {};
-            if (!order.admin.proof || typeof order.admin.proof !== 'object') order.admin.proof = {};
-            if (!order.admin.proof.status) order.admin.proof.status = 'Not Sent';
-            if (!('mockupDataUrl' in order.admin.proof)) order.admin.proof.mockupDataUrl = null;
-            return order;
-        }
-
-        function saveOrders() {
-            localStorage.setItem('orders', JSON.stringify(orders));
-        }
-
-        function uploadReceipt(orderId) {
-            pendingReceiptOrderId = orderId;
-            const input = document.getElementById('receiptUploadInput');
-            if (input) {
-                input.value = '';
-                input.click();
-            }
-        }
-
-        function viewReceipt(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            const url = order?.admin?.payment?.receiptDataUrl;
-            if (!url) {
-                alert('No receipt uploaded yet.');
-                return;
-            }
-            window.open(url, '_blank', 'noopener,noreferrer');
-        }
-
-        function viewProof(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            const url = order?.admin?.proof?.mockupDataUrl;
-            if (!url) {
-                alert('No design proof yet. Please wait for admin.');
-                return;
-            }
-            window.open(url, '_blank', 'noopener,noreferrer');
-        }
-
-        function requestProofRevision(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            if (!order) return;
-            ensureAdminShape(order);
-
-            const wf = String(order.admin.workflowStatus || '');
-            const proofStatus = String(order.admin.proof.status || 'Not Sent');
-            if (wf !== 'Proofing') {
-                alert('Revisions are only available during the Proofing stage.');
-                return;
-            }
-            if (proofStatus !== 'Sent') {
-                alert('Please wait for the admin to send the proof first.');
-                return;
-            }
-
-            order.admin.proof.status = 'Revision Requested';
-            saveOrders();
-            loadAndDisplay();
-            alert('Revision request sent to admin. Please wait for the updated proof.');
-        }
-
-        function approveDesignProof(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            if (!order) return;
-            ensureAdminShape(order);
-
-            const wf = String(order.admin.workflowStatus || '');
-            const proofStatus = String(order.admin.proof.status || 'Not Sent');
-            if (wf !== 'Proofing') {
-                alert('Approval is only available during the Proofing stage.');
-                return;
-            }
-            if (proofStatus !== 'Sent') {
-                alert('Please wait for the admin to send the proof first.');
-                return;
-            }
-
-            if (!confirm('Approve this design proof? Once approved, production will start.')) return;
-
-            order.admin.proof.status = 'Approved';
-            order.admin.workflowStatus = 'In Progress';
-            saveOrders();
-            loadAndDisplay();
-            alert('Design proof approved! Your order is now in production.');
-        }
-
-        function handleReceiptFileSelected(file) {
-            if (!pendingReceiptOrderId) return;
-            const order = orders.find(o => o.id === pendingReceiptOrderId);
-            if (!order) return;
-            ensureAdminShape(order);
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                order.admin.payment.receiptDataUrl = String(reader.result || '');
-                order.admin.payment.receiptMeta.fileName = file?.name || null;
-                order.admin.payment.receiptMeta.uploadedAt = new Date().toISOString();
-                saveOrders();
-                pendingReceiptOrderId = null;
-                loadAndDisplay();
-                alert('Receipt uploaded! Admin will verify it soon.');
-            };
-            reader.readAsDataURL(file);
+        function viewOrder(orderId) {
+            window.location.href = `order-tracking.html?id=${encodeURIComponent(String(orderId))}`;
         }
 
         // Function to add a cart item to orders (called from other pages)
@@ -511,8 +379,6 @@
             window.dispatchEvent(new CustomEvent('orderAdded', { detail: newOrder }));
         };
     </script>
-
-    <input id="receiptUploadInput" type="file" accept="image/*" style="display:none">
     <script>
         document.getElementById('receiptUploadInput')?.addEventListener('change', (e) => {
             const file = e.target.files?.[0];

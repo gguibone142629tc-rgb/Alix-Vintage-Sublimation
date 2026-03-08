@@ -19,6 +19,32 @@ final class Request
     }
 
     /** @return array<string,string> */
+    public function query(): array
+    {
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $query = parse_url($uri, PHP_URL_QUERY);
+        if ($query === null || $query === '') {
+            return [];
+        }
+
+        $out = [];
+        parse_str($query, $out);
+
+        $normalized = [];
+        foreach ($out as $k => $v) {
+            if (is_scalar($v)) {
+                $normalized[(string) $k] = (string) $v;
+            }
+        }
+        return $normalized;
+    }
+
+    public function queryParam(string $name): ?string
+    {
+        return $this->query()[$name] ?? null;
+    }
+
+    /** @return array<string,string> */
     public function headers(): array
     {
         $headers = [];
@@ -41,6 +67,26 @@ final class Request
     {
         $key = strtolower($name);
         return $this->headers()[$key] ?? null;
+    }
+
+    public function ipAddress(): ?string
+    {
+        $xff = $this->header('x-forwarded-for');
+        if ($xff !== null && trim($xff) !== '') {
+            $first = trim(explode(',', $xff)[0] ?? '');
+            if ($first !== '') {
+                return $first;
+            }
+        }
+
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        return trim($ip) === '' ? null : $ip;
+    }
+
+    public function userAgent(): ?string
+    {
+        $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        return trim($ua) === '' ? null : $ua;
     }
 
     /** @return array<string,mixed> */

@@ -9,6 +9,11 @@ final class Router
     /** @var array<string, array<string, callable(Request): void>> */
     private array $routes = [];
 
+    public function get(string $path, callable $handler): void
+    {
+        $this->map('GET', $path, $handler);
+    }
+
     public function post(string $path, callable $handler): void
     {
         $this->map('POST', $path, $handler);

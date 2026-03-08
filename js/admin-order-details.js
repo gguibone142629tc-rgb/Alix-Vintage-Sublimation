@@ -35,6 +35,32 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
+    const safeJsonParse = (value, fallback) => {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed == null ? fallback : parsed;
+        } catch {
+            return fallback;
+        }
+    };
+
+    const getLoggedInUserSummary = () => {
+        const raw = localStorage.getItem("alix_auth_user");
+        const user = safeJsonParse(raw || "null", null);
+        if (!user || typeof user !== "object") return { name: null, mobile: null };
+
+        const firstname = String(user.firstname || "").trim();
+        const lastname = String(user.lastname || "").trim();
+        const email = String(user.email || "").trim();
+        const phone = String(user.phone_number || user.phone || user.mobile || "").trim();
+
+        const full = `${firstname} ${lastname}`.trim();
+        return {
+            name: full || email || null,
+            mobile: phone || null,
+        };
+    };
+
     const formatDate = (iso) => {
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return "-";
@@ -146,13 +172,19 @@
         const details = order.details || {};
         const custom = order.customRequest || null;
 
-        const customerName =
-            details.customerName ||
-            details.groupName ||
-            custom?.designName ||
-            "-";
+        const loggedIn = getLoggedInUserSummary();
 
-        const mobile = details.customerMobile || details.customerPhone || "-";
+        const explicitName =
+            details.customerName ||
+            details.fullName ||
+            details.name ||
+            details.customer_fullname ||
+            details.customer ||
+            null;
+
+        const customerName = explicitName || loggedIn.name || details.groupName || custom?.designName || "-";
+
+        const mobile = details.customerMobile || details.customerPhone || loggedIn.mobile || "-";
         return { customerName, mobile };
     };
 

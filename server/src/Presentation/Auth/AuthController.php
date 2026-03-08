@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Auth;
 
+use App\Application\ActivityLogs\LogActivity;
 use App\Application\Auth\LoginUser;
 use App\Application\Auth\RequestOtp;
 use App\Application\Auth\RegisterUser;
@@ -19,6 +20,7 @@ final class AuthController
         private readonly LoginUser $loginUser,
         private readonly RequestOtp $requestOtp,
         private readonly VerifyOtp $verifyOtp,
+        private readonly LogActivity $logActivity,
     ) {
     }
 
@@ -44,11 +46,31 @@ final class AuthController
             Response::json(['error' => $result['error']], $result['status']);
         }
 
+        $this->logActivity->handle([
+            'action' => 'auth.register.customer',
+            'actor_user_id' => $result['user']['user_id'] ?? null,
+            'actor_role' => 'customer',
+            'description' => 'Customer registered',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => $result['user']['email'] ?? null],
+        ]);
+
         // Send OTP after successful registration.
         $otpResult = $this->requestOtp->handle(['email' => (string) ($data['email'] ?? '')]);
         if (!$otpResult['ok']) {
             Response::json(['error' => $otpResult['error']], $otpResult['status']);
         }
+
+        $this->logActivity->handle([
+            'action' => 'auth.otp.request',
+            'actor_user_id' => $result['user']['user_id'] ?? null,
+            'actor_role' => 'customer',
+            'description' => 'Requested verification code',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => $result['user']['email'] ?? null],
+        ]);
 
         Response::json(['ok' => true, 'user' => $result['user'], 'next' => 'otp'], 201);
     }
@@ -75,6 +97,16 @@ final class AuthController
             Response::json(['error' => $result['error']], $result['status']);
         }
 
+        $this->logActivity->handle([
+            'action' => 'auth.register.admin',
+            'actor_user_id' => $result['user']['user_id'] ?? null,
+            'actor_role' => 'admin',
+            'description' => 'Admin user registered',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => $result['user']['email'] ?? null],
+        ]);
+
         Response::json(['ok' => true, 'user' => $result['user']], 201);
     }
 
@@ -90,6 +122,16 @@ final class AuthController
         if (!$result['ok']) {
             Response::json(['error' => $result['error']], $result['status']);
         }
+
+        $this->logActivity->handle([
+            'action' => 'auth.login',
+            'actor_user_id' => $result['user']['user_id'] ?? null,
+            'actor_role' => 'customer',
+            'description' => 'Customer logged in',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => $result['user']['email'] ?? null],
+        ]);
 
         Response::json([
             'ok' => true,
@@ -119,6 +161,16 @@ final class AuthController
             Response::json(['error' => 'Invalid admin credentials'], 401);
         }
 
+        $this->logActivity->handle([
+            'action' => 'auth.admin_login',
+            'actor_user_id' => null,
+            'actor_role' => 'admin',
+            'description' => 'Admin logged in',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['username' => $username],
+        ]);
+
         Response::json(['ok' => true], 200);
     }
 
@@ -132,6 +184,16 @@ final class AuthController
         if (!$result['ok']) {
             Response::json(['error' => $result['error']], $result['status']);
         }
+
+        $this->logActivity->handle([
+            'action' => 'auth.otp.request',
+            'actor_user_id' => null,
+            'actor_role' => 'customer',
+            'description' => 'Requested verification code',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => (string) ($data['email'] ?? '')],
+        ]);
 
         Response::json(['ok' => true], 200);
     }
@@ -147,6 +209,16 @@ final class AuthController
         if (!$result['ok']) {
             Response::json(['error' => $result['error']], $result['status']);
         }
+
+        $this->logActivity->handle([
+            'action' => 'auth.otp.verify',
+            'actor_user_id' => $result['user']['user_id'] ?? null,
+            'actor_role' => 'customer',
+            'description' => 'Verified account',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => $result['user']['email'] ?? (string) ($data['email'] ?? '')],
+        ]);
 
         Response::json([
             'ok' => true,

@@ -23,6 +23,31 @@
 
     const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
 
+    const getCustomerLabel = (order) => {
+        const details = order.details || {};
+        const legacyCustomer = order.customer && typeof order.customer === "object" ? order.customer : {};
+
+        const name =
+            details.customerName ||
+            details.customer_fullname ||
+            details.customer ||
+            order.customerName ||
+            order.customer_fullname ||
+            order.customer ||
+            legacyCustomer.name ||
+            legacyCustomer.fullName ||
+            legacyCustomer.fullname ||
+            details.groupName ||
+            (Array.isArray(details.roster) && details.roster.length > 0
+                ? String(details.roster[0]?.name || "").trim() || "Group Order"
+                : "") ||
+            order.customRequest?.designName ||
+            (order.customRequest ? "Custom Request" : "") ||
+            "-";
+
+        return String(name).trim() || "-";
+    };
+
     const initFromQuery = () => {
         if (!window.AdminStore) return;
 
@@ -82,7 +107,7 @@
         if (orders.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6">No orders found.</td>
+                    <td colspan="7">No orders found.</td>
                 </tr>
             `;
             return;
@@ -97,11 +122,12 @@
                     <tr>
                         <td>${escapeHtml(formatDate(o.date))}</td>
                         <td><strong>${escapeHtml(o.id)}</strong></td>
+                        <td>${escapeHtml(getCustomerLabel(o))}</td>
                         <td>${escapeHtml(type === "custom" ? "Custom" : "Fixed")}</td>
                         <td><span class="status-pill">${escapeHtml(workflow)}</span></td>
                         <td><strong>${escapeHtml(formatMoney(o.total))}</strong></td>
                         <td>
-                            <a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.id))}">Open</a>
+                            <a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.id))}">View</a>
                         </td>
                     </tr>
                 `;

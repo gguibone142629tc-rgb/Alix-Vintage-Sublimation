@@ -12,7 +12,7 @@ final class Response
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Setup-Key');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Setup-Key, X-Admin-Api-Key');
         header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
         echo json_encode($payload, JSON_UNESCAPED_SLASHES);
         exit;
@@ -22,7 +22,7 @@ final class Response
     {
         http_response_code($statusCode);
         header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Setup-Key');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Setup-Key, X-Admin-Api-Key');
         header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
         exit;
     }

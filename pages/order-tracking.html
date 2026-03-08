@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking | Alix Vintage</title>
+    <link rel="stylesheet" href="../css/order-tracking.css">
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <div class="logo-wrap">
+                <img src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="homepage.html">Home</a></li>
+                    <li><a href="categories.html">Categories</a></li>
+                    <li><a href="contact-us.html">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                    <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                            <path d="M4 20a8 8 0 0 1 16 0" />
+                        </svg>
+                    </a>
+                    <div class="nav-account-dropdown is-hidden" role="menu">
+                        <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                    </div>
+                </div>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <aside class="sidebar">
+            <a href="order-tracking.html" class="sidebar-item active">
+                <span>📦</span>
+                Orders
+            </a>
+            <a href="order-history.html" class="sidebar-item">
+                <span>📋</span>
+                Order History
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>⚙️</span>
+                Account Settings
+            </a>
+        </aside>
+
+        <section class="content">
+            <h1 class="page-title">ORDER TRACKING</h1>
+
+            <section class="panel" id="ordersListPanel" aria-label="Orders list" style="display:none">
+                <div class="panel-title">ORDERS</div>
+
+                <div class="search-row" aria-label="Search and filter">
+                    <input type="text" class="search-input" id="ordersSearchInput" placeholder="Search by order ID, item name ...">
+                </div>
+
+                <div class="filter-tabs" id="ordersWorkflowTabs" aria-label="Workflow filters">
+                    <button class="tab-btn active" data-workflow="all" type="button">All</button>
+                    <button class="tab-btn" data-workflow="Pending Review" type="button">Pending Review</button>
+                    <button class="tab-btn" data-workflow="Awaiting Payment" type="button">Awaiting Payment</button>
+                    <button class="tab-btn" data-workflow="Proofing" type="button">Proofing</button>
+                    <button class="tab-btn" data-workflow="In Progress" type="button">In Progress</button>
+                    <button class="tab-btn" data-workflow="Ready to Ship" type="button">Ready to Ship</button>
+                    <button class="tab-btn" data-workflow="On Transit" type="button">On Transit</button>
+                </div>
+
+                <div class="table-container" aria-label="Orders table">
+                    <table class="orders-table" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th>ORDER ID</th>
+                                <th>DATE</th>
+                                <th>ITEMS</th>
+                                <th>STATUS</th>
+                                <th>AMOUNT</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    <div class="empty-state-icon">📭</div>
+                                    <h3>No Orders</h3>
+                                    <p>No in-process orders found.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div id="orderDetailView">
+            <section class="panel" aria-label="Order header">
+                <div class="order-header">
+                    <div>
+                        <div class="order-id" id="orderTitle">ORDER #</div>
+                        <div class="order-sub" id="orderPlacedAt">Placed on -</div>
+                    </div>
+                    <div class="order-pill" id="orderPill">-</div>
+                </div>
+
+                <div class="stepper" aria-label="Order progress">
+                    <div class="step" data-step="0"><span class="dot"></span><span class="label">Pending Review</span></div>
+                    <div class="step" data-step="1"><span class="dot"></span><span class="label">Awaiting Payment</span></div>
+                    <div class="step" data-step="2"><span class="dot"></span><span class="label">Proofing</span></div>
+                    <div class="step" data-step="3"><span class="dot"></span><span class="label">In Progress</span></div>
+                    <div class="step" data-step="4"><span class="dot"></span><span class="label">Ready to Ship</span></div>
+                    <div class="step" data-step="5"><span class="dot"></span><span class="label">On Transit</span></div>
+                    <div class="step" data-step="6"><span class="dot"></span><span class="label">Completed</span></div>
+                </div>
+
+                <div class="status-card" aria-label="Current status">
+                    <div class="status-card-title" id="statusTitle">-</div>
+                    <div class="status-card-body" id="statusBody">-</div>
+                </div>
+
+                <div class="summary-grid" aria-label="Order summary">
+                    <div class="summary-item">
+                        <div class="summary-k">Order Type</div>
+                        <div class="summary-v" id="summaryType">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-k">Quantity</div>
+                        <div class="summary-v" id="summaryQty">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-k">Payment Status</div>
+                        <div class="summary-v" id="summaryPayment">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="paymentPanel" aria-label="Payment" style="display:none">
+                <div class="panel-title">PAYMENT</div>
+                <div class="payment-note" id="paymentNote">-</div>
+
+                <div class="payment-grid" aria-label="Payment summary">
+                    <div class="payment-item">
+                        <div class="payment-k">Total Amount</div>
+                        <div class="payment-v" id="paymentTotal">-</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-k">Required Downpayment (50%)</div>
+                        <div class="payment-v" id="paymentDownpayment">-</div>
+                    </div>
+                </div>
+
+                <div class="payment-upload" aria-label="Receipt upload">
+                    <label class="upload-label" for="paymentReceiptUpload">Upload receipt screenshot (image)</label>
+                    <input class="upload-input" id="paymentReceiptUpload" type="file" accept="image/*">
+                    <div class="upload-preview" id="paymentReceiptPreview"></div>
+                    <div class="payment-actions">
+                        <button class="btn btn-primary" id="uploadReceiptBtn" type="button">UPLOAD RECEIPT</button>
+                    </div>
+                    <div class="payment-state" id="paymentState">-</div>
+                </div>
+            </section>
+
+            <section class="panel" id="proofPanel" aria-label="Proofing" style="display:none">
+                <div class="panel-title">PROOFING</div>
+                <div class="proof-note" id="proofNote">-</div>
+                <div class="upload-preview" id="proofPreview"></div>
+                <div class="proof-actions" id="proofActions">
+                    <button class="btn" id="requestRevisionBtn" type="button">REQUEST REVISION</button>
+                    <button class="btn btn-primary" id="approveProofBtn" type="button">APPROVE PROOF</button>
+                </div>
+            </section>
+
+            <section class="panel" id="shippingPanel" aria-label="Shipping information">
+                <div class="panel-title">SHIPPING INFORMATION</div>
+                <div class="shipping-sub">J&amp;T Express Tracking</div>
+
+                <div class="tracking-row">
+                    <input class="tracking-input" id="trackingNumber" type="text" value="" readonly>
+                    <button class="btn" id="copyTrackingBtn" type="button">COPY</button>
+                </div>
+
+                <div class="shipping-details" id="shippingDetails">
+                    <div class="shipping-line"><span class="shipping-k">Courier:</span> <span class="shipping-v">J&amp;T Express</span></div>
+                    <div class="shipping-line"><span class="shipping-k">Destination:</span> <span class="shipping-v">-</span></div>
+                    <div class="shipping-line"><span class="shipping-k">Estimated Delivery:</span> <span class="shipping-v">-</span></div>
+                </div>
+
+                <a class="btn btn-wide" id="trackOnCourierBtn" href="https://www.jtexpress.ph/" target="_blank" rel="noopener noreferrer">TRACK ON J&amp;T WEBSITE</a>
+            </section>
+
+            <div class="actions" aria-label="Actions">
+                <a class="btn" href="order-history.html">VIEW ORDER HISTORY</a>
+                <a class="btn btn-primary" href="categories.html">PLACE NEW ORDER</a>
+            </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contact-us" class="site-footer">
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+                <p><a href="#">Instagram (dummy)</a></p>
+                <p><a href="#">TikTok (dummy)</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
+    </footer>
+
+    <script src="../js/nav-auth.js"></script>
+    <script src="../js/admin-store.js"></script>
+    <script src="../js/order-tracking.js"></script>
+</body>
+</html>

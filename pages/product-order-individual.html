@@ -185,9 +185,28 @@
             const item = { id: Date.now(), name, price, quantity: 1 };
             let orders = JSON.parse(localStorage.getItem('orders')) || [];
 
+            let profileName = '';
+            let profilePhone = '';
+            try {
+                const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
+                if (u && typeof u === 'object') {
+                    const fn = String(u.firstname || '').trim();
+                    const ln = String(u.lastname || '').trim();
+                    const full = `${fn} ${ln}`.trim();
+                    profileName = full || String(u.email || '').trim();
+                    profilePhone = String(u.phone_number || '').trim();
+                }
+            } catch {}
+
             const groupName = (document.getElementById('group-name')?.value || '').trim();
             const customerNumber = (document.getElementById('number')?.value || '').trim();
-            const customerName = (document.getElementById('name')?.value || '').trim();
+            const customerNameInput = (document.getElementById('name')?.value || '').trim();
+            const customerName = customerNameInput || profileName;
+
+            if (!customerName) {
+                alert('Please enter your full name before placing the order.');
+                return;
+            }
 
             const order = {
                 id: `ORD-${Date.now()}`,
@@ -198,7 +217,8 @@
                 details: {
                     groupName,
                     customerName,
-                    customerNumber
+                    customerNumber,
+                    customerMobile: profilePhone
                 }
             };
             orders.push(order);

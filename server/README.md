@@ -127,6 +127,20 @@ Returns:
 - `token` (JWT)
 - `user`
 
+## Activity Logs (admin)
+
+### List activity logs
+
+- `GET /api/admin/activity-logs?limit=50&offset=0`
+
+Header (recommended):
+- `X-Admin-Api-Key: <ADMIN_API_KEY from .env>`
+
+Notes:
+- Logs are stored in PostgreSQL table `activity_logs`.
+- The API writes logs automatically for key auth events (register/login/OTP request/verify).
+- If `ADMIN_API_KEY` is not set, the endpoint falls back to `ADMIN_SETUP_KEY`.
+
 ## Notes
 
 - On startup, the API ensures default roles exist: `admin`, `customer`.

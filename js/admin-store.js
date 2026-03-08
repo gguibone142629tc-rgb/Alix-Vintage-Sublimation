@@ -24,6 +24,49 @@
         normalized.status = normalized.status || "active"; // used by order-history.html
         normalized.total = Number.isFinite(Number(normalized.total)) ? Number(normalized.total) : 0;
 
+        const details = typeof normalized.details === "object" && normalized.details ? { ...normalized.details } : {};
+
+        // Backward/variant compatibility: older pages may store customer fields at top-level
+        // or under different keys. Normalize to `details.*` so admin UI can always read it.
+        const legacyCustomer = normalized.customer && typeof normalized.customer === "object" ? normalized.customer : {};
+        details.customerName =
+            details.customerName ||
+            details.customer_fullname ||
+            details.customer ||
+            normalized.customerName ||
+            normalized.customer_fullname ||
+            normalized.customer ||
+            legacyCustomer.name ||
+            legacyCustomer.fullName ||
+            legacyCustomer.fullname ||
+            details.customer_name ||
+            details.fullname ||
+            details.name ||
+            "";
+
+        details.customerMobile =
+            details.customerMobile ||
+            details.customerPhone ||
+            normalized.customerMobile ||
+            normalized.customerPhone ||
+            legacyCustomer.mobile ||
+            legacyCustomer.phone ||
+            legacyCustomer.phone_number ||
+            details.mobile ||
+            details.phone ||
+            details.phone_number ||
+            "";
+
+        // Support a few common group/order keys if they were saved outside `details`.
+        details.groupName = details.groupName || normalized.groupName || "";
+        details.roster = Array.isArray(details.roster)
+            ? details.roster
+            : Array.isArray(normalized.roster)
+              ? normalized.roster
+              : [];
+
+        normalized.details = details;
+
         const admin = typeof normalized.admin === "object" && normalized.admin ? { ...normalized.admin } : {};
         admin.workflowStatus = admin.workflowStatus || "Pending";
         admin.stockConfirmed = Boolean(admin.stockConfirmed);
