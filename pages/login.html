@@ -21,13 +21,18 @@
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                                <a class="nav-login-btn-link" href="login.html">Log In</a>
-                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
+                                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
+                <div class="nav-account-dropdown is-hidden" role="menu">
+                    <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                </div>
+                </div>
                 <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 6h14l-2 9H8L6 6z" />
@@ -49,7 +54,7 @@
             <h1>Login to Alix Vintage</h1>
             <div class="title-line"></div>
 
-            <form class="form-card" action="homepage.html">
+            <form class="form-card" id="customer-login-form" action="homepage.html" novalidate>
                 <div class="field-group">
                     <label for="email">Email address</label>
                     <input id="email" type="email" placeholder="juan.delacruz@email.com" required>
@@ -59,7 +64,7 @@
                 <div class="field-group">
                     <label for="password">Password</label>
                     <div class="password-wrap">
-                        <input id="password" type="password" placeholder="Alix@2026" required>
+                        <input id="password" type="password" placeholder="Enter your password" required>
                         <button class="toggle-password" type="button" aria-label="Show password" data-target="password">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
@@ -81,6 +86,31 @@
                 <button class="login-btn" type="submit">Login</button>
 
                 <p class="foot-line">Don’t have an account? <a href="register.html">Register here</a></p>
+                <p class="foot-line">Admin? <a id="switch-to-admin" href="#admin">Login here</a></p>
+            </form>
+
+            <form class="form-card is-hidden" id="admin-login-form" action="admin-homepage.html" novalidate autocomplete="off">
+                <div class="field-group">
+                    <label for="admin-username">Admin username</label>
+                    <input id="admin-username" type="text" placeholder="Enter admin username" autocomplete="off" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="admin-password">Admin password</label>
+                    <div class="password-wrap">
+                        <input id="admin-password" type="password" placeholder="Enter admin password" autocomplete="off" required>
+                        <button class="toggle-password" type="button" aria-label="Show password" data-target="admin-password">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="login-btn" type="submit">Login as Admin</button>
+
+                <p class="foot-line">Not an admin? <a id="switch-to-customer" href="#customer">Customer login</a></p>
             </form>
         </section>
     </main>
@@ -116,14 +146,101 @@
         </div>
     </footer>
 
+    <script src="../js/auth-client.js"></script>
     <script>
-        const loginFormElement = document.querySelector('.form-card');
+        const ADMIN_SESSION_KEY = 'alix_admin_logged_in';
+        const ADMIN_LOGIN_AT_KEY = 'alix_admin_logged_in_at';
+        const ADMIN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+
+        const customerLoginFormElement = document.getElementById('customer-login-form');
+        const adminLoginFormElement = document.getElementById('admin-login-form');
+        const switchToAdminLink = document.getElementById('switch-to-admin');
+        const switchToCustomerLink = document.getElementById('switch-to-customer');
         const passwordToggleButtons = document.querySelectorAll('.toggle-password');
 
-        if (loginFormElement) {
-            loginFormElement.addEventListener('submit', () => {
-                localStorage.setItem('alix_is_logged_in', 'true');
-                localStorage.setItem('alix_logged_in_at', String(Date.now()));
+        const isAdminSessionFresh = () => {
+            const flag = localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+            const loginAt = Number(localStorage.getItem(ADMIN_LOGIN_AT_KEY));
+            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
+            const isFresh = hasValidTimestamp && Date.now() - loginAt <= ADMIN_MAX_AGE_MS;
+
+            if (flag && !isFresh) {
+                localStorage.removeItem(ADMIN_SESSION_KEY);
+                localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+            }
+
+            return flag && isFresh;
+        };
+
+        const setLoginMode = (mode) => {
+            const isAdminMode = mode === 'admin';
+            if (customerLoginFormElement) {
+                customerLoginFormElement.classList.toggle('is-hidden', isAdminMode);
+            }
+            if (adminLoginFormElement) {
+                adminLoginFormElement.classList.toggle('is-hidden', !isAdminMode);
+            }
+
+            if (isAdminMode && isAdminSessionFresh()) {
+                window.location.replace('admin-homepage.html');
+            }
+        };
+
+        const getModeFromHash = () => {
+            const raw = String(window.location.hash || '').toLowerCase();
+            return raw === '#admin' ? 'admin' : 'customer';
+        };
+
+        setLoginMode(getModeFromHash());
+        window.addEventListener('hashchange', () => setLoginMode(getModeFromHash()));
+
+        if (switchToAdminLink) {
+            switchToAdminLink.addEventListener('click', () => setLoginMode('admin'));
+        }
+
+        if (switchToCustomerLink) {
+            switchToCustomerLink.addEventListener('click', () => setLoginMode('customer'));
+        }
+
+        if (customerLoginFormElement) {
+            customerLoginFormElement.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const email = String(document.getElementById('email')?.value || '').trim();
+                const password = String(document.getElementById('password')?.value || '');
+
+                try {
+                    const result = await window.AlixAuth.postJson('/api/auth/login', { email, password });
+                    window.AlixAuth.setSession(result.token, result.user);
+                    window.location.href = 'homepage.html';
+                } catch (error) {
+                    const message = error?.message || 'Login failed';
+                    if (message === 'Account not verified') {
+                        localStorage.setItem('alix_pending_email', email);
+                        window.location.href = 'otp.html';
+                        return;
+                    }
+                    alert(message);
+                }
+            });
+        }
+
+        if (adminLoginFormElement) {
+            adminLoginFormElement.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const username = String(document.getElementById('admin-username')?.value || '').trim();
+                const password = String(document.getElementById('admin-password')?.value || '');
+
+                try {
+                    await window.AlixAuth.postJson('/api/admin/login', { username, password });
+                    localStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    localStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
+                    window.location.href = 'admin-homepage.html';
+                } catch (error) {
+                    const message = error?.message || 'Invalid admin credentials';
+                    alert(message);
+                }
             });
         }
 

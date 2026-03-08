@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alix Vintage | OTP Verification</title>
+    <title>Alix Vintage | Email Verification</title>
     <link rel="stylesheet" href="../css/otp.css">
 </head>
 <body>
@@ -21,13 +21,18 @@
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                                <a class="nav-login-btn-link" href="login.html">Log In</a>
-                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
+                                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
+                <div class="nav-account-dropdown is-hidden" role="menu">
+                    <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                </div>
+                </div>
                 <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 6h14l-2 9H8L6 6z" />
@@ -47,15 +52,15 @@
                 <span>ALIX VINTAGE</span>
             </div>
             <h1>Create Account</h1>
-            <p class="subtitle">Enter the OTP sent to your mobile number to complete registration.</p>
+            <p class="subtitle">Enter the 6-digit code sent to your email to complete registration.</p>
             <div class="title-line"></div>
 
-            <form class="form-card" action="login.html">
+            <form class="form-card" action="login.html" novalidate>
                 <div class="otp-icon">✉</div>
                 <p class="otp-note">A 6-digit code has been sent to</p>
-                <p class="otp-number">+63 9XX XXX XXXX</p>
+                <p class="otp-number">your email</p>
 
-                <p class="otp-label">Enter 6 Digit OTP Code</p>
+                <p class="otp-label">Enter 6 Digit Verification Code</p>
 
                 <div class="otp-row">
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
@@ -66,7 +71,7 @@
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                 </div>
 
-                <a class="resend" href="#">Resend Code (0:56)</a>
+                <a class="resend" href="#">Resend Code</a>
 
                 <button class="verify-btn" type="submit">Verify &amp; Complete Registration</button>
 
@@ -106,8 +111,31 @@
         </div>
     </footer>
 
+    <script src="../js/auth-client.js"></script>
     <script>
         const otpInputElements = Array.from(document.querySelectorAll('.otp-input'));
+        const otpFormElement = document.querySelector('.form-card');
+        const resendLinkElement = document.querySelector('.resend');
+        const otpNumberElement = document.querySelector('.otp-number');
+
+        const pendingEmail = localStorage.getItem('alix_pending_email') || '';
+        const maskEmail = (raw) => {
+            const value = String(raw || '').trim();
+            const at = value.indexOf('@');
+            if (at <= 1) {
+                return value || 'your email';
+            }
+            const name = value.slice(0, at);
+            const domain = value.slice(at + 1);
+            const maskedName = name[0] + '*'.repeat(Math.max(1, name.length - 2)) + name[name.length - 1];
+            return maskedName + '@' + domain;
+        };
+
+        if (otpNumberElement && pendingEmail) {
+            otpNumberElement.textContent = maskEmail(pendingEmail);
+        }
+
+        const collectOtp = () => otpInputElements.map((el) => el.value).join('');
 
         const handleOtpInput = (event, index) => {
             const inputElement = event.target;
@@ -163,6 +191,47 @@
                 handleOtpPaste(event);
             });
         });
+
+        if (otpFormElement) {
+            otpFormElement.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const otp_code = collectOtp();
+                if (!pendingEmail) {
+                    alert('Missing email for verification. Please register again.');
+                    window.location.href = 'register.html';
+                    return;
+                }
+
+                try {
+                    const result = await window.AlixAuth.postJson('/api/auth/otp/verify', { email: pendingEmail, otp_code });
+                    window.AlixAuth.setSession(result.token, result.user);
+                    localStorage.removeItem('alix_pending_email');
+                    localStorage.removeItem('alix_pending_phone');
+                    window.location.href = 'homepage.html';
+                } catch (error) {
+                    alert(error?.message || 'OTP verification failed');
+                }
+            });
+        }
+
+        if (resendLinkElement) {
+            resendLinkElement.addEventListener('click', async (event) => {
+                event.preventDefault();
+                if (!pendingEmail) {
+                    alert('Missing email for resend. Please register again.');
+                    window.location.href = 'register.html';
+                    return;
+                }
+
+                try {
+                    await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
+                    alert('OTP sent. Please check your phone.');
+                } catch (error) {
+                    alert(error?.message || 'Failed to resend OTP');
+                }
+            });
+        }
     </script>
     <script src="../js/nav-auth.js"></script>
 </body>

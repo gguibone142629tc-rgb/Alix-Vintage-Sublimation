@@ -21,13 +21,18 @@
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                                <a class="nav-login-btn-link" href="login.html">Log In</a>
-                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
+                                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
+                <div class="nav-account-dropdown is-hidden" role="menu">
+                    <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                </div>
+                </div>
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 6h14l-2 9H8L6 6z" />
                     <path d="M6 6H4" />

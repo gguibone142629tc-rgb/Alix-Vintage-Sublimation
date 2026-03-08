@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Alix Vintage</title>
+    <link rel="stylesheet" href="../css/admin-homepage.css">
+    <style>
+        .admin-login-shell {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: var(--app-bg, #0f1115);
+        }
+
+        .admin-login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel, #141824);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 24px;
+            color: var(--text, #e9eefc);
+        }
+
+        .admin-login-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 6px;
+        }
+
+        .admin-login-sub {
+            margin: 0 0 18px;
+            opacity: 0.8;
+            font-size: 13px;
+        }
+
+        .admin-login-field {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .admin-login-field label {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .admin-login-field input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.18);
+            color: inherit;
+            outline: none;
+        }
+
+        .admin-login-field input:focus {
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .admin-login-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 14px;
+            background: #6e8efb;
+            color: #0f1115;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .admin-login-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .admin-login-note {
+            margin-top: 14px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .admin-login-note a {
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <main class="admin-login-shell">
+        <section class="admin-login-card" aria-label="Admin login">
+            <h1 class="admin-login-title">Admin Login</h1>
+            <p class="admin-login-sub">Sign in to access the admin dashboard.</p>
+
+            <form id="admin-login-form">
+                <div class="admin-login-field">
+                    <label for="admin-username">Username</label>
+                    <input id="admin-username" name="username" type="text" autocomplete="username" required>
+                </div>
+
+                <div class="admin-login-field">
+                    <label for="admin-password">Password</label>
+                    <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+
+                <button class="admin-login-btn" type="submit">Login</button>
+
+                <p class="admin-login-note">
+                    Go back to <a href="homepage.html">store homepage</a>.
+                </p>
+            </form>
+        </section>
+    </main>
+
+    <script src="../js/admin-auth.js"></script>
+</body>
+</html>

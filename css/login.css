@@ -217,6 +217,7 @@ nav a.active {
             font-weight: 600;
         }
 
+        input[type="text"],
         input[type="email"],
         .password-wrap input {
             width: 100%;
@@ -229,6 +230,7 @@ nav a.active {
             transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
 
+        input[type="text"]:focus,
         input[type="email"]:focus,
         .password-wrap input:focus {
             outline: none;
@@ -237,6 +239,7 @@ nav a.active {
             background: #ffffff;
         }
 
+        input[type="text"]::placeholder,
         input[type="email"]::placeholder,
         .password-wrap input::placeholder {
             color: #9a9a9a;

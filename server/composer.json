@@ -1,0 +1,14 @@
+{
+  "name": "alix-vintage-sublimation/server",
+  "description": "Backend API (PHP + PostgreSQL) for Alix Vintage Sublimation",
+  "type": "project",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}
