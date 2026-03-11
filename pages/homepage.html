@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Alix Vintage | Home</title>
     <link rel="stylesheet" href="../css/homepage.css">
+    <link rel="stylesheet" href="../css/sublimation-theme.css">
 </head>
 <body>
     <header>
         <div class="nav">
-            <div class="logo-wrap">
+            <a class="logo-wrap" href="homepage.html" aria-label="Go to homepage">
                 <img src="../assets/reallogo.png" alt="Alix Vintage logo">
                 <span>ALIX VINTAGE</span>
-            </div>
+            </a>
             <nav>
                 <ul>
-                    <li><a href="homepage.html" class="active">Home</a></li>
-                    <li><a href="categories.html">Categories</a></li>
-                    <li><a href="contact-us.html">Contact Us</a></li>
+                    <li><a href="categories.html" class="nav-shop-link">SHOP NOW</a></li>
                 </ul>
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
-                                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-contact-link" href="contact-us.html">Contact</a>
+                <a class="nav-login-btn-link" href="login.html">Log In</a>
                 <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
@@ -53,13 +56,59 @@
                     <p>Select designs below and turn an idea to product.</p>
                 </div>
             </a>
-            <a class="action-card dark" href="upload-custom-design.html">
+            <a class="action-card" href="upload-custom-design.html">
                 <div class="action-icon">⬆</div>
                 <div class="action-text">
                     <h3>UPLOAD CUSTOM DESIGN</h3>
                     <p>Upload your own design or reference image for custom order.</p>
                 </div>
             </a>
+        </section>
+
+        <section class="business-overview" aria-labelledby="business-overview-title">
+            <div class="business-hero-card">
+                <div class="business-copy">
+                    <span class="business-kicker">About Alix Vintage</span>
+                    <h2 id="business-overview-title">CUSTOM SUBLIMATION JERSEYS BUILT FOR TEAMS, EVENTS, AND GROUP ORDERS.</h2>
+                    <p>Alix Vintage produces custom jerseys and apparel for teams, schools, organizations, and group customers through ready-made catalog options or fully custom design submissions.</p>
+                    <p class="business-note">From design selection to personalization and final production, the process stays clear, coordinated, and focused on a finished set your group can wear with confidence.</p>
+                </div>
+
+                <div class="business-stats" aria-label="Business strengths">
+                    <div class="business-stat">
+                        <strong>Ready Styles or Custom</strong>
+                        <span>Choose from available designs or send your own layout, peg, or reference image.</span>
+                    </div>
+                    <div class="business-stat">
+                        <strong>Names, Numbers, Sizing</strong>
+                        <span>Designed for team personalization and organized group ordering.</span>
+                    </div>
+                    <div class="business-stat">
+                        <strong>Clear Order Flow</strong>
+                        <span>Inquiry, approval, production, and updates are kept in one straightforward path.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="business-service-row" aria-label="What Alix Vintage offers">
+                <article class="business-service">
+                    <span class="business-service-no">01</span>
+                    <h3>For Teams and Organizations</h3>
+                    <p>Suitable for leagues, school groups, company events, clubs, and customer group orders.</p>
+                </article>
+
+                <article class="business-service">
+                    <span class="business-service-no">02</span>
+                    <h3>For Custom Jersey Requests</h3>
+                    <p>Useful for customers who already have a design idea, peg, logo, or full layout to submit.</p>
+                </article>
+
+                <article class="business-service">
+                    <span class="business-service-no">03</span>
+                    <h3>For Reliable Final Output</h3>
+                    <p>Focused on finished apparel that is ready to wear, present, and deliver to the whole group.</p>
+                </article>
+            </div>
         </section>
 
         <section>
@@ -95,29 +144,84 @@
             </div>
         </section>
 
-        <section class="process">
+        <section class="feedback-showcase" aria-labelledby="feedback-showcase-title">
+            <div class="section-header feedback-header">
+                <div>
+                    <h2 id="feedback-showcase-title">TEAMS WE'VE PRINTED FOR</h2>
+                    <p class="feedback-intro">Real customers, real finished jerseys, and real team orders delivered with care.</p>
+                </div>
+            </div>
+
+            <div class="feedback-grid">
+                <article class="feedback-card">
+                    <img src="../assets/feedback1.jpg" alt="Customer group wearing Alix Vintage custom jerseys">
+                    <div class="feedback-copy">
+                        <span class="feedback-tag">Finished Jerseys</span>
+                    </div>
+                </article>
+
+                <article class="feedback-card">
+                    <img src="../assets/feedback2.jpg" alt="Satisfied customer group in completed custom teamwear">
+                    <div class="feedback-copy">
+                        <span class="feedback-tag">Finished Jerseys</span>
+                    </div>
+                </article>
+
+                <article class="feedback-card">
+                    <img src="../assets/feedback3.jpg" alt="Customer feedback photo with completed custom jersey order">
+                    <div class="feedback-copy">
+                        <span class="feedback-tag">Finished Jerseys</span>
+                    </div>
+                </article>
+            </div>
+
+        </section>
+
+        <section class="process" aria-labelledby="ordering-process-title">
             <div class="process-header">
-                <span>🗂️</span>
-                <span>ORDERING PROCESS</span>
+                <span class="process-badge">Order Guide</span>
+                <h2 id="ordering-process-title">ORDERING PROCESS</h2>
+                <p>Follow these steps for faster approval and production.</p>
             </div>
-            <div class="process-steps">
-                <div class="process-step">
-                    <h4>1. Select Design</h4>
-                    <p>Choose from catalog or upload custom.</p>
-                </div>
-                <div class="process-step">
-                    <h4>2. Enter Roster</h4>
-                    <p>Names, numbers, sizes.</p>
-                </div>
-                <div class="process-step">
-                    <h4>3. Admin Review</h4>
-                    <p>Wait for quote approval.</p>
-                </div>
-                <div class="process-step">
-                    <h4>4. Payment</h4>
-                    <p>50% downpayment required.</p>
-                </div>
+
+            <div class="process-timeline" aria-label="Order timeline steps">
+                <article class="process-step">
+                    <div class="step-topline">
+                        <span class="step-dot" aria-hidden="true"></span>
+                        <span class="step-time">Step 1</span>
+                    </div>
+                    <h4>Select or Upload Design</h4>
+                    <p>Choose from our catalog or upload your custom layout and references.</p>
+                </article>
+
+                <article class="process-step">
+                    <div class="step-topline">
+                        <span class="step-dot" aria-hidden="true"></span>
+                        <span class="step-time">Step 2</span>
+                    </div>
+                    <h4>Complete Team Details</h4>
+                    <p>Submit names, numbers, sizes, quantity, and preferred delivery date.</p>
+                </article>
+
+                <article class="process-step">
+                    <div class="step-topline">
+                        <span class="step-dot" aria-hidden="true"></span>
+                        <span class="step-time">Step 3</span>
+                    </div>
+                    <h4>Approve Quote and Mockup</h4>
+                    <p>We send your quote and design proof for confirmation before printing.</p>
+                </article>
+
+                <article class="process-step">
+                    <div class="step-topline">
+                        <span class="step-dot" aria-hidden="true"></span>
+                        <span class="step-time">Step 4</span>
+                    </div>
+                    <h4>Pay and Track Progress</h4>
+                    <p>Pay downpayment to start production, then monitor updates until delivery.</p>
+                </article>
             </div>
+
         </section>
     </main>
     <footer id="contact-us" class="site-footer">
@@ -156,13 +260,4 @@
     <script src="../js/nav-auth.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
