@@ -3,7 +3,18 @@
     const STORAGE_USER_KEY = "alix_auth_user";
 
     function getApiBaseUrl() {
-        return window.ALIX_API_BASE_URL || "http://localhost:8000";
+        if (window.ALIX_API_BASE_URL) {
+            return window.ALIX_API_BASE_URL;
+        }
+
+        // If served via the PHP router (or any web server), prefer same-origin so
+        // /api/* can be proxied by router.php. When opened via file://, origin is "null".
+        const origin = window.location && window.location.origin ? window.location.origin : "";
+        if (origin && origin !== "null") {
+            return origin;
+        }
+
+        return "http://localhost:8000";
     }
 
     function safeJsonParse(value) {
