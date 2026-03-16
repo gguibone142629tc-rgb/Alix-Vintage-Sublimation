@@ -1,4 +1,42 @@
 (function () {
+    const STANDARD_FOOTER_HTML = `
+        <div class="footer-wrap">
+            <div class="footer-col footer-brand">
+                <h3>ALIX VINTAGE</h3>
+                <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
+                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
+                <p><strong>Email:</strong> hello@alixvintage.com</p>
+                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+            </div>
+            <div class="footer-col">
+                <h4>Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+            </div>
+            <div class="footer-col">
+                <h4>Follow Us</h4>
+                <p><a href="https://www.facebook.com/profile.php?id=61563383904729" target="_blank" rel="noopener noreferrer">Facebook Page</a></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
+            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+        </div>
+    `;
+
+    const normalizeFooters = () => {
+        document.querySelectorAll("footer.site-footer").forEach((footer) => {
+            footer.innerHTML = STANDARD_FOOTER_HTML;
+        });
+    };
+
+    normalizeFooters();
+
     const style = document.createElement("style");
     style.textContent = `
         .nav-account-menu { position: relative; display: inline-flex; align-items: center; }
@@ -6,6 +44,70 @@
         .nav-account-dropdown { background: var(--panel, #ffffff); border: 1px solid var(--line, #d0d0d0); border-radius: 6px; padding: 10px 12px; min-width: 140px; }
         .nav-account-dropdown a { display: block; text-decoration: none; color: var(--ink, inherit); font-weight: 600; }
         .nav-account-dropdown a:hover { text-decoration: underline; }
+
+        /* Keep footer presentation consistent across pages with different CSS files */
+        footer.site-footer {
+            background: radial-gradient(circle at 50% 50%, #4b220c 0%, #2b1308 65%, #1f0f08 100%) !important;
+            color: #f3ede6 !important;
+            padding: 20px 0 10px !important;
+            border-top: 2px solid rgba(216, 172, 126, 0.18) !important;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        footer.site-footer .footer-wrap {
+            width: min(1360px, 92%) !important;
+            margin: 0 auto !important;
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 14px !important;
+            align-items: start !important;
+            text-align: center !important;
+        }
+        footer.site-footer .footer-col { min-width: 0 !important; }
+        footer.site-footer .footer-col h3,
+        footer.site-footer .footer-col h4 {
+            margin: 0 0 8px !important;
+            color: #f7c183 !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase !important;
+            font-weight: 800 !important;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        footer.site-footer .footer-col h3 { font-size: 20px !important; line-height: 1.05 !important; }
+        footer.site-footer .footer-col h4 { font-size: 18px !important; line-height: 1.05 !important; }
+        footer.site-footer .footer-col p,
+        footer.site-footer .footer-col a {
+            margin: 0 0 5px !important;
+            color: #f3ede6 !important;
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+            text-decoration-thickness: 1.5px !important;
+            text-underline-offset: 2px !important;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        footer.site-footer .footer-note { opacity: 0.96 !important; }
+        footer.site-footer .footer-bottom {
+            width: min(1360px, 92%) !important;
+            margin: 10px auto 0 !important;
+            padding-top: 8px !important;
+            border-top: 1px solid rgba(216, 172, 126, 0.22) !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            gap: 16px !important;
+            color: #ead7c3 !important;
+            font-size: 11px !important;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        @media (max-width: 1100px) {
+            footer.site-footer .footer-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        }
+        @media (max-width: 640px) {
+            footer.site-footer .footer-wrap { grid-template-columns: 1fr !important; }
+            footer.site-footer .footer-bottom { flex-direction: column !important; text-align: center !important; }
+            footer.site-footer .footer-col h3 { font-size: 18px !important; }
+            footer.site-footer .footer-col h4 { font-size: 16px !important; }
+            footer.site-footer .footer-col p,
+            footer.site-footer .footer-col a { font-size: 12px !important; }
+        }
     `;
     document.head.appendChild(style);
 
