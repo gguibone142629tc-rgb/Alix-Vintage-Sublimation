@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Alix Vintage | Verification Code</title>
-    <link rel="stylesheet" href="../css/verification-code.css">
+    <link rel="stylesheet" href="../css/otp.css">
     <link rel="stylesheet" href="../css/sublimation-theme.css">
 </head>
 <body>
@@ -49,16 +49,22 @@
     </header>
 
     <main>
-        <section class="verify-panel">
+        <section class="otp-panel">
             <div class="brand-mark">
                 <img src="../assets/reallogo.png" alt="Alix Vintage mark">
                 <span>ALIX VINTAGE</span>
             </div>
             <h1>Verification Code</h1>
-            <p class="subtitle">Enter the 6-digit code sent to your email.</p>
+            <p class="subtitle">Enter the 6-digit code sent to your email to reset your password.</p>
             <div class="title-line"></div>
 
-            <form class="form-card" action="reset-password.html" id="verification-form">
+            <form class="form-card" action="reset-password.html" id="verification-form" novalidate>
+                <div class="otp-icon">✉</div>
+                <p class="otp-note">A 6-digit code has been sent to</p>
+                <p class="otp-number">your email</p>
+
+                <p class="otp-label">Enter 6 Digit Verification Code</p>
+
                 <div class="otp-row">
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
@@ -68,9 +74,7 @@
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                 </div>
 
-                <div class="resend-wrap">
-                    <button id="resend-code-btn" class="resend-btn" type="button" disabled>Resend code in 01:00</button>
-                </div>
+                <a class="resend" href="#" id="resend-code-link" aria-disabled="true">Resend Code in 01:00</a>
 
                 <button class="verify-btn" type="submit">Verify Code</button>
 
@@ -108,10 +112,32 @@
         </div>
     </footer>
 
+    <script src="../js/auth-client.js"></script>
     <script src="../js/ui-dialog.js"></script>
     <script>
         const otpInputElements = Array.from(document.querySelectorAll('.otp-input'));
-        const resendButtonElement = document.getElementById('resend-code-btn');
+        const verificationFormElement = document.getElementById('verification-form');
+        const resendCodeLinkElement = document.getElementById('resend-code-link');
+        const otpNumberElement = document.querySelector('.otp-number');
+
+        const pendingResetEmail = localStorage.getItem('alix_reset_email') || '';
+
+        const maskEmail = (raw) => {
+            const value = String(raw || '').trim();
+            const at = value.indexOf('@');
+            if (at <= 1) {
+                return value || 'your email';
+            }
+
+            const name = value.slice(0, at);
+            const domain = value.slice(at + 1);
+            const maskedName = name[0] + '*'.repeat(Math.max(1, name.length - 2)) + name[name.length - 1];
+            return maskedName + '@' + domain;
+        };
+
+        if (otpNumberElement && pendingResetEmail) {
+            otpNumberElement.textContent = maskEmail(pendingResetEmail);
+        }
 
         const formatTime = (remainingSeconds) => {
             const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
@@ -122,20 +148,24 @@
         let countdownSeconds = 60;
         let countdownIntervalId = null;
 
-        const updateResendButton = () => {
-            if (countdownSeconds > 0) {
-                resendButtonElement.disabled = true;
-                resendButtonElement.textContent = `Resend code in ${formatTime(countdownSeconds)}`;
+        const updateResendLink = () => {
+            if (!resendCodeLinkElement) {
                 return;
             }
 
-            resendButtonElement.disabled = false;
-            resendButtonElement.textContent = 'Resend code';
+            if (countdownSeconds > 0) {
+                resendCodeLinkElement.setAttribute('aria-disabled', 'true');
+                resendCodeLinkElement.textContent = `Resend Code in ${formatTime(countdownSeconds)}`;
+                return;
+            }
+
+            resendCodeLinkElement.setAttribute('aria-disabled', 'false');
+            resendCodeLinkElement.textContent = 'Resend Code';
         };
 
         const startCountdown = () => {
             countdownSeconds = 60;
-            updateResendButton();
+            updateResendLink();
 
             if (countdownIntervalId) {
                 clearInterval(countdownIntervalId);
@@ -143,7 +173,7 @@
 
             countdownIntervalId = setInterval(() => {
                 countdownSeconds -= 1;
-                updateResendButton();
+                updateResendLink();
 
                 if (countdownSeconds <= 0) {
                     clearInterval(countdownIntervalId);
@@ -152,11 +182,47 @@
             }, 1000);
         };
 
-        resendButtonElement.addEventListener('click', () => {
-            const message = 'A new verification code has been sent.';
-            window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'success' }) || alert(message);
-            startCountdown();
-        });
+        const collectOtp = () => otpInputElements.map((el) => el.value).join('');
+
+        if (verificationFormElement) {
+            verificationFormElement.addEventListener('submit', (event) => {
+                const otpCode = collectOtp();
+                if (otpCode.length !== otpInputElements.length) {
+                    event.preventDefault();
+                    const message = 'Please enter the complete 6-digit verification code.';
+                    window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'danger' }) || alert(message);
+                    return;
+                }
+
+                localStorage.setItem('alix_reset_otp_code', otpCode);
+            });
+        }
+
+        if (resendCodeLinkElement) {
+            resendCodeLinkElement.addEventListener('click', async (event) => {
+                event.preventDefault();
+                if (countdownSeconds > 0) {
+                    return;
+                }
+
+                if (!pendingResetEmail) {
+                    const message = 'Missing email for resend. Please start again.';
+                    window.AVDialog?.alert(message, { title: 'Resend Code', tone: 'danger' }) || alert(message);
+                    window.location.href = 'forgot-password.html';
+                    return;
+                }
+
+                try {
+                    await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingResetEmail });
+                    const message = 'A new verification code has been sent.';
+                    window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'success' }) || alert(message);
+                    startCountdown();
+                } catch (error) {
+                    const message = error?.message || 'Failed to resend verification code';
+                    window.AVDialog?.alert(message, { title: 'Resend Code', tone: 'danger' }) || alert(message);
+                }
+            });
+        }
 
         const handleOtpInput = (event, index) => {
             const inputElement = event.target;
@@ -213,6 +279,7 @@
             });
         });
 
+        updateResendLink();
         startCountdown();
     </script>
     <script src="../js/nav-auth.js"></script>

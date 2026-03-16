@@ -241,6 +241,13 @@ nav a.active {
             display: inline-block;
         }
 
+        .resend[aria-disabled='true'] {
+            pointer-events: none;
+            color: #8f8f8f;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+
         .verify-btn {
             width: 100%;
             height: 48px;

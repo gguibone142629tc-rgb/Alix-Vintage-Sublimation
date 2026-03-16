@@ -137,6 +137,49 @@
             otpNumberElement.textContent = maskEmail(pendingEmail);
         }
 
+        const formatTime = (remainingSeconds) => {
+            const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+            const seconds = String(remainingSeconds % 60).padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        };
+
+        let countdownSeconds = 60;
+        let countdownIntervalId = null;
+
+        const updateResendLink = () => {
+            if (!resendLinkElement) {
+                return;
+            }
+
+            if (countdownSeconds > 0) {
+                resendLinkElement.setAttribute('aria-disabled', 'true');
+                resendLinkElement.textContent = `Resend Code in ${formatTime(countdownSeconds)}`;
+                return;
+            }
+
+            resendLinkElement.setAttribute('aria-disabled', 'false');
+            resendLinkElement.textContent = 'Resend Code';
+        };
+
+        const startCountdown = () => {
+            countdownSeconds = 60;
+            updateResendLink();
+
+            if (countdownIntervalId) {
+                clearInterval(countdownIntervalId);
+            }
+
+            countdownIntervalId = setInterval(() => {
+                countdownSeconds -= 1;
+                updateResendLink();
+
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownIntervalId);
+                    countdownIntervalId = null;
+                }
+            }, 1000);
+        };
+
         const collectOtp = () => otpInputElements.map((el) => el.value).join('');
 
         const handleOtpInput = (event, index) => {
@@ -222,6 +265,10 @@
         if (resendLinkElement) {
             resendLinkElement.addEventListener('click', async (event) => {
                 event.preventDefault();
+                if (countdownSeconds > 0) {
+                    return;
+                }
+
                 if (!pendingEmail) {
                     const message = 'Missing email for resend. Please register again.';
                     window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
@@ -231,14 +278,18 @@
 
                 try {
                     await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
-                    const message = 'OTP sent. Please check your phone.';
+                    const message = 'OTP sent. Please check your email.';
                     window.AVDialog?.alert(message, { title: 'OTP Sent', tone: 'success' }) || alert(message);
+                    startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend OTP';
                     window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
                 }
             });
         }
+
+        updateResendLink();
+        startCountdown();
     </script>
     <script src="../js/nav-auth.js"></script>
 </body>
