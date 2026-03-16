@@ -7,6 +7,10 @@ use App\Presentation\Http\Router;
 use App\Presentation\Http\Response;
 use App\Presentation\Auth\AuthRoutes;
 use App\Presentation\ActivityLogs\ActivityLogRoutes;
+use App\Presentation\Products\ProductRoutes;
+use App\Presentation\Cart\CartRoutes;
+use App\Presentation\Orders\OrderRoutes;
+use App\Presentation\AdminOrders\AdminOrderRoutes;
 use App\Infrastructure\Db\PdoConnectionFactory;
 use App\Infrastructure\Db\RoleSeeder;
 
@@ -35,5 +39,9 @@ $pdo = (new PdoConnectionFactory())->create();
 $router = new Router();
 AuthRoutes::register($router, $pdo);
 ActivityLogRoutes::register($router, $pdo);
+ProductRoutes::register($router, $pdo);
+CartRoutes::register($router, $pdo);
+OrderRoutes::register($router, $pdo);
+AdminOrderRoutes::register($router, $pdo);
 
 $router->dispatch();

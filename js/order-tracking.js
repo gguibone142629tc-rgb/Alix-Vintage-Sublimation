@@ -30,11 +30,16 @@
     const requestRevisionBtnEl = qs("#requestRevisionBtn");
     const proofActionsEl = qs("#proofActions");
 
+    const commentsPanelEl = qs("#commentsPanel");
+    const commentsListEl = qs("#commentsList");
+
     const ordersListPanelEl = qs("#ordersListPanel");
     const ordersSearchInputEl = qs("#ordersSearchInput");
     const ordersWorkflowTabsEl = qs("#ordersWorkflowTabs");
     const ordersTableBodyEl = qs("#ordersTableBody");
     const orderDetailViewEl = qs("#orderDetailView");
+
+    const orderContentsEl = qs("#orderContents");
 
     const shippingPanelEl = qs("#shippingPanel");
     const trackingNumberEl = qs("#trackingNumber");
@@ -80,6 +85,227 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
+    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+
+    let activeDialogCleanup = null;
+
+    const showThemedDialog = ({ title, message, tone } = {}) => {
+        if (typeof activeDialogCleanup === "function") {
+            activeDialogCleanup();
+            activeDialogCleanup = null;
+        }
+
+        const safeTitle = String(title || "Notice").trim() || "Notice";
+        const safeMessage = String(message || "").trim();
+        const safeTone = String(tone || "info").trim() || "info"; // info | success | danger
+
+        const backdrop = document.createElement("div");
+        backdrop.className = "av-dialog-backdrop";
+
+        const dialog = document.createElement("div");
+        dialog.className = `av-dialog av-dialog--${safeTone}`;
+        dialog.setAttribute("role", "dialog");
+        dialog.setAttribute("aria-modal", "true");
+
+        dialog.innerHTML = `
+            <div class="av-dialog-head">
+                <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
+            </div>
+            <div class="av-dialog-body">
+                <div class="av-dialog-desc">${escapeHtml(safeMessage)}</div>
+            </div>
+            <div class="av-dialog-actions">
+                <button type="button" class="av-dialog-btn">OK</button>
+            </div>
+        `;
+
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        const okBtn = dialog.querySelector(".av-dialog-btn");
+
+        const close = () => {
+            window.removeEventListener("keydown", onKeyDown, true);
+            backdrop.removeEventListener("click", onBackdropClick);
+            okBtn?.removeEventListener("click", close);
+            backdrop.remove();
+            if (activeDialogCleanup === cleanup) {
+                activeDialogCleanup = null;
+            }
+        };
+
+        const onBackdropClick = (e) => {
+            if (e.target === backdrop) close();
+        };
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") close();
+        };
+
+        const cleanup = close;
+        activeDialogCleanup = cleanup;
+
+        backdrop.addEventListener("click", onBackdropClick);
+        window.addEventListener("keydown", onKeyDown, true);
+        okBtn?.addEventListener("click", close);
+
+        setTimeout(() => okBtn?.focus(), 0);
+    };
+
+    const uiPromptRevisionNote = ({ title, message, placeholder, okText, cancelText } = {}) =>
+        new Promise((resolve) => {
+            const safeTitle = String(title || "Revision").trim() || "Revision";
+            const safeMessage = String(message || "").trim();
+            const safePlaceholder = String(placeholder || "Add instructions for revision...");
+            const safeOkText = String(okText || "Request").trim() || "Request";
+            const safeCancelText = String(cancelText || "Cancel").trim() || "Cancel";
+
+            const backdrop = document.createElement("div");
+            backdrop.className = "av-dialog-backdrop";
+
+            const dialog = document.createElement("div");
+            dialog.className = "av-dialog av-dialog--info";
+            dialog.setAttribute("role", "dialog");
+            dialog.setAttribute("aria-modal", "true");
+
+            dialog.innerHTML = `
+                <div class="av-dialog-head">
+                    <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
+                </div>
+                <div class="av-dialog-body">
+                    ${safeMessage ? `<div class="av-dialog-desc">${escapeHtml(safeMessage)}</div>` : ""}
+                    <textarea class="comment-input" id="avRevisionNote" rows="4" placeholder="${escapeHtml(safePlaceholder)}"></textarea>
+                </div>
+                <div class="av-dialog-actions">
+                    <button type="button" class="av-dialog-btn" data-act="cancel">${escapeHtml(safeCancelText)}</button>
+                    <button type="button" class="av-dialog-btn" data-act="ok">${escapeHtml(safeOkText)}</button>
+                </div>
+            `;
+
+            backdrop.appendChild(dialog);
+            document.body.appendChild(backdrop);
+
+            const cleanup = () => {
+                backdrop.remove();
+            };
+
+            const noteEl = dialog.querySelector("#avRevisionNote");
+            const cancelBtn = dialog.querySelector('[data-act="cancel"]');
+            const okBtn = dialog.querySelector('[data-act="ok"]');
+
+            const onCancel = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            const onOk = () => {
+                const value = String(noteEl?.value || "").trim();
+                cleanup();
+                resolve(value);
+            };
+
+            cancelBtn?.addEventListener("click", onCancel);
+            okBtn?.addEventListener("click", onOk);
+            backdrop.addEventListener("click", (e) => {
+                if (e.target === backdrop) onCancel();
+            });
+            document.addEventListener(
+                "keydown",
+                (e) => {
+                    if (e.key === "Escape") onCancel();
+                },
+                { once: true },
+            );
+
+            setTimeout(() => {
+                if (noteEl && typeof noteEl.focus === "function") noteEl.focus();
+            }, 0);
+        });
+
+    const uiAlert = (message, opts = {}) => {
+        showThemedDialog({
+            title: opts.title || "Notice",
+            message,
+            tone: opts.tone || "info",
+        });
+    };
+
+    const uiConfirm = (messageOrOptions, opts = {}) =>
+        new Promise((resolve) => {
+            const options =
+                typeof messageOrOptions === "string"
+                    ? { ...opts, message: messageOrOptions }
+                    : (messageOrOptions && typeof messageOrOptions === "object" ? messageOrOptions : {});
+
+            const { message, title, tone, okText, cancelText } = options;
+
+            const safeTitle = String(title || "Confirm").trim() || "Confirm";
+            const safeMessage = String(message || "Are you sure?").trim() || "Are you sure?";
+            const safeTone = String(tone || "danger").trim() || "danger";
+            const safeOkText = String(okText || "OK").trim() || "OK";
+            const safeCancelText = String(cancelText || "Cancel").trim() || "Cancel";
+
+            const backdrop = document.createElement("div");
+            backdrop.className = "av-dialog-backdrop";
+
+            const dialog = document.createElement("div");
+            dialog.className = `av-dialog av-dialog--${safeTone}`;
+            dialog.setAttribute("role", "dialog");
+            dialog.setAttribute("aria-modal", "true");
+
+            dialog.innerHTML = `
+                <div class="av-dialog-head">
+                    <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
+                </div>
+                <div class="av-dialog-body">
+                    <div class="av-dialog-desc">${escapeHtml(safeMessage)}</div>
+                </div>
+                <div class="av-dialog-actions">
+                    <button type="button" class="av-dialog-btn" data-act="cancel">${escapeHtml(safeCancelText)}</button>
+                    <button type="button" class="av-dialog-btn" data-act="ok">${escapeHtml(safeOkText)}</button>
+                </div>
+            `;
+
+            backdrop.appendChild(dialog);
+            document.body.appendChild(backdrop);
+
+            const cancelBtn = dialog.querySelector('[data-act="cancel"]');
+            const okBtn = dialog.querySelector('[data-act="ok"]');
+
+            const cleanup = () => {
+                window.removeEventListener("keydown", onKeyDown, true);
+                backdrop.removeEventListener("click", onBackdropClick);
+                cancelBtn?.removeEventListener("click", onCancel);
+                okBtn?.removeEventListener("click", onOk);
+                backdrop.remove();
+            };
+
+            const onCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const onOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const onBackdropClick = (e) => {
+                if (e.target === backdrop) onCancel();
+            };
+
+            const onKeyDown = (e) => {
+                if (e.key === "Escape") onCancel();
+            };
+
+            cancelBtn?.addEventListener("click", onCancel);
+            okBtn?.addEventListener("click", onOk);
+            backdrop.addEventListener("click", onBackdropClick);
+            window.addEventListener("keydown", onKeyDown, true);
+
+            setTimeout(() => okBtn?.focus(), 0);
+        });
+
     const getWorkflowStepIndex = (workflowStatus) => {
         const wf = String(workflowStatus || "");
         if (wf === "Awaiting Payment") return 1;
@@ -97,10 +323,70 @@
         return wf;
     };
 
+    const isAuthed = () => Boolean(localStorage.getItem("alix_auth_token"));
+
+    const dbStatusToWorkflow = (status) => {
+        const s = String(status || "pending").toLowerCase();
+        if (s === "completed") return "Completed";
+        if (s === "cancelled") return "Completed";
+        if (s === "shipped") return "On Transit";
+        if (s === "ready_to_ship") return "Ready to Ship";
+        if (s === "proofing") return "Proofing";
+        if (s === "processing") return "In Progress";
+        if (s === "paid") return "Awaiting Payment";
+        return "Pending Review";
+    };
+
+    const normalizeOrders = (apiOrders) => {
+        const list = Array.isArray(apiOrders) ? apiOrders : [];
+        return list.map((row) => {
+            const o = row?.order || {};
+            const items = Array.isArray(row?.items) ? row.items : [];
+            const designProof = row?.design_proof && typeof row.design_proof === "object" ? row.design_proof : null;
+            const orderId = o.order_id;
+
+            const metaFromApi = (o.meta && typeof o.meta === "object") ? o.meta : {};
+
+            const mapDesignProofStatus = (s) => {
+                const v = String(s || "").toLowerCase();
+                if (v === "approved") return "Approved";
+                if (v === "rejected") return "Revision Requested";
+                if (v === "submitted" || v === "reviewing") return "Sent";
+                return "Not Sent";
+            };
+
+            const meta = { ...metaFromApi };
+            if (designProof) {
+                meta.proof = {
+                    status: mapDesignProofStatus(designProof.proof_status),
+                    mockup_data_url: String(designProof.proof_file_path || ""),
+                    revision_note: designProof.revision_note ?? null,
+                    version_number: designProof.version_number ?? null,
+                };
+            }
+
+            return {
+                id: orderId != null ? `ORD-${orderId}` : "ORD-?",
+                rawId: orderId,
+                date: o.created_at || null,
+                status: String(o.status || "pending"),
+                orderType: String(o.order_type || ""),
+                tracking_number: o.tracking_number != null ? String(o.tracking_number) : null,
+                meta,
+                total: Number(o.base_price || 0) + Number(o.shipping_fee || 0),
+                items: items.map((it) => ({
+                    name: it?.meta?.product_name || `Product #${it?.product_id ?? ""}`,
+                    quantity: Number(it?.quantity || 0) || 0,
+                    meta: it?.meta || {},
+                    total_amount: Number(it?.total_amount || 0) || 0,
+                })),
+            };
+        });
+    };
+
     const isInProcessOrder = (order) => {
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const wf = getWorkflowDisplay(admin.workflowStatus);
-        return wf !== "Completed";
+        const s = String(order?.status || "").toLowerCase();
+        return s !== "completed" && s !== "cancelled";
     };
 
     const computeStatusCard = (workflowStatus) => {
@@ -158,45 +444,35 @@
         return { title: wf.toUpperCase(), body: "" };
     };
 
-    const getOrders = () => {
-        if (window.AdminStore && typeof window.AdminStore.getOrders === "function") {
-            return window.AdminStore.getOrders();
-        }
-        const raw = localStorage.getItem("orders");
-        const list = safeJsonParse(raw || "[]", []);
-        return Array.isArray(list) ? list : [];
-    };
+    let orders = [];
 
-    const updateOrder = (orderId, updater) => {
-        if (!orderId) return null;
-        if (window.AdminStore && typeof window.AdminStore.updateOrder === "function") {
-            return window.AdminStore.updateOrder(orderId, updater);
+    const loadOrders = async () => {
+        if (!isAuthed()) {
+            const message = "Please log in first to view your orders.";
+            window.AVDialog?.alert(message, { title: "Login Required", tone: "info" }) || alert(message);
+            window.location.href = "login.html";
+            return;
         }
 
-        const orders = getOrders();
-        const idx = orders.findIndex((o) => String(o.id) === String(orderId));
-        if (idx < 0) return null;
-        const current = orders[idx];
-        const next = typeof updater === "function" ? updater({ ...current }) : { ...current, ...(updater || {}) };
-        orders[idx] = next;
-        localStorage.setItem("orders", JSON.stringify(orders));
-        return next;
+        try {
+            const res = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
+            orders = normalizeOrders(res?.orders);
+        } catch (error) {
+            const message = error?.message || "Failed to load orders.";
+            uiAlert(message, { title: "Orders", tone: "danger" });
+            orders = [];
+        }
     };
 
-    const getOrderById = (id) => {
-        if (!id) return null;
-        const orders = getOrders();
-        return orders.find((o) => String(o.id) === String(id)) || null;
+    const getOrderByRawId = (rawId) => {
+        if (rawId === null || rawId === undefined || rawId === "") return null;
+        return orders.find((o) => String(o.rawId) === String(rawId)) || null;
     };
 
     const getCurrentOrder = () => {
         const id = getQueryParam("id");
-        if (id) {
-            const found = getOrderById(id);
-            if (found) return found;
-        }
-
-        return null;
+        if (!id) return null;
+        return getOrderByRawId(id);
     };
 
     const renderStepper = (workflowStatus) => {
@@ -208,7 +484,127 @@
         });
     };
 
-    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+    const renderOrderContents = (order) => {
+        if (!orderContentsEl) return;
+
+        const items = Array.isArray(order?.items) ? order.items : [];
+        if (items.length === 0) {
+            orderContentsEl.innerHTML = `<div class="empty-state"><p>No items found.</p></div>`;
+            return;
+        }
+
+        const renderMetaLine = (label, value) => {
+            const v = String(value ?? "").trim();
+            if (!v) return "";
+            return `<div class="order-content-meta-line"><span class="k">${escapeHtml(label)}</span><div class="v">${escapeHtml(v)}</div></div>`;
+        };
+
+        const normalizeRoster = (meta) => {
+            if (!meta || typeof meta !== "object") return [];
+
+            const rosterRaw = meta.roster;
+            if (Array.isArray(rosterRaw) && rosterRaw.length) {
+                return rosterRaw
+                    .filter((r) => r && typeof r === "object")
+                    .map((r) => ({
+                        name: r.name ?? r.playerName ?? "-",
+                        number: r.number ?? r.jerseyNumber ?? "-",
+                        size: r.size ?? "-",
+                    }));
+            }
+
+            const playerName = meta.playerName ?? meta.player_name ?? meta.customerName ?? meta.name;
+            const jerseyNumber = meta.jerseyNumber ?? meta.jersey_number ?? meta.customerNumber ?? meta.number;
+            const size = meta.size ?? meta.jerseySize;
+            const hasAny = String(playerName ?? "").trim() || String(jerseyNumber ?? "").trim() || String(size ?? "").trim();
+            if (!hasAny) return [];
+
+            return [
+                {
+                    name: playerName ?? "-",
+                    number: jerseyNumber ?? "-",
+                    size: size ?? "-",
+                },
+            ];
+        };
+
+        const renderRosterTable = (roster) => {
+            if (!Array.isArray(roster) || roster.length === 0) return "";
+
+            const rows = roster
+                .filter((r) => r && typeof r === "object")
+                .map((r, idx) => {
+                    const name = r.name ?? r.playerName ?? "-";
+                    const number = r.number ?? r.jerseyNumber ?? "-";
+                    const size = r.size ?? "-";
+                    return `
+                        <tr>
+                            <td>${escapeHtml(idx + 1)}</td>
+                            <td>${escapeHtml(name)}</td>
+                            <td>${escapeHtml(size)}</td>
+                            <td>${escapeHtml(number)}</td>
+                        </tr>
+                    `;
+                })
+                .join("");
+
+            return `
+                <div class="order-content-roster">
+                    <div class="table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>NAME</th>
+                                    <th>SIZE</th>
+                                    <th>JERSEY NUMBER</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || ""}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        };
+
+        orderContentsEl.innerHTML = `
+            <div class="order-contents">
+                ${items
+                    .map((it) => {
+                        const meta = it && typeof it.meta === "object" && it.meta ? it.meta : {};
+
+                        const groupName = meta.groupName ?? meta.teamName ?? meta.team_name;
+                        const note = meta.note ?? meta.notes ?? meta.customRequest ?? meta.custom_request;
+
+                        const roster = normalizeRoster(meta);
+
+                        const qty = Number(it.quantity || 0) || 0;
+                        const lineTotal = Number(it.total_amount || 0) || 0;
+
+                        const metaLines = [
+                            renderMetaLine("Group", groupName),
+                            renderMetaLine("Note", note),
+                        ]
+                            .filter(Boolean)
+                            .join("");
+
+                        return `
+                            <div class="order-content-item">
+                                <div class="order-content-head">
+                                    <div class="order-content-name">${escapeHtml(it.name || "-")}</div>
+                                    <div class="order-content-sub">x${escapeHtml(qty)} • ${escapeHtml(formatMoney(lineTotal))}</div>
+                                </div>
+                                ${metaLines ? `<div class="order-content-meta">${metaLines}</div>` : ""}
+                                ${renderRosterTable(roster)}
+                            </div>
+                        `;
+                    })
+                    .join("")}
+            </div>
+        `;
+    };
 
     const renderImagePreview = (container, dataUrl, alt) => {
         if (!container) return;
@@ -224,90 +620,118 @@
         container.appendChild(img);
     };
 
-    const computeTotals = (order) => {
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const quote = admin.quote && typeof admin.quote === "object" ? admin.quote : {};
-        const isCustom = String(admin.orderType || "") === "custom";
-        const base = Number(quote.basePrice || 0);
-        const ship = Number(quote.shippingFee || 0);
+    const renderComments = (order) => {
+        if (!commentsListEl) return;
+        const raw = order?.meta?.comments;
+        const comments = Array.isArray(raw) ? raw : [];
+        const normalized = comments
+            .filter((c) => c && typeof c === "object")
+            .map((c) => ({
+                author: String(c.author || "Customer"),
+                message: String(c.message || ""),
+                at: typeof c.at === "string" ? c.at : "",
+            }))
+            .filter((c) => c.message.trim() !== "");
 
-        const total = isCustom && (base > 0 || ship > 0) ? base + ship : Number(order.total || 0);
-        const downpayment = Math.round((total * 0.5) * 100) / 100;
+        if (normalized.length === 0) {
+            commentsListEl.innerHTML = `<div class="mini-note">No comments yet.</div>`;
+            return;
+        }
+
+        commentsListEl.innerHTML = normalized
+            .slice()
+            .sort((a, b) => String(a.at).localeCompare(String(b.at)))
+            .map((c) => {
+                const at = c.at ? formatDate(c.at) : "-";
+                return `
+                    <div class="comment-card">
+                        <div class="comment-meta">
+                            <span class="comment-author">${escapeHtml(c.author)}</span>
+                            <span>${escapeHtml(at)}</span>
+                        </div>
+                        <div class="comment-body">${escapeHtml(c.message)}</div>
+                    </div>
+                `;
+            })
+            .join("");
+    };
+
+    const computeTotals = (order) => {
+        const total = Number(order?.total || 0);
+        const downpayment = Math.round(total * 0.5 * 100) / 100;
         return { total, downpayment };
     };
 
     const renderStagePanels = (order) => {
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const workflow = admin.workflowStatus || "Pending";
-        const workflowDisplay = getWorkflowDisplay(workflow);
-        const stepIndex = getWorkflowStepIndex(workflow);
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
+        const stepIndex = getWorkflowStepIndex(workflowDisplay);
 
-        // Shipping: show only when On Transit (or Completed).
-        if (shippingPanelEl) {
-            const showShipping = stepIndex >= 5;
-            shippingPanelEl.style.display = showShipping ? "block" : "none";
-        }
-
-        // Payment stage
         if (paymentPanelEl) {
             const showPayment = workflowDisplay === "Awaiting Payment";
             paymentPanelEl.style.display = showPayment ? "block" : "none";
-            if (showPayment) {
-                if (paymentNoteEl) {
-                    paymentNoteEl.textContent = "Wait for Admin to accept the order. Once accepted, pay the required 50% downpayment and upload your receipt screenshot. Admin will verify it before proofing.";
-                }
 
+            if (showPayment) {
                 const totals = computeTotals(order);
                 if (paymentTotalEl) paymentTotalEl.textContent = formatMoney(totals.total);
                 if (paymentDownpaymentEl) paymentDownpaymentEl.textContent = formatMoney(totals.downpayment);
+                if (paymentNoteEl) {
+                    paymentNoteEl.textContent =
+                        "Upload your downpayment receipt screenshot so admin can verify your payment.";
+                }
 
-                const payment = admin.payment && typeof admin.payment === "object" ? admin.payment : {};
-                const hasReceipt = Boolean(payment.receiptDataUrl);
-                renderImagePreview(paymentReceiptPreviewEl, payment.receiptDataUrl, "Payment receipt");
+                const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+                const receiptUrl = typeof paymentMeta.receipt_data_url === "string" ? paymentMeta.receipt_data_url : "";
+                renderImagePreview(paymentReceiptPreviewEl, receiptUrl, "Payment receipt");
+
+                const uploadedAt = typeof paymentMeta.receipt_uploaded_at === "string" ? paymentMeta.receipt_uploaded_at : "";
+                const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified";
                 if (paymentStateEl) {
-                    if (!hasReceipt) {
+                    if (!receiptUrl) {
                         paymentStateEl.textContent = "No receipt uploaded yet.";
-                    } else if (payment.verified) {
-                        const typ = String(payment.verifiedType || "");
-                        paymentStateEl.textContent = `Receipt uploaded. Payment verified (${typ || "-"}).`;
+                    } else if (verified) {
+                        paymentStateEl.textContent = `Payment verified${uploadedAt ? ` (uploaded ${formatDate(uploadedAt)})` : ""}.`;
                     } else {
-                        paymentStateEl.textContent = "Receipt uploaded. Waiting for admin verification.";
+                        paymentStateEl.textContent = `Receipt uploaded${uploadedAt ? ` (${formatDate(uploadedAt)})` : ""}. Awaiting admin verification.`;
                     }
                 }
             }
         }
 
-        // Proofing stage
         if (proofPanelEl) {
             const showProof = workflowDisplay === "Proofing";
             proofPanelEl.style.display = showProof ? "block" : "none";
 
             if (showProof) {
-                const proof = admin.proof && typeof admin.proof === "object" ? admin.proof : {};
-                const status = String(proof.status || "Not Sent");
-                const hasMockup = Boolean(proof.mockupDataUrl);
-
-                renderImagePreview(proofPreviewEl, proof.mockupDataUrl, "Design proof");
+                const proofMeta = order?.meta?.proof && typeof order.meta.proof === "object" ? order.meta.proof : {};
+                const status = String(proofMeta.status || "Not Sent");
+                const dataUrl = String(proofMeta.mockup_data_url || proofMeta.mockupDataUrl || "").trim();
 
                 if (proofNoteEl) {
-                    if (!hasMockup || status === "Not Sent") {
+                    if (!dataUrl) {
                         proofNoteEl.textContent = "Waiting for admin to send the design proof.";
                     } else if (status === "Sent") {
-                        proofNoteEl.textContent = "Please review the design proof. Approve to start production or request a revision.";
+                        proofNoteEl.textContent = "Review the proof image, then approve or request a revision.";
                     } else if (status === "Revision Requested") {
-                        proofNoteEl.textContent = "Revision requested. Please wait for the updated proof.";
+                        proofNoteEl.textContent = "Revision requested. Waiting for updated proof.";
                     } else if (status === "Approved") {
-                        proofNoteEl.textContent = "Approved. Production will start.";
+                        proofNoteEl.textContent = "Proof approved. Production will start soon.";
                     } else {
                         proofNoteEl.textContent = "Proofing.";
                     }
                 }
 
-                const canRespond = status === "Sent";
-                if (proofActionsEl) proofActionsEl.style.display = canRespond ? "flex" : "none";
-                if (approveProofBtnEl) approveProofBtnEl.disabled = !canRespond;
-                if (requestRevisionBtnEl) requestRevisionBtnEl.disabled = !canRespond;
+                renderImagePreview(proofPreviewEl, dataUrl, "Design proof");
+
+                const canAct = Boolean(dataUrl) && status === "Sent";
+                if (proofActionsEl) proofActionsEl.style.display = canAct ? "flex" : "none";
+                if (approveProofBtnEl) approveProofBtnEl.disabled = !canAct;
+                if (requestRevisionBtnEl) requestRevisionBtnEl.disabled = !canAct;
             }
+        }
+
+        if (shippingPanelEl) {
+            const showShipping = stepIndex >= 5;
+            shippingPanelEl.style.display = showShipping ? "block" : "none";
         }
     };
 
@@ -317,10 +741,10 @@
     const renderOrdersList = () => {
         if (!ordersTableBodyEl) return;
 
-        const orders = getOrders().filter(isInProcessOrder);
-        const filtered = orders
+        const inProcess = orders.filter(isInProcessOrder);
+        const filtered = inProcess
             .filter((o) => {
-                const wf = getWorkflowDisplay(o?.admin?.workflowStatus);
+                const wf = dbStatusToWorkflow(o?.status);
                 if (currentWorkflowFilter !== "all" && wf !== currentWorkflowFilter) return false;
 
                 if (!currentSearchTerm) return true;
@@ -348,7 +772,7 @@
 
         ordersTableBodyEl.innerHTML = filtered
             .map((order) => {
-                const wf = getWorkflowDisplay(order?.admin?.workflowStatus);
+                const wf = dbStatusToWorkflow(order?.status);
                 const items = Array.isArray(order.items) ? order.items : [];
                 const itemsHtml = items
                     .map((it) => `<div class="order-item-line">${escapeHtml(it.name || "-")} (x${escapeHtml(it.quantity || 0)})</div>`)
@@ -362,7 +786,7 @@
                         <td><span class="status-badge">${escapeHtml(wf)}</span></td>
                         <td><strong>${escapeHtml(formatMoney(amount))}</strong></td>
                         <td>
-                            <button class="action-btn" type="button" data-view-order="${escapeHtml(order.id || "")}">VIEW</button>
+                            <button class="action-btn" type="button" data-view-order="${escapeHtml(order.rawId ?? "")}">VIEW</button>
                         </td>
                     </tr>
                 `;
@@ -424,45 +848,61 @@
             if (paymentPanelEl) paymentPanelEl.style.display = "none";
             if (proofPanelEl) proofPanelEl.style.display = "none";
             if (shippingPanelEl) shippingPanelEl.style.display = "none";
+            if (orderContentsEl) orderContentsEl.innerHTML = "";
+            if (commentsPanelEl) commentsPanelEl.style.display = "none";
             renderStepper("Pending");
             return;
         }
 
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const workflow = admin.workflowStatus || "Pending";
-        const workflowDisplay = getWorkflowDisplay(workflow);
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
 
         if (orderTitleEl) orderTitleEl.textContent = `ORDER #${String(order.id || "")}`;
         if (orderPlacedAtEl) orderPlacedAtEl.textContent = `Placed on ${formatDate(order.date)}`;
         if (orderPillEl) orderPillEl.textContent = workflowDisplay;
 
-        const status = computeStatusCard(workflow);
+        const status = computeStatusCard(workflowDisplay);
         if (statusTitleEl) statusTitleEl.textContent = status.title;
         if (statusBodyEl) statusBodyEl.textContent = status.body;
 
-        const type = admin.orderType === "custom" ? "Custom" : "Fixed";
-        if (summaryTypeEl) summaryTypeEl.textContent = type;
+        const type = String(order.orderType || "").toLowerCase();
+        if (summaryTypeEl) {
+            summaryTypeEl.textContent = type ? type.charAt(0).toUpperCase() + type.slice(1) : "-";
+        }
 
         const items = Array.isArray(order.items) ? order.items : [];
         const qty = items.reduce((sum, it) => sum + Number(it.quantity || 0), 0);
         if (summaryQtyEl) summaryQtyEl.textContent = qty > 0 ? String(qty) : "-";
 
-        const payment = admin.payment && typeof admin.payment === "object" ? admin.payment : {};
-        const payVerified = Boolean(payment.verified);
-        const payLabel = payVerified ? "Verified" : (workflowDisplay === "Awaiting Payment" ? "Pending" : "-");
-        if (summaryPaymentEl) summaryPaymentEl.textContent = payLabel;
+        if (summaryPaymentEl) {
+            const status = String(order.status || "").toLowerCase();
+            const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+            const hasReceipt = typeof paymentMeta.receipt_data_url === "string" && String(paymentMeta.receipt_data_url).trim() !== "";
+            const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified";
 
-        const trackingNumber = String(admin.trackingNumber || "").trim();
+            if (status === "paid") {
+                summaryPaymentEl.textContent = verified ? "Verified" : (hasReceipt ? "Pending Verification" : "Awaiting Receipt");
+            } else if (status === "proofing" || status === "processing" || status === "shipped" || status === "completed") {
+                summaryPaymentEl.textContent = "Verified";
+            } else {
+                summaryPaymentEl.textContent = "Unpaid";
+            }
+        }
+
+        const trackingNumber = String(order?.tracking_number || order?.meta?.tracking_number || order?.meta?.trackingNumber || "").trim();
         if (trackingNumberEl) trackingNumberEl.value = trackingNumber;
 
-        renderStepper(workflow);
+        renderStepper(workflowDisplay);
         renderStagePanels(order);
+        renderOrderContents(order);
+
+        if (commentsPanelEl) commentsPanelEl.style.display = "block";
+        renderComments(order);
     };
 
     const copyTracking = async () => {
         const value = String(trackingNumberEl?.value || "").trim();
         if (!value) {
-            alert("No tracking number yet.");
+            uiAlert("Tracking number isn't available yet.", { title: "Tracking", tone: "info" });
             return;
         }
 
@@ -478,128 +918,219 @@
             }
         }
 
-        alert("Tracking number copied.");
+        uiAlert("Tracking number copied to clipboard.", { title: "Copied", tone: "success" });
     };
 
     copyBtn?.addEventListener("click", copyTracking);
 
     const uploadReceipt = async () => {
         const order = getCurrentOrder();
-        if (!order) return;
-
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const wf = getWorkflowDisplay(admin.workflowStatus || "Pending");
-        if (wf !== "Awaiting Payment") {
-            alert("Receipt upload is only available in the Awaiting Payment stage.");
+        if (!order || !order.rawId) {
+            uiAlert("Please open an order first.", { title: "Receipt Upload", tone: "info" });
             return;
         }
 
-        const file = paymentReceiptUploadEl?.files?.[0];
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
+        if (workflowDisplay !== "Awaiting Payment") {
+            uiAlert("Receipt upload is only available while the order is Awaiting Payment.", {
+                title: "Receipt Upload",
+                tone: "info",
+            });
+            return;
+        }
+
+        const file = paymentReceiptUploadEl?.files && paymentReceiptUploadEl.files[0] ? paymentReceiptUploadEl.files[0] : null;
         if (!file) {
-            alert("Please choose a receipt screenshot first.");
+            uiAlert("Please choose an image file first.", { title: "Receipt Upload", tone: "info" });
             return;
         }
 
-        const dataUrl = await readFileAsDataUrl(file);
-        updateOrder(order.id, (o) => {
-            if (!o.admin || typeof o.admin !== "object") o.admin = {};
-            if (!o.admin.payment || typeof o.admin.payment !== "object") o.admin.payment = {};
-            if (!o.admin.payment.receiptMeta || typeof o.admin.payment.receiptMeta !== "object") o.admin.payment.receiptMeta = {};
-            o.admin.payment.method = o.admin.payment.method || "GCash";
-            o.admin.payment.receiptDataUrl = dataUrl;
-            o.admin.payment.receiptMeta.fileName = file.name || null;
-            o.admin.payment.receiptMeta.uploadedAt = new Date().toISOString();
-            // Do not auto-verify. Admin verifies in admin workflow.
-            o.admin.payment.verified = Boolean(o.admin.payment.verified);
-            return o;
-        });
+        if (!String(file.type || "").startsWith("image/")) {
+            uiAlert("Receipt must be an image.", { title: "Receipt Upload", tone: "danger" });
+            return;
+        }
 
-        alert("Receipt uploaded! Admin will verify it soon.");
-        render();
+        const maxBytes = 2_000_000;
+        if (typeof file.size === "number" && file.size > maxBytes) {
+            uiAlert("Image is too large (max 2MB).", { title: "Receipt Upload", tone: "danger" });
+            return;
+        }
+
+        const oldLabel = uploadReceiptBtnEl ? uploadReceiptBtnEl.textContent : null;
+        if (uploadReceiptBtnEl) {
+            uploadReceiptBtnEl.disabled = true;
+            uploadReceiptBtnEl.textContent = "UPLOADING...";
+        }
+
+        try {
+            const dataUrl = await readFileAsDataUrl(file);
+            const res = await window.AlixCart.uploadOrderReceipt({
+                order_id: order.rawId,
+                receipt_data_url: dataUrl,
+            });
+
+            order.meta = order.meta && typeof order.meta === "object" ? order.meta : {};
+            order.meta.payment = res?.payment && typeof res.payment === "object" ? res.payment : { receipt_data_url: dataUrl };
+
+            renderStagePanels(order);
+            uiAlert("Receipt uploaded successfully.", { title: "Receipt Upload", tone: "success" });
+        } finally {
+            if (uploadReceiptBtnEl) {
+                uploadReceiptBtnEl.disabled = false;
+                uploadReceiptBtnEl.textContent = oldLabel || "UPLOAD RECEIPT";
+            }
+        }
     };
 
-    const requestRevision = () => {
+    const requestRevision = async () => {
         const order = getCurrentOrder();
-        if (!order) return;
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const wf = getWorkflowDisplay(admin.workflowStatus || "Pending");
-        if (wf !== "Proofing") {
-            alert("Revisions are only available during the Proofing stage.");
+        if (!order || !order.rawId) {
+            uiAlert("Please open an order first.", { title: "Proofing", tone: "info" });
             return;
         }
 
-        const proof = admin.proof && typeof admin.proof === "object" ? admin.proof : {};
-        const status = String(proof.status || "Not Sent");
-        if (status !== "Sent") {
-            alert("Please wait for the admin to send the proof first.");
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
+        if (workflowDisplay !== "Proofing") {
+            uiAlert("Proofing actions are only available during Proofing.", { title: "Proofing", tone: "info" });
             return;
         }
 
-        updateOrder(order.id, (o) => {
-            if (!o.admin || typeof o.admin !== "object") o.admin = {};
-            if (!o.admin.proof || typeof o.admin.proof !== "object") o.admin.proof = {};
-            o.admin.proof.status = "Revision Requested";
-            if (!Array.isArray(o.admin.comments)) o.admin.comments = [];
-            o.admin.comments.push({ author: "Customer", message: "Requested revision on proof.", at: new Date().toISOString() });
-            return o;
+        const msg = await uiPromptRevisionNote({
+            title: "Request Revision",
+            message: "Add instructions for the revision. This will be sent to admin.",
+            placeholder: "e.g. Change logo color to blue, add dragon wings, ...",
+            okText: "Request",
+            cancelText: "Cancel",
         });
+        if (msg === null) return;
+        if (!msg) {
+            uiAlert("Please add revision instructions.", { title: "Request Revision", tone: "info" });
+            return;
+        }
 
-        alert("Revision request sent to admin. Please wait for the updated proof.");
-        render();
+        try {
+            await window.AlixCart.respondOrderProof({ order_id: order.rawId, action: "revision", message: msg });
+            await loadOrders();
+            render();
+            uiAlert("Revision requested.", { title: "Proofing", tone: "success" });
+        } catch (e) {
+            uiAlert(e?.message || "Failed to request revision.", { title: "Proofing", tone: "danger" });
+        }
     };
 
-    const approveProof = () => {
+    const approveProof = async () => {
         const order = getCurrentOrder();
-        if (!order) return;
-        const admin = order && typeof order.admin === "object" && order.admin ? order.admin : {};
-        const wf = getWorkflowDisplay(admin.workflowStatus || "Pending");
-        if (wf !== "Proofing") {
-            alert("Approval is only available during the Proofing stage.");
+        if (!order || !order.rawId) {
+            uiAlert("Please open an order first.", { title: "Proofing", tone: "info" });
             return;
         }
 
-        const proof = admin.proof && typeof admin.proof === "object" ? admin.proof : {};
-        const status = String(proof.status || "Not Sent");
-        if (status !== "Sent") {
-            alert("Please wait for the admin to send the proof first.");
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
+        if (workflowDisplay !== "Proofing") {
+            uiAlert("Proof approval is only available during Proofing.", { title: "Proofing", tone: "info" });
             return;
         }
 
-        if (!confirm("Approve this design proof? Once approved, production will start.")) return;
-
-        updateOrder(order.id, (o) => {
-            if (!o.admin || typeof o.admin !== "object") o.admin = {};
-            if (!o.admin.proof || typeof o.admin.proof !== "object") o.admin.proof = {};
-            o.admin.proof.status = "Approved";
-            if (!Array.isArray(o.admin.comments)) o.admin.comments = [];
-            o.admin.comments.push({ author: "Customer", message: "Approved the proof.", at: new Date().toISOString() });
-            return o;
+        const ok = await uiConfirm("Approve this proof and start production?", {
+            title: "Approve Proof",
+            tone: "danger",
+            okText: "Approve",
+            cancelText: "Cancel",
         });
+        if (!ok) return;
 
-        alert("Design proof approved! Your order is now in production.");
-        render();
+        try {
+            await window.AlixCart.respondOrderProof({ order_id: order.rawId, action: "approve" });
+            await loadOrders();
+            render();
+            uiAlert("Proof approved.", { title: "Proofing", tone: "success" });
+        } catch (e) {
+            uiAlert(e?.message || "Failed to approve proof.", { title: "Proofing", tone: "danger" });
+        }
+    };
+
+    const sendComment = async () => {
+        const order = getCurrentOrder();
+        if (!order || !order.rawId) {
+            uiAlert("Please open an order first.", { title: "Comments", tone: "info" });
+            return;
+        }
+
+        const workflowDisplay = dbStatusToWorkflow(order?.status);
+        if (workflowDisplay !== "Proofing") {
+            uiAlert("You can add revision comments during Proofing.", { title: "Comments", tone: "info" });
+            return;
+        }
+
+        const msg = String(commentInputEl?.value || "").trim();
+        if (!msg) return;
+
+        const oldLabel = sendCommentBtnEl ? sendCommentBtnEl.textContent : null;
+        if (sendCommentBtnEl) {
+            sendCommentBtnEl.disabled = true;
+            sendCommentBtnEl.textContent = "SENDING...";
+        }
+
+        try {
+            await window.AlixCart.addOrderComment({ order_id: order.rawId, message: msg });
+            if (commentInputEl) commentInputEl.value = "";
+            await loadOrders();
+            render();
+            uiAlert("Comment sent.", { title: "Comments", tone: "success" });
+        } catch (e) {
+            uiAlert(e?.message || "Failed to send comment.", { title: "Comments", tone: "danger" });
+        } finally {
+            if (sendCommentBtnEl) {
+                sendCommentBtnEl.textContent = oldLabel || "SEND COMMENT";
+            }
+            const refreshed = getCurrentOrder();
+            const canComment = dbStatusToWorkflow(refreshed?.status) === "Proofing";
+            if (sendCommentBtnEl) sendCommentBtnEl.disabled = !canComment;
+        }
     };
 
     uploadReceiptBtnEl?.addEventListener("click", () => {
-        uploadReceipt().catch(() => alert("Failed to upload receipt."));
+        uploadReceipt().catch(() => uiAlert("Upload failed. Please try again.", { title: "Receipt Upload", tone: "danger" }));
+    });
+
+    paymentReceiptUploadEl?.addEventListener("change", () => {
+        const file = paymentReceiptUploadEl.files && paymentReceiptUploadEl.files[0] ? paymentReceiptUploadEl.files[0] : null;
+        if (!file) {
+            renderImagePreview(paymentReceiptPreviewEl, "", "Payment receipt");
+            if (paymentStateEl) paymentStateEl.textContent = "No receipt selected.";
+            return;
+        }
+
+        if (!String(file.type || "").startsWith("image/")) {
+            renderImagePreview(paymentReceiptPreviewEl, "", "Payment receipt");
+            if (paymentStateEl) paymentStateEl.textContent = "Please select an image file.";
+            return;
+        }
+
+        readFileAsDataUrl(file)
+            .then((dataUrl) => {
+                renderImagePreview(paymentReceiptPreviewEl, dataUrl, "Payment receipt");
+                if (paymentStateEl) paymentStateEl.textContent = "Ready to upload.";
+            })
+            .catch(() => {
+                if (paymentStateEl) paymentStateEl.textContent = "Failed to read file.";
+            });
     });
 
     requestRevisionBtnEl?.addEventListener("click", requestRevision);
     approveProofBtnEl?.addEventListener("click", approveProof);
 
-    window.addEventListener("storage", (e) => {
-        if (e.key === "orders" || e.key === "alix_auth_user") {
-            render();
-        }
-    });
+    const start = async () => {
+        wireOrdersListControls();
+        await loadOrders();
+        render();
+    };
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
-            wireOrdersListControls();
-            render();
+            start().catch(() => uiAlert("Failed to load orders.", { title: "Orders", tone: "danger" }));
         });
     } else {
-        wireOrdersListControls();
-        render();
+        start().catch(() => uiAlert("Failed to load orders.", { title: "Orders", tone: "danger" }));
     }
 })();

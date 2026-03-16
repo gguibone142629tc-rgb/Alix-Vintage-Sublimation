@@ -19,6 +19,21 @@ final class Router
         $this->map('POST', $path, $handler);
     }
 
+    public function put(string $path, callable $handler): void
+    {
+        $this->map('PUT', $path, $handler);
+    }
+
+    public function patch(string $path, callable $handler): void
+    {
+        $this->map('PATCH', $path, $handler);
+    }
+
+    public function delete(string $path, callable $handler): void
+    {
+        $this->map('DELETE', $path, $handler);
+    }
+
     public function options(string $path, callable $handler): void
     {
         $this->map('OPTIONS', $path, $handler);

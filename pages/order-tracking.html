@@ -150,6 +150,11 @@
                 </div>
             </section>
 
+            <section class="panel" aria-label="Order contents">
+                <div class="panel-title">ORDER CONTENTS</div>
+                <div id="orderContents"></div>
+            </section>
+
             <section class="panel" id="paymentPanel" aria-label="Payment" style="display:none">
                 <div class="panel-title">PAYMENT</div>
                 <div class="payment-note" id="paymentNote">-</div>
@@ -184,6 +189,11 @@
                     <button class="btn" id="requestRevisionBtn" type="button">REQUEST REVISION</button>
                     <button class="btn btn-primary" id="approveProofBtn" type="button">APPROVE PROOF</button>
                 </div>
+            </section>
+
+            <section class="panel" id="commentsPanel" aria-label="Order comments and revisions">
+                <div class="panel-title">ORDER COMMENTS &amp; REVISIONS</div>
+                <div class="comment-thread" id="commentsList"></div>
             </section>
 
             <section class="panel" id="shippingPanel" aria-label="Shipping information">
@@ -243,6 +253,9 @@
     </footer>
 
     <script src="../js/nav-auth.js"></script>
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/cart-client.js"></script>
     <script src="../js/admin-store.js"></script>
     <script src="../js/order-tracking.js"></script>
 </body>

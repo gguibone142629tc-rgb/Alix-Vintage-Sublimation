@@ -40,10 +40,93 @@
     const style = document.createElement("style");
     style.textContent = `
         .nav-account-menu { position: relative; display: inline-flex; align-items: center; }
-        .nav-account-dropdown { position: absolute; right: 0; top: calc(100% + 10px); z-index: 50; }
-        .nav-account-dropdown { background: var(--panel, #ffffff); border: 1px solid var(--line, #d0d0d0); border-radius: 6px; padding: 10px 12px; min-width: 140px; }
-        .nav-account-dropdown a { display: block; text-decoration: none; color: var(--ink, inherit); font-weight: 600; }
-        .nav-account-dropdown a:hover { text-decoration: underline; }
+        .nav-account-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 12px);
+            z-index: 120;
+            width: 246px;
+            background: #ffffff;
+            border: 1px solid rgba(40, 40, 40, 0.12);
+            border-radius: 14px;
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+        }
+        .nav-account-dropdown::before {
+            content: "";
+            position: absolute;
+            right: 18px;
+            top: -7px;
+            width: 12px;
+            height: 12px;
+            transform: rotate(45deg);
+            background: #ffffff;
+            border-left: 1px solid rgba(40, 40, 40, 0.12);
+            border-top: 1px solid rgba(40, 40, 40, 0.12);
+        }
+        .nav-account-header {
+            padding: 10px 10px 12px;
+            border-bottom: 1px solid rgba(40, 40, 40, 0.1);
+            margin-bottom: 6px;
+        }
+        .nav-account-name {
+            display: block;
+            font-size: 15px;
+            font-weight: 800;
+            color: #202020;
+            line-height: 1.2;
+        }
+        .nav-account-email {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
+            color: #6d6d6d;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .nav-account-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border-radius: 10px;
+            padding: 9px 10px;
+            text-decoration: none;
+            color: #2b2b2b;
+            font-size: 14px;
+            font-weight: 700;
+            transition: background 0.18s ease, color 0.18s ease;
+        }
+        .nav-account-item + .nav-account-item { margin-top: 2px; }
+        .nav-account-item svg {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .nav-account-item:hover {
+            background: #f4f5f7;
+            color: #121212;
+        }
+        .nav-account-item--logout:hover {
+            background: #fbe9e9;
+            color: #9f2424;
+        }
+        @media (max-width: 640px) {
+            .nav-account-dropdown {
+                right: -8px;
+                width: 220px;
+                top: calc(100% + 10px);
+            }
+        }
 
         /* Keep footer presentation consistent across pages with different CSS files */
         footer.site-footer {
@@ -168,13 +251,61 @@
         localStorage.removeItem(TOKEN_KEY);
     }
 
-    const isProtectedPage = /(order-history|order-tracking|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
+    const isProtectedPage = /(cart|order-history|order-tracking|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
         window.location.pathname
     );
     const loginButtons = document.querySelectorAll(".nav-login-btn-link");
     const logoutButtons = document.querySelectorAll(".nav-logout-btn-link");
     const accountLinks = document.querySelectorAll(".nav-account-link");
     const orderLinks = document.querySelectorAll(".nav-order-link");
+
+    const getUserIdentity = () => {
+        const raw = localStorage.getItem(USER_KEY);
+        if (!raw) {
+            return { name: "My Account", email: "" };
+        }
+
+        try {
+            const user = JSON.parse(raw);
+            const first = String(user?.firstname || "").trim();
+            const last = String(user?.lastname || "").trim();
+            const full = `${first} ${last}`.trim();
+            const email = String(user?.email || "").trim();
+            return {
+                name: full || email || "My Account",
+                email,
+            };
+        } catch {
+            return { name: "My Account", email: "" };
+        }
+    };
+
+    // Ensure there is a clickable cart link on pages that only have the cart SVG.
+    // (Some pages include the cart icon as a plain <svg> without an <a> wrapper.)
+    document.querySelectorAll('.nav-icons').forEach((wrap) => {
+        const existingLink = wrap.querySelector('a.nav-order-link');
+        if (existingLink) return;
+
+        const svgs = Array.from(wrap.querySelectorAll('svg.nav-icon'));
+        const cartSvg = svgs.find((svg) => {
+            const html = svg.outerHTML || '';
+            return html.includes('M6 6h14') && html.includes('circle') && html.includes('cx="9"') && html.includes('cx="17"');
+        });
+        if (!cartSvg) return;
+
+        const a = document.createElement('a');
+        a.className = 'nav-order-link is-hidden';
+        a.href = 'cart.html';
+        a.setAttribute('aria-label', 'Cart');
+        cartSvg.parentNode && cartSvg.parentNode.insertBefore(a, cartSvg);
+        a.appendChild(cartSvg);
+    });
+
+    // Repurpose the existing "order" icon link as the Cart link.
+    document.querySelectorAll('a.nav-order-link').forEach((link) => {
+        link.setAttribute('href', 'cart.html');
+        link.setAttribute('aria-label', 'Cart');
+    });
 
     const performLogout = (event) => {
         event.stopPropagation();
@@ -236,16 +367,78 @@
             dropdown = document.createElement("div");
             dropdown.className = "nav-account-dropdown is-hidden";
             dropdown.setAttribute("role", "menu");
-
-            const logoutLink = document.createElement("a");
-            logoutLink.className = "nav-logout-btn-link";
-            logoutLink.href = "#";
-            logoutLink.setAttribute("role", "menuitem");
-            logoutLink.textContent = "Log Out";
-            logoutLink.addEventListener("click", performLogout);
-
-            dropdown.appendChild(logoutLink);
             menu.appendChild(dropdown);
+        }
+
+        const identity = getUserIdentity();
+
+        let header = dropdown.querySelector('.nav-account-header');
+        if (!header) {
+            header = document.createElement('div');
+            header.className = 'nav-account-header';
+            dropdown.prepend(header);
+        }
+        header.innerHTML = `
+            <span class="nav-account-name">${identity.name}</span>
+            <span class="nav-account-email">${identity.email || 'Signed in'}</span>
+        `;
+
+        let ordersLink = dropdown.querySelector('.nav-account-item--orders');
+        if (!ordersLink) {
+            ordersLink = Array.from(dropdown.querySelectorAll('a')).find((a) => {
+                const href = String(a.getAttribute('href') || '').toLowerCase();
+                return href.endsWith('order-history.html') || href.endsWith('order-tracking.html');
+            }) || null;
+            if (ordersLink) {
+                ordersLink.classList.add('nav-account-item', 'nav-account-item--orders');
+                ordersLink.setAttribute('role', 'menuitem');
+                ordersLink.href = 'order-tracking.html';
+                ordersLink.innerHTML = `
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18"></path><path d="M7 3h10v18H7z"></path><path d="M10 11h4"></path><path d="M10 15h4"></path></svg>
+                    <span>Orders</span>
+                `;
+            }
+        }
+        if (!ordersLink) {
+            ordersLink = document.createElement('a');
+            ordersLink.className = 'nav-account-item nav-account-item--orders';
+            ordersLink.href = 'order-tracking.html';
+            ordersLink.setAttribute('role', 'menuitem');
+            ordersLink.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18"></path><path d="M7 3h10v18H7z"></path><path d="M10 11h4"></path><path d="M10 15h4"></path></svg>
+                <span>Orders</span>
+            `;
+            dropdown.appendChild(ordersLink);
+        }
+
+        let logoutLink = dropdown.querySelector('.nav-logout-btn-link');
+        if (logoutLink) {
+            logoutLink.classList.add('nav-account-item', 'nav-account-item--logout');
+            logoutLink.setAttribute('role', 'menuitem');
+            logoutLink.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-5-5 5-5"></path><path d="M5 12h11"></path><path d="M14 4h5v16h-5"></path></svg>
+                <span>Log Out</span>
+            `;
+        }
+        if (!logoutLink) {
+            logoutLink = document.createElement('a');
+            logoutLink.className = 'nav-account-item nav-account-item--logout nav-logout-btn-link';
+            logoutLink.href = '#';
+            logoutLink.setAttribute('role', 'menuitem');
+            logoutLink.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-5-5 5-5"></path><path d="M5 12h11"></path><path d="M14 4h5v16h-5"></path></svg>
+                <span>Log Out</span>
+            `;
+            logoutLink.addEventListener('click', performLogout);
+            dropdown.appendChild(logoutLink);
+        }
+
+        // Keep a stable order: header -> order history -> logout.
+        if (header.nextElementSibling !== ordersLink) {
+            dropdown.insertBefore(ordersLink, header.nextElementSibling);
+        }
+        if (ordersLink.nextElementSibling !== logoutLink) {
+            dropdown.insertBefore(logoutLink, ordersLink.nextElementSibling);
         }
 
         return dropdown;

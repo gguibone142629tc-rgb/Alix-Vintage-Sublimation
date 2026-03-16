@@ -154,11 +154,23 @@
         }
 
         if (action === "delete") {
-            const ok = window.confirm("Delete this product?");
-            if (!ok) return;
-            window.AdminStore.deleteProduct(id);
-            if (productIdInput.value === id) resetForm();
-            renderTable();
+            const run = async () => {
+                const ok = window.AVDialog?.confirm
+                    ? await window.AVDialog.confirm("Delete this product?", {
+                          title: "Delete Product",
+                          tone: "danger",
+                          okText: "Delete",
+                          cancelText: "Cancel",
+                      })
+                    : window.confirm("Delete this product?");
+                if (!ok) return;
+
+                window.AdminStore.deleteProduct(id);
+                if (productIdInput.value === id) resetForm();
+                renderTable();
+            };
+
+            run();
         }
     });
 

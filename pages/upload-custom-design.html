@@ -267,6 +267,9 @@
         </div>
     </footer>
 
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/cart-client.js"></script>
     <script>
         const rosterTableElement = document.getElementById("roster-table");
         const quantityInputElement = document.getElementById("quantity");
@@ -290,12 +293,7 @@
 
         const DRAFT_KEY = "alix_custom_design_draft";
 
-        const isLoggedIn = () => {
-            const loginFlag = localStorage.getItem("alix_is_logged_in") === "true";
-            const loginAt = Number(localStorage.getItem("alix_logged_in_at"));
-            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
-            return loginFlag && hasValidTimestamp;
-        };
+        const isLoggedIn = () => Boolean(localStorage.getItem('alix_auth_token'));
 
         const showToast = (message) => {
             const notif = document.createElement("div");
@@ -542,15 +540,18 @@
             input.addEventListener("change", updatePersonalizationState);
         });
 
-        const submitCustomRequest = () => {
-            if (!isLoggedIn()) {
-                alert("Please log in first before submitting a custom request.");
+        const submitCustomRequest = async () => {
+            const token = localStorage.getItem('alix_auth_token');
+            if (!token) {
+                const message = "Please log in first before submitting a custom request.";
+                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
                 window.location.href = "login.html";
                 return;
             }
 
             if (!termsAckInput?.checked) {
-                alert("Please acknowledge the payment obligation and terms before submitting.");
+                const message = "Please acknowledge the payment obligation and terms before submitting.";
+                window.AVDialog?.alert(message, { title: 'Terms Required', tone: 'danger' }) || alert(message);
                 return;
             }
 
@@ -559,12 +560,9 @@
             const qty = Number(draft.quantity || 0);
             const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
 
-            const rawOrders = safeJsonParse(localStorage.getItem("orders"), []);
-            const orders = Array.isArray(rawOrders) ? rawOrders : [];
-            const orderId = `ORD-${Date.now()}`;
-
             let profileName = '';
             let profilePhone = '';
+            let profileEmail = '';
             try {
                 const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
                 if (u && typeof u === 'object') {
@@ -573,49 +571,42 @@
                     const full = `${fn} ${ln}`.trim();
                     profileName = full || String(u.email || '').trim();
                     profilePhone = String(u.phone_number || '').trim();
+                    profileEmail = String(u.email || '').trim();
                 }
             } catch {}
 
-            if (!profileName) {
-                alert('Your session profile is missing. Please log in again to continue.');
-                window.location.href = 'login.html';
+            const itemName = `Custom ${draft.productType || "Product"} — ${draft.designName || "Design"}`;
+            try {
+                await window.AlixCart.addItem({
+                    product_name: itemName,
+                    apparel_type: String(draft.productType || 'Custom'),
+                    base_price: 0,
+                    quantity: effectiveQty,
+                    meta: {
+                        customerName: profileName,
+                        customerMobile: profilePhone,
+                        customerEmail: profileEmail,
+                        customRequest: {
+                            designName: draft.designName,
+                            productType: draft.productType,
+                            quantity: effectiveQty,
+                            notes: draft.notes,
+                            designType: draft.designType,
+                            personalization: draft.personalization,
+                            roster: draft.roster,
+                            paymentPreference: draft.paymentPreference,
+                            submittedAt: new Date().toISOString(),
+                        },
+                    },
+                });
+            } catch (error) {
+                const message = error?.message || 'Failed to submit request.';
+                window.AVDialog?.alert(message, { title: 'Request', tone: 'danger' }) || alert(message);
                 return;
             }
 
-            const itemName = `Custom ${draft.productType || "Product"} — ${draft.designName || "Design"}`;
-            const order = {
-                id: orderId,
-                date: new Date().toISOString(),
-                items: [{ id: Date.now(), name: itemName, price: 0, quantity: effectiveQty }],
-                status: "active",
-                total: 0,
-                details: {
-                    customerName: profileName,
-                    customerMobile: profilePhone,
-                },
-                customRequest: {
-                    designName: draft.designName,
-                    productType: draft.productType,
-                    quantity: effectiveQty,
-                    notes: draft.notes,
-                    designType: draft.designType,
-                    personalization: draft.personalization,
-                    roster: draft.roster,
-                    paymentPreference: draft.paymentPreference,
-                    submittedAt: new Date().toISOString(),
-                },
-                admin: {
-                    payment: {
-                        method: draft.paymentPreference,
-                    },
-                },
-            };
-
-            orders.push(order);
-            localStorage.setItem("orders", JSON.stringify(orders));
             localStorage.removeItem(DRAFT_KEY);
-
-            showToast("✓ Custom request submitted! Admin will review it.");
+            showToast("✓ Custom request added to cart! Admin will review it.");
             setTimeout(() => {
                 window.location.href = "order-history.html";
             }, 600);

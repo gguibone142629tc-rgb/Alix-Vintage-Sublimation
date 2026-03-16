@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
+    <title>Admin | Transactions</title>
+    <link rel="stylesheet" href="../css/admin-homepage.css">
+    <link rel="stylesheet" href="../css/sublimation-theme.css">
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Admin sidebar">
+            <div class="sidebar-brand">
+                <img class="brand-logo" src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <div class="brand-text">
+                    <div class="brand-name">Alix Vintage</div>
+                    <div class="brand-sub">Admin Dashboard</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Main Menu</div>
+                <nav class="sidebar-nav" aria-label="Main menu">
+                    <a href="admin-homepage.html" class="nav-item">Dashboard</a>
+                    <a href="admin-orders.html" class="nav-item">Order Management</a>
+                    <a href="admin-transactions.html" class="nav-item active">Transactions</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Product</div>
+                <nav class="sidebar-nav" aria-label="Product menu">
+                    <a href="admin-products.html" class="nav-item">Add / Manage Products</a>
+                    <a href="#" class="nav-item">Products Media</a>
+                    <a href="categories.html" class="nav-item">Product List (Store)</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">System</div>
+                <nav class="sidebar-nav" aria-label="System menu">
+                    <a href="#" class="nav-item">Customers</a>
+                    <a href="#" class="nav-item">Activity Logs</a>
+                    <a href="#" class="nav-item">Settings</a>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <div class="topbar" role="banner">
+                <div class="topbar-left">
+                    <div class="topbar-title">Transactions</div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <section class="panel panel-wide" aria-label="Transactions list">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Payment Transactions</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table" aria-label="Transactions">
+                            <thead>
+                                <tr>
+                                    <th>Payment ID</th>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Method</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <tr><td colspan="8">Loading transactions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/admin-auth.js"></script>
+    <script src="../js/admin-transactions.js"></script>
+</body>
+</html>

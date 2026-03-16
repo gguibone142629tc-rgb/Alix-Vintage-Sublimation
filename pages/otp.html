@@ -113,6 +113,7 @@
     </footer>
 
     <script src="../js/auth-client.js"></script>
+    <script src="../js/ui-dialog.js"></script>
     <script>
         const otpInputElements = Array.from(document.querySelectorAll('.otp-input'));
         const otpFormElement = document.querySelector('.form-card');
@@ -199,7 +200,8 @@
 
                 const otp_code = collectOtp();
                 if (!pendingEmail) {
-                    alert('Missing email for verification. Please register again.');
+                    const message = 'Missing email for verification. Please register again.';
+                    window.AVDialog?.alert(message, { title: 'OTP Verification', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
@@ -211,7 +213,8 @@
                     localStorage.removeItem('alix_pending_phone');
                     window.location.href = 'homepage.html';
                 } catch (error) {
-                    alert(error?.message || 'OTP verification failed');
+                    const message = error?.message || 'OTP verification failed';
+                    window.AVDialog?.alert(message, { title: 'OTP Verification', tone: 'danger' }) || alert(message);
                 }
             });
         }
@@ -220,16 +223,19 @@
             resendLinkElement.addEventListener('click', async (event) => {
                 event.preventDefault();
                 if (!pendingEmail) {
-                    alert('Missing email for resend. Please register again.');
+                    const message = 'Missing email for resend. Please register again.';
+                    window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
 
                 try {
                     await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
-                    alert('OTP sent. Please check your phone.');
+                    const message = 'OTP sent. Please check your phone.';
+                    window.AVDialog?.alert(message, { title: 'OTP Sent', tone: 'success' }) || alert(message);
                 } catch (error) {
-                    alert(error?.message || 'Failed to resend OTP');
+                    const message = error?.message || 'Failed to resend OTP';
+                    window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
                 }
             });
         }

@@ -26,6 +26,24 @@
 
         const details = typeof normalized.details === "object" && normalized.details ? { ...normalized.details } : {};
 
+        // Ownership (customer identity) for multi-user demo: store the logged-in user's id/email.
+        const rawOwnerId =
+            normalized.customerUserId ??
+            normalized.customer_user_id ??
+            normalized.user_id ??
+            normalized.userId ??
+            normalized.customer_id ??
+            null;
+        const ownerIdNum = rawOwnerId === null || rawOwnerId === '' ? null : Number(rawOwnerId);
+        normalized.customerUserId = Number.isFinite(ownerIdNum) ? ownerIdNum : null;
+
+        details.customerEmail =
+            details.customerEmail ||
+            details.customer_email ||
+            normalized.customerEmail ||
+            normalized.customer_email ||
+            "";
+
         // Backward/variant compatibility: older pages may store customer fields at top-level
         // or under different keys. Normalize to `details.*` so admin UI can always read it.
         const legacyCustomer = normalized.customer && typeof normalized.customer === "object" ? normalized.customer : {};

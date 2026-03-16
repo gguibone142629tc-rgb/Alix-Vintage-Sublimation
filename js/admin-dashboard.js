@@ -1,15 +1,39 @@
 (function () {
     "use strict";
 
-    if (!window.AdminStore) return;
-
     const qs = (sel) => document.querySelector(sel);
 
     const getApiBaseUrl = () => {
+        if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
+            return window.AlixAuth.apiBaseUrl();
+        }
+
         if (window.ALIX_API_BASE_URL) return window.ALIX_API_BASE_URL;
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
         return "http://localhost:8000";
+    };
+
+    const getAdminApiKey = () => {
+        const key = localStorage.getItem("alix_admin_api_key");
+        return key && String(key).trim() ? String(key).trim() : null;
+    };
+
+    const fetchJson = async (path) => {
+        const headers = { Accept: "application/json" };
+        const key = getAdminApiKey();
+        if (key) headers["X-Admin-Api-Key"] = key;
+
+        const res = await fetch(getApiBaseUrl() + path, { method: "GET", headers });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const msg = typeof data.error === "string" ? data.error : "Request failed";
+            const err = new Error(msg);
+            err.status = res.status;
+            err.data = data;
+            throw err;
+        }
+        return data;
     };
 
     const setText = (sel, value) => {
@@ -54,6 +78,44 @@
         return counts;
     };
 
+    const dbStatusToWorkflow = (status) => {
+        const s = String(status || "pending").toLowerCase();
+        if (s === "completed") return "Completed";
+        if (s === "cancelled") return "Completed";
+        if (s === "shipped") return "On Transit";
+        if (s === "ready_to_ship") return "Ready to Ship";
+        if (s === "proofing") return "Proofing";
+        if (s === "processing") return "In Progress";
+        if (s === "paid") return "Awaiting Payment";
+        return "Pending";
+    };
+
+    const normalizeDbOrders = (apiOrders) => {
+        const list = Array.isArray(apiOrders) ? apiOrders : [];
+        return list.map((row) => {
+            const o = row?.order || {};
+            const user = row?.user || null;
+            const idNum = o.order_id;
+            const name = user ? `${String(user.firstname || "").trim()} ${String(user.lastname || "").trim()}`.trim() : "";
+            const meta = o.meta && typeof o.meta === "object" ? o.meta : {};
+            const fallbackCustomer = String(meta?.customerName || meta?.customer_fullname || "").trim();
+
+            return {
+                id: idNum != null ? `ORD-${idNum}` : "ORD-?",
+                rawId: idNum,
+                date: o.created_at || new Date().toISOString(),
+                status: String(o.status || "pending"),
+                details: {
+                    customerName: name || user?.email || fallbackCustomer || "-",
+                },
+                admin: {
+                    workflowStatus: dbStatusToWorkflow(o.status),
+                },
+                meta,
+            };
+        });
+    };
+
     const renderStats = (orders) => {
         const counts = getWorkflowCounts(orders);
         setText(".stats-grid .stat-card:nth-child(1) .stat-value", counts.Pending);
@@ -85,7 +147,7 @@
                         <td>${escapeHtml(getCustomerLabel(o))}</td>
                         <td>${escapeHtml(formatDate(o.date))}</td>
                         <td><span class="status-pill">${escapeHtml(status)}</span></td>
-                        <td><a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.id))}">View</a></td>
+                        <td><a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.rawId ?? ""))}&db=1">View</a></td>
                     </tr>
                 `;
             })
@@ -178,16 +240,23 @@
         }
     };
 
-    const renderAll = () => {
-        const orders = window.AdminStore.getOrders();
-        renderStats(orders);
-        renderRecent(orders);
+    const loadOrders = async () => {
+        const res = await fetchJson("/api/admin/orders?limit=50&offset=0");
+        return normalizeDbOrders(res?.orders);
     };
 
-    window.addEventListener("storage", (e) => {
-        if (e.key === "orders") renderAll();
-    });
+    const start = async () => {
+        try {
+            const orders = await loadOrders();
+            renderStats(orders);
+            renderRecent(orders);
+        } catch {
+            renderStats([]);
+            renderRecent([]);
+        }
 
-    renderAll();
-    loadRecentActivity();
+        loadRecentActivity();
+    };
+
+    start();
 })();

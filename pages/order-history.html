@@ -78,7 +78,7 @@
                     <div class="stat-value" id="totalOrdersCount">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">ACTIVE</div>
+                    <div class="stat-label">CANCELLED</div>
                     <div class="stat-value" id="activeOrdersCount">0</div>
                 </div>
                 <div class="stat-card">
@@ -101,14 +101,14 @@
                         placeholder="Search by order ID, item name ..."
                     >
                     <button class="btn" id="filterBtn">FILTER</button>
-                    <button class="btn" id="dateRangeBtn">DATE RANGE</button>
-                    <button class="btn btn-danger" id="clearBtn">CLEAR ALL</button>
+                    <button class="btn" id="dateRangeBtn">THIS MONTH</button>
+                    <button class="btn btn-danger" id="clearBtn">REFRESH</button>
                 </div>
 
                 <!-- Filter Tabs -->
                 <div class="filter-tabs">
                     <button class="tab-btn active" data-workflow="all">All</button>
-                    <button class="tab-btn" data-workflow="Completed">Completed</button>
+                    <button class="tab-btn" data-workflow="completed">Completed</button>
                 </div>
             </div>
 
@@ -168,19 +168,211 @@
         </div>
     </footer>
 
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/cart-client.js"></script>
     <script>
-        // Order data storage
-        let orders = JSON.parse(localStorage.getItem('orders')) || [];
-        let currentWorkflowFilter = 'all';
+        const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+        }[ch] || ch));
 
-        // Load and display orders
-        function loadAndDisplay() {
-            orders = JSON.parse(localStorage.getItem('orders')) || [];
-            renderOrders();
+        const formatMoney = (amount) => {
+            const n = Number(amount || 0);
+            return `₱${(Number.isFinite(n) ? n : 0).toLocaleString('en-PH')}`;
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '-';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-PH', options);
+        };
+
+        let orders = [];
+        let currentStatusFilter = 'all';
+        let currentSearchTerm = '';
+
+        const isHistoryStatus = (status) => {
+            const s = String(status || '').toLowerCase();
+            return s === 'completed' || s === 'cancelled';
+        };
+
+        const isAuthed = () => Boolean(localStorage.getItem('alix_auth_token'));
+
+        const normalizeOrders = (apiOrders) => {
+            const list = Array.isArray(apiOrders) ? apiOrders : [];
+            return list.map((row) => {
+                const o = row?.order || {};
+                const items = Array.isArray(row?.items) ? row.items : [];
+                const orderId = o.order_id;
+                return {
+                    id: orderId != null ? `ORD-${orderId}` : 'ORD-?',
+                    rawId: orderId,
+                    date: o.created_at || null,
+                    status: String(o.status || 'pending'),
+                    total: Number(o.base_price || 0) + Number(o.shipping_fee || 0),
+                    items: items.map((it) => ({
+                        name: it?.meta?.product_name || `Product #${it?.product_id ?? ''}`,
+                        quantity: Number(it?.quantity || 0) || 0,
+                        meta: it?.meta || {},
+                        total_amount: Number(it?.total_amount || 0) || 0,
+                    })),
+                };
+            });
+        };
+
+        const loadAndDisplay = async () => {
+            if (!isAuthed()) {
+                const message = 'Please log in first to view your cart and orders.';
+                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const ordersRes = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
+                orders = normalizeOrders(ordersRes?.orders);
+            } catch (error) {
+                const message = error?.message || 'Failed to load orders.';
+                window.AVDialog?.alert(message, { title: 'Orders', tone: 'danger' }) || alert(message);
+                orders = [];
+            }
+
+            renderRows();
             updateStats();
-        }
+        };
 
-        // Initialize immediately - load orders before DOM is ready
+        const getFilteredOrders = () => {
+            let filtered = [...orders].filter((o) => isHistoryStatus(o.status));
+
+            if (currentStatusFilter !== 'all') {
+                filtered = filtered.filter((o) => String(o.status).toLowerCase() === String(currentStatusFilter).toLowerCase());
+            }
+
+            if (currentSearchTerm) {
+                const term = currentSearchTerm.toLowerCase();
+                filtered = filtered.filter((o) => {
+                    const idMatch = String(o.id || '').toLowerCase().includes(term);
+                    const itemMatch = (Array.isArray(o.items) ? o.items : []).some((it) => String(it.name || '').toLowerCase().includes(term));
+                    return idMatch || itemMatch;
+                });
+            }
+
+            return filtered.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+        };
+
+        const renderRows = () => {
+            const tbody = document.getElementById('ordersTableBody');
+            const filteredOrders = getFilteredOrders();
+
+            if (filteredOrders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <h3>No Orders Yet</h3>
+                            <p>Start shopping to see your orders here</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const ordersSection = `
+                ${filteredOrders
+                    .map((o) => {
+                        const itemsHtml = (Array.isArray(o.items) ? o.items : [])
+                            .map((it) => `
+                                <div class="order-item-line">
+                                    ${escapeHtml(it.name)} (x${escapeHtml(it.quantity)})
+                                </div>
+                            `)
+                            .join('');
+
+                        const statusLower = String(o.status || '').toLowerCase();
+                        const badgeClass =
+                            statusLower === 'completed' ? 'completed' : statusLower === 'cancelled' ? 'cancelled' : statusLower === 'pending' ? 'pending' : 'active';
+
+                        return `
+                            <tr>
+                                <td><strong>${escapeHtml(o.id)}</strong></td>
+                                <td>${escapeHtml(formatDate(o.date))}</td>
+                                <td><div class="order-items-wrap">${itemsHtml}</div></td>
+                                <td><span class="status-badge ${escapeHtml(badgeClass)}">${escapeHtml(o.status)}</span></td>
+                                <td><strong>${escapeHtml(formatMoney(o.total))}</strong></td>
+                                <td>
+                                    <button class="action-btn" data-view-order="${escapeHtml(o.rawId)}">VIEW</button>
+                                </td>
+                            </tr>
+                        `;
+                    })
+                    .join('')
+                }
+            `;
+
+            tbody.innerHTML = ordersSection;
+
+            tbody.querySelectorAll('[data-view-order]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-view-order');
+                    const order = orders.find((o) => String(o.rawId) === String(id)) || null;
+                    if (!order) return;
+                    const lines = (Array.isArray(order.items) ? order.items : [])
+                        .map((it) => `- ${it.name} x${it.quantity}`)
+                        .join('\n');
+                    const message = `${order.id}\nStatus: ${order.status}\nTotal: ${formatMoney(order.total)}\n\nItems:\n${lines || '-'}`;
+                    window.AVDialog?.alert(message, { title: 'Order', tone: 'info' }) || alert(message);
+                });
+            });
+        };
+
+        const updateStats = () => {
+            const historyOrders = orders.filter((o) => isHistoryStatus(o.status));
+            const totalOrders = historyOrders.length;
+            const completedOrders = historyOrders.filter((o) => String(o.status).toLowerCase() === 'completed').length;
+            const cancelledOrders = historyOrders.filter((o) => String(o.status).toLowerCase() === 'cancelled').length;
+            const totalSpent = historyOrders
+                .filter((o) => String(o.status).toLowerCase() === 'completed')
+                .reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+            document.getElementById('totalOrdersCount').textContent = String(totalOrders);
+            document.getElementById('activeOrdersCount').textContent = String(cancelledOrders);
+            document.getElementById('completedOrdersCount').textContent = String(completedOrders);
+            document.getElementById('totalSpentAmount').textContent = formatMoney(totalSpent);
+        };
+
+        const setupEventListeners = () => {
+            document.querySelectorAll('.tab-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentStatusFilter = btn.dataset.workflow || 'all';
+                    renderRows();
+                    updateStats();
+                });
+            });
+
+            document.getElementById('searchInput')?.addEventListener('input', (e) => {
+                currentSearchTerm = String(e.target.value || '').trim();
+                renderRows();
+            });
+
+            document.getElementById('filterBtn')?.addEventListener('click', () => {
+                alert('Filter options are not implemented yet.');
+            });
+
+            document.getElementById('dateRangeBtn')?.addEventListener('click', () => {
+                alert('Date range selection is not implemented yet.');
+            });
+
+            document.getElementById('clearBtn')?.addEventListener('click', () => {
+                loadAndDisplay();
+            });
+        };
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 setupEventListeners();
@@ -191,201 +383,6 @@
             loadAndDisplay();
         }
 
-        // Listen for cart additions from other pages/tabs
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'orders') {
-                console.log('Storage event detected');
-                loadAndDisplay();
-            }
-        });
-
-        // Listen for local cart events (same page/tab)
-        window.addEventListener('cartItemAdded', () => {
-            console.log('Cart item added event detected');
-            setTimeout(() => {
-                loadAndDisplay();
-            }, 50);
-        });
-
-        // Also listen for visibility change to refresh when tab becomes active
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                console.log('Tab became visible');
-                loadAndDisplay();
-            }
-        });
-
-        function setupEventListeners() {
-            // Tab filtering
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    currentWorkflowFilter = e.target.dataset.workflow;
-                    renderOrders();
-                });
-            });
-
-            // Search functionality
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                filterAndRenderOrders(searchTerm);
-            });
-
-            // Filter button
-            document.getElementById('filterBtn').addEventListener('click', () => {
-                alert('Filter functionality coming soon!');
-            });
-
-            // Date range button
-            document.getElementById('dateRangeBtn').addEventListener('click', () => {
-                alert('Date range filter coming soon!');
-            });
-
-            // Clear all button
-            document.getElementById('clearBtn').addEventListener('click', () => {
-                if (confirm('Are you sure you want to delete all orders? This cannot be undone.')) {
-                    localStorage.removeItem('orders');
-                    orders = [];
-                    renderOrders();
-                    updateStats();
-                    console.log('All orders cleared');
-                }
-            });
-        }
-
-        function getWorkflowDisplay(workflowStatus) {
-            const wf = String(workflowStatus || 'Pending');
-            if (wf === 'Pending' || wf === 'Revision Requested') return 'Pending Review';
-            return wf;
-        }
-
-        function isCompletedOrder(order) {
-            const wf = getWorkflowDisplay(order?.admin?.workflowStatus);
-            return wf === 'Completed';
-        }
-
-        function getFilteredOrders(searchTerm = '') {
-            // History page shows COMPLETED orders only.
-            let filtered = orders.filter(isCompletedOrder);
-
-            if (currentWorkflowFilter !== 'all') {
-                filtered = filtered.filter(order => getWorkflowDisplay(order?.admin?.workflowStatus) === currentWorkflowFilter);
-            }
-
-            // Filter by search term
-            if (searchTerm) {
-                filtered = filtered.filter(order =>
-                    String(order.id || '').toLowerCase().includes(searchTerm) ||
-                    (Array.isArray(order.items) ? order.items : []).some(item => String(item.name || '').toLowerCase().includes(searchTerm))
-                );
-            }
-
-            return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-        }
-
-        function filterAndRenderOrders(searchTerm = '') {
-            const filteredOrders = getFilteredOrders(searchTerm);
-            renderOrders(filteredOrders);
-        }
-
-        function renderOrders(ordersToRender = null) {
-            const ordersToDisplay = ordersToRender || getFilteredOrders();
-            const tbody = document.getElementById('ordersTableBody');
-
-            if (ordersToDisplay.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <div class="empty-state-icon">📭</div>
-                            <h3>No Orders</h3>
-                            <p>No completed orders found</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = ordersToDisplay.map(order => {
-                const workflow = getWorkflowDisplay(order?.admin?.workflowStatus);
-                const actionButtons = `
-                    <button class="action-btn" onclick="viewOrder('${order.id}')">VIEW</button>
-                `;
-
-                return `
-                <tr>
-                    <td><strong>${order.id}</strong></td>
-                    <td>${formatDate(order.date)}</td>
-                    <td>
-                        <div class="order-items-wrap">
-                            ${order.items.map(item => `
-                                <div class="order-item-line">
-                                    ${item.name} (x${item.quantity})
-                                </div>
-                            `).join('')}
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge completed">
-                            ${workflow}
-                        </span>
-                    </td>
-                    <td><strong>₱${order.total.toLocaleString('en-PH')}</strong></td>
-                    <td>
-                        ${actionButtons}
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-
-        function updateStats() {
-            const completed = orders.filter(isCompletedOrder);
-            const activeOrders = 0;
-            const completedOrders = completed.length;
-            const totalSpent = completed.reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-            document.getElementById('totalOrdersCount').textContent = completed.length;
-            document.getElementById('activeOrdersCount').textContent = activeOrders;
-            document.getElementById('completedOrdersCount').textContent = completedOrders;
-            document.getElementById('totalSpentAmount').textContent = `₱${totalSpent.toLocaleString('en-PH')}`;
-        }
-
-        function formatDate(dateString) {
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            return new Date(dateString).toLocaleDateString('en-PH', options);
-        }
-
-        function viewOrder(orderId) {
-            window.location.href = `order-tracking.html?id=${encodeURIComponent(String(orderId))}`;
-        }
-
-        // Function to add a cart item to orders (called from other pages)
-        window.addToOrderHistory = function(item) {
-            const orderId = `ORD-${Date.now()}`;
-            const newOrder = {
-                id: orderId,
-                date: new Date().toISOString(),
-                items: [item],
-                status: 'active',
-                total: item.price * item.quantity
-            };
-
-            orders.push(newOrder);
-            localStorage.setItem('orders', JSON.stringify(orders));
-            renderOrders();
-            updateStats();
-
-            // Dispatch custom event for real-time updates
-            window.dispatchEvent(new CustomEvent('orderAdded', { detail: newOrder }));
-        };
-    </script>
-    <script>
-        document.getElementById('receiptUploadInput')?.addEventListener('change', (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            handleReceiptFileSelected(file);
-        });
     </script>
     <script src="../js/nav-auth.js"></script>
 </body>

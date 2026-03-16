@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
+    <title>Alix Vintage | Cart</title>
+
+    <link rel="stylesheet" href="../css/homepage.css" />
+    <link rel="stylesheet" href="../css/sublimation-theme.css" />
+    <link rel="stylesheet" href="../css/cart.css" />
+</head>
+
+<body>
+    <header>
+        <div class="nav">
+            <a class="logo-wrap" href="homepage.html" aria-label="Go to homepage">
+                <img src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="categories.html" class="nav-shop-link">SHOP NOW</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <a class="nav-contact-link" href="contact-us.html">Contact</a>
+                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                        <path d="M4 20a8 8 0 0 1 16 0" />
+                    </svg>
+                </a>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="cart-main">
+        <div class="cart-card">
+            <div class="cart-header">
+                <h1>Your Cart</h1>
+                <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh</button>
+            </div>
+
+            <div class="cart-summary">
+                <div>
+                    <div class="summary-label">Items</div>
+                    <div id="cartItemCount" class="summary-value">0</div>
+                </div>
+                <div>
+                    <div class="summary-label">Total</div>
+                    <div id="cartTotal" class="summary-value">₱0.00</div>
+                </div>
+                <div class="summary-actions">
+                    <button id="clearCartBtn" class="btn btn-danger" type="button">Clear Cart</button>
+                    <button id="checkoutBtn" class="btn btn-primary" type="button">Place Order</button>
+                </div>
+            </div>
+
+            <div class="cart-table-wrap">
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Details</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartItemsBody">
+                        <tr>
+                            <td colspan="6" class="muted">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="cart-footnote muted">
+                Orders are placed using your saved cart items.
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"></footer>
+
+    <script src="../js/nav-auth.js"></script>
+    <script src="../js/cart-client.js"></script>
+
+    <script>
+        const peso = (value) => {
+            const n = Number(value || 0);
+            return `₱${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+
+        const safeText = (value) => {
+            if (value === null || value === undefined) return '';
+            return String(value);
+        };
+
+        const renderMeta = (meta) => {
+            if (!meta || typeof meta !== 'object') return '';
+
+            const lines = [];
+
+            if (meta.playerName || meta.jerseyNumber) {
+                const p = [];
+                if (meta.playerName) p.push(`Player: ${safeText(meta.playerName)}`);
+                if (meta.jerseyNumber) p.push(`Jersey: ${safeText(meta.jerseyNumber)}`);
+                lines.push(p.join(' • '));
+            }
+
+            if (meta.groupName) {
+                lines.push(`Group: ${safeText(meta.groupName)}`);
+            }
+
+            if (Array.isArray(meta.roster) && meta.roster.length) {
+                lines.push(`Roster: ${meta.roster.length} item(s)`);
+            }
+
+            if (meta.customRequest && typeof meta.customRequest === 'object') {
+                const cr = meta.customRequest;
+                if (cr.designName) lines.push(`Design: ${safeText(cr.designName)}`);
+                if (cr.productType) lines.push(`Type: ${safeText(cr.productType)}`);
+                if (cr.quantity) lines.push(`Requested Qty: ${safeText(cr.quantity)}`);
+                if (cr.notes) lines.push(`Notes: ${safeText(cr.notes)}`);
+            }
+
+            if (meta.customerName) lines.push(`Name: ${safeText(meta.customerName)}`);
+            if (meta.customerMobile) lines.push(`Mobile: ${safeText(meta.customerMobile)}`);
+            if (meta.customerEmail) lines.push(`Email: ${safeText(meta.customerEmail)}`);
+
+            return lines
+                .filter(Boolean)
+                .map((l) => `<div>${l}</div>`)
+                .join('');
+        };
+
+        const renderCart = (cartEnvelope) => {
+            const cart = cartEnvelope?.cart && typeof cartEnvelope.cart === 'object' ? cartEnvelope.cart : cartEnvelope;
+            const items = Array.isArray(cart?.items) ? cart.items : [];
+
+            document.getElementById('cartItemCount').textContent = String(items.reduce((sum, it) => sum + Number(it.quantity || 0), 0));
+            document.getElementById('cartTotal').textContent = peso(cart?.total || cart?.total_amount || 0);
+
+            const body = document.getElementById('cartItemsBody');
+            body.innerHTML = '';
+
+            if (!items.length) {
+                body.innerHTML = `<tr><td colspan="6" class="muted">Your cart is empty.</td></tr>`;
+                return;
+            }
+
+            items.forEach((it) => {
+                const tr = document.createElement('tr');
+
+                const productName = safeText(it?.product?.product_name || it?.meta?.product_name || it.product_name || it.productName || 'Product');
+                const qty = Number(it.quantity || 0);
+                const lineTotal = Number(it.line_total || it.total_amount || 0);
+                const price = Number(it.unit_price || it?.product?.price || it.price || (qty ? lineTotal / qty : 0) || 0);
+                const cartItemId = it.cart_item_id ?? it.id;
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="cell-title">${productName}</div>
+                        <div class="muted">${safeText(it?.product?.category || it.product_category || '')}</div>
+                    </td>
+                    <td>${qty}</td>
+                    <td>${peso(price)}</td>
+                    <td class="cell-details">${renderMeta(it.meta)}</td>
+                    <td>${peso(lineTotal)}</td>
+                    <td class="cell-actions">
+                        <button class="btn btn-link" data-remove="${safeText(cartItemId)}" type="button">Remove</button>
+                    </td>
+                `;
+
+                body.appendChild(tr);
+            });
+        };
+
+        const refresh = async () => {
+            try {
+                const cartEnvelope = await window.AlixCart.getCart();
+                renderCart(cartEnvelope);
+            } catch (e) {
+                const msg = (e && e.message) ? e.message : 'Failed to load cart.';
+                alert(msg);
+                const body = document.getElementById('cartItemsBody');
+                body.innerHTML = `<tr><td colspan="6" class="muted">${safeText(msg)}</td></tr>`;
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('refreshBtn').addEventListener('click', refresh);
+
+            document.getElementById('clearCartBtn').addEventListener('click', async () => {
+                if (!confirm('Clear all items in your cart?')) return;
+                try {
+                    await window.AlixCart.clearCart();
+                    await refresh();
+                } catch (e) {
+                    alert(e?.message || 'Failed to clear cart.');
+                }
+            });
+
+            document.getElementById('checkoutBtn').addEventListener('click', async () => {
+                if (!confirm('Place order for all items in your cart?')) return;
+                try {
+                    await window.AlixCart.checkout();
+                    alert('Order placed successfully.');
+                    window.location.href = 'order-history.html';
+                } catch (e) {
+                    alert(e?.message || 'Checkout failed.');
+                }
+            });
+
+            document.getElementById('cartItemsBody').addEventListener('click', async (e) => {
+                const btn = e.target.closest('button[data-remove]');
+                if (!btn) return;
+
+                const itemId = btn.getAttribute('data-remove');
+                if (!itemId) return;
+
+                try {
+                    await window.AlixCart.removeItem(itemId);
+                    await refresh();
+                } catch (err) {
+                    alert(err?.message || 'Failed to remove item.');
+                }
+            });
+
+            refresh();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -208,6 +208,9 @@
         </div>
     </footer>
 
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/cart-client.js"></script>
     <script>
         const groupRosterTableElement = document.getElementById("group-roster");
         const addGroupRowButton = document.getElementById("add-group-row");
@@ -247,13 +250,11 @@
         removeGroupRowButton.addEventListener("click", handleRemoveGroupRowClick);
 
         // Add to cart functionality
-        function addOrderToHistory() {
-            const loginFlag = localStorage.getItem('alix_is_logged_in') === 'true';
-            const loginAt = Number(localStorage.getItem('alix_logged_in_at'));
-            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
-            const isLoggedIn = loginFlag && hasValidTimestamp;
-            if (!isLoggedIn) {
-                alert('Please log in first before adding items to cart/order history.');
+        async function addOrderToHistory() {
+            const token = localStorage.getItem('alix_auth_token');
+            if (!token) {
+                const message = 'Please log in first before adding items to cart/order history.';
+                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
                 window.location.href = 'login.html';
                 return;
             }
@@ -266,11 +267,9 @@
                 price = parseFloat(priceEl.textContent.replace(/[₱,]/g, '')) || 0;
             }
 
-            const item = { id: Date.now(), name, price, quantity: 1 };
-            let orders = JSON.parse(localStorage.getItem('orders')) || [];
-
             let profileName = '';
             let profilePhone = '';
+            let profileEmail = '';
             try {
                 const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
                 if (u && typeof u === 'object') {
@@ -279,14 +278,9 @@
                     const full = `${fn} ${ln}`.trim();
                     profileName = full || String(u.email || '').trim();
                     profilePhone = String(u.phone_number || '').trim();
+                    profileEmail = String(u.email || '').trim();
                 }
             } catch {}
-
-            if (!profileName) {
-                alert('Your session profile is missing. Please log in again to continue.');
-                window.location.href = 'login.html';
-                return;
-            }
 
             const groupName = (document.getElementById('group-name')?.value || '').trim();
             const rosterRows = Array.from(document.querySelectorAll('#group-roster tbody tr'));
@@ -301,23 +295,25 @@
                 .filter((r) => r.name || r.number || r.size);
 
             const quantity = Math.max(1, roster.length || 1);
-            item.quantity = quantity;
-            const order = {
-                id: `ORD-${Date.now()}`,
-                date: new Date().toISOString(),
-                items: [item],
-                status: 'active',
-                total: price * quantity,
-                details: {
-                    groupName,
-                    roster,
-                    customerName: profileName,
-                    customerMobile: profilePhone
-                }
-            };
-            orders.push(order);
-            localStorage.setItem('orders', JSON.stringify(orders));
-            console.log('Order saved:', order);
+            try {
+                await window.AlixCart.addItem({
+                    product_name: name,
+                    apparel_type: 'jersey',
+                    base_price: price,
+                    quantity,
+                    meta: {
+                        groupName,
+                        roster,
+                        customerName: profileName,
+                        customerMobile: profilePhone,
+                        customerEmail: profileEmail,
+                    },
+                });
+            } catch (error) {
+                const message = error?.message || 'Failed to add to cart.';
+                window.AVDialog?.alert(message, { title: 'Cart', tone: 'danger' }) || alert(message);
+                return;
+            }
 
             window.dispatchEvent(new Event('cartItemAdded'));
             showNotification('✓ Order added! View it in Order History');

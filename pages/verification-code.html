@@ -108,6 +108,7 @@
         </div>
     </footer>
 
+    <script src="../js/ui-dialog.js"></script>
     <script>
         const otpInputElements = Array.from(document.querySelectorAll('.otp-input'));
         const resendButtonElement = document.getElementById('resend-code-btn');
@@ -152,7 +153,8 @@
         };
 
         resendButtonElement.addEventListener('click', () => {
-            alert('A new verification code has been sent.');
+            const message = 'A new verification code has been sent.';
+            window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'success' }) || alert(message);
             startCountdown();
         });
 

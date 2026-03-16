@@ -8,12 +8,70 @@ BEGIN;
 -- Enums
 -- =========
 DO $$ BEGIN
-  CREATE TYPE order_status AS ENUM ('pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled');
+  CREATE TYPE order_status AS ENUM ('draft', 'pending', 'paid', 'proofing', 'processing', 'ready_to_ship', 'shipped', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Add missing enum values on existing databases.
+
+-- Allow using orders as a draft cart (cart = draft order).
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_type t WHERE t.typname = 'order_status'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_status' AND e.enumlabel = 'draft'
+  ) THEN
+    ALTER TYPE order_status ADD VALUE 'draft';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_type t WHERE t.typname = 'order_status'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_status' AND e.enumlabel = 'proofing'
+  ) THEN
+    ALTER TYPE order_status ADD VALUE 'proofing';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_type t WHERE t.typname = 'order_status'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_status' AND e.enumlabel = 'ready_to_ship'
+  ) THEN
+    ALTER TYPE order_status ADD VALUE 'ready_to_ship';
+  END IF;
+END $$;
 
 DO $$ BEGIN
   CREATE TYPE order_type AS ENUM ('individual', 'group');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Allow cart checkout to create an order with multiple item types.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_type' AND e.enumlabel = 'mixed'
+  ) THEN
+    ALTER TYPE order_type ADD VALUE 'mixed';
+  END IF;
+END $$;
 
 DO $$ BEGIN
   CREATE TYPE apparel_type AS ENUM ('shirt', 'jersey', 'hoodie', 'other');
@@ -110,6 +168,7 @@ CREATE TABLE IF NOT EXISTS orders (
   base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   shipping_fee NUMERIC(12,2) NOT NULL DEFAULT 0,
   tracking_number VARCHAR(100),
+  meta JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -122,7 +181,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id BIGINT NOT NULL REFERENCES products(product_id),
 
   quantity INTEGER NOT NULL CHECK (quantity > 0),
-  total_amount NUMERIC(12,2) NOT NULL
+  total_amount NUMERIC(12,2) NOT NULL,
+  meta JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
 -- =========

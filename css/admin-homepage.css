@@ -30,6 +30,10 @@ body {
     min-height: 100vh;
 }
 
+.admin-shell--no-sidebar .admin-sidebar {
+    display: none;
+}
+
 .admin-sidebar {
     width: 280px;
     background: var(--dark);
@@ -429,6 +433,36 @@ body {
     font-size: 13px;
 }
 
+.order-meta-grid {
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+.order-meta-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.order-meta-k {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.order-meta-v {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
 .upload-cards {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -751,6 +785,70 @@ body {
     font-size: 13px;
     color: var(--muted);
     line-height: 1.6;
+}
+
+.order-contents-notice {
+    margin: 12px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-left-width: 6px;
+    border-radius: 12px;
+    background: var(--panel);
+}
+
+.order-contents-notice.is-danger {
+    border-color: var(--danger);
+    border-left-color: var(--danger);
+}
+
+.order-contents-notice.is-info {
+    border-left-color: var(--accent);
+}
+
+.order-contents-notice-title {
+    font-weight: 800;
+    color: var(--danger-dark);
+    margin-bottom: 6px;
+}
+
+.order-contents-notice.is-info .order-contents-notice-title {
+    color: var(--ink-strong);
+}
+
+.order-contents-notice-body {
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.order-contents-notice-actions {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.order-contents-notice-links {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.order-contents-notice-links a {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-strong);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.order-contents-notice-links a:hover {
+    border-color: var(--danger);
+    color: var(--danger-dark);
 }
 
 .stats-grid {

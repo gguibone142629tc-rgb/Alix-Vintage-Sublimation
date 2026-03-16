@@ -148,6 +148,7 @@
     </footer>
 
     <script src="../js/auth-client.js"></script>
+    <script src="../js/ui-dialog.js"></script>
     <script>
         const ADMIN_SESSION_KEY = 'alix_admin_logged_in';
         const ADMIN_LOGIN_AT_KEY = 'alix_admin_logged_in_at';
@@ -221,7 +222,7 @@
                         window.location.href = 'otp.html';
                         return;
                     }
-                    alert(message);
+                    window.AVDialog?.alert(message, { title: 'Login Failed', tone: 'danger' }) || alert(message);
                 }
             });
         }
@@ -240,7 +241,7 @@
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';
-                    alert(message);
+                    window.AVDialog?.alert(message, { title: 'Admin Login Failed', tone: 'danger' }) || alert(message);
                 }
             });
         }

@@ -479,6 +479,56 @@ main {
     color: var(--ink-strong);
 }
 
+.order-contents {
+    display: grid;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.order-content-item {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    background: #ffffff;
+}
+
+.order-content-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.order-content-name {
+    font-weight: 800;
+    color: var(--ink-strong);
+}
+
+.order-content-sub {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.order-content-meta {
+    margin-top: 10px;
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.order-content-meta .k {
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-size: 11px;
+}
+
+.order-content-roster {
+    margin-top: 10px;
+}
+
 .payment-note,
 .proof-note {
     margin-top: 6px;
@@ -562,6 +612,76 @@ main {
     justify-content: flex-end;
     gap: 10px;
     margin-top: 12px;
+}
+
+.mini-note {
+    font-size: 13px;
+    color: var(--muted);
+    padding-top: 6px;
+}
+
+.comment-thread {
+    display: grid;
+    gap: 12px;
+    padding-top: 6px;
+    max-height: 420px;
+    overflow: auto;
+}
+
+.comment-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.comment-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.comment-author {
+    color: var(--ink-strong);
+    font-weight: 800;
+}
+
+.comment-body {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.comment-compose {
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+    padding-top: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.comment-input {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: #f8f8f8;
+    padding: 12px 14px;
+    font-size: 13px;
+    outline: none;
+    color: var(--ink-strong);
+    resize: vertical;
+}
+
+.comment-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
 .payment-state {
