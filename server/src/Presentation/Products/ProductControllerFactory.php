@@ -13,6 +13,6 @@ final class ProductControllerFactory
     {
         $repo = new PdoProductRepository($pdo);
         $useCase = new ListProducts($repo);
-        return new ProductController($useCase);
+        return new ProductController($useCase, $repo);
     }
 }

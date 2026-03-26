@@ -147,6 +147,17 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS product_images (
+  product_image_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  product_id BIGINT NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+  view_type VARCHAR(20) NOT NULL CHECK (view_type IN ('front', 'back', 'lower', 'full')),
+  image_path VARCHAR(500) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (product_id, view_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id);
+
 CREATE TABLE IF NOT EXISTS payments (
   payment_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   amount_paid NUMERIC(12,2) NOT NULL,

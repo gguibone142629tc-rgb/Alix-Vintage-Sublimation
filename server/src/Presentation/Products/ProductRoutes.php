@@ -12,5 +12,8 @@ final class ProductRoutes
     {
         $controller = ProductControllerFactory::create($pdo);
         $router->get('/api/products', [$controller, 'list']);
+        $router->post('/api/admin/products', [$controller, 'create']);
+        $router->patch('/api/admin/products', [$controller, 'update']);
+        $router->delete('/api/admin/products', [$controller, 'delete']);
     }
 }

@@ -8,8 +8,18 @@
     const productNameInput = qs("#productName");
     const productCategoryInput = qs("#productCategory");
     const productPriceInput = qs("#productPrice");
-    const productImageInput = qs("#productImage");
-    const productImageDataUrlInput = qs("#productImageDataUrl");
+    const imageInputs = {
+        front: qs("#productImageFront"),
+        back: qs("#productImageBack"),
+        lower: qs("#productImageLower"),
+        full: qs("#productImageFull"),
+    };
+    const imageDataInputs = {
+        front: qs("#productImageFrontDataUrl"),
+        back: qs("#productImageBackDataUrl"),
+        lower: qs("#productImageLowerDataUrl"),
+        full: qs("#productImageFullDataUrl"),
+    };
     const imagePreview = qs("#imagePreview");
     const resetButton = qs("#resetProductBtn");
     const searchInput = qs("#productSearch");
@@ -25,16 +35,88 @@
 
     const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
 
-    const renderImagePreview = (dataUrl) => {
+    const getApiBaseUrl = () => {
+        if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
+            return window.AlixAuth.apiBaseUrl();
+        }
+
+        const origin = window.location && window.location.origin ? window.location.origin : "";
+        if (origin && origin !== "null") return origin;
+        return "http://localhost:8000";
+    };
+
+    const getAdminApiKey = () => {
+        const key = localStorage.getItem("alix_admin_api_key");
+        return key && String(key).trim() ? String(key).trim() : null;
+    };
+
+    const resolveImageUrl = (imagePath) => {
+        const raw = String(imagePath || "").trim();
+        if (!raw) return null;
+        if (/^https?:\/\//i.test(raw)) return raw;
+        const base = getApiBaseUrl().replace(/\/$/, "");
+        if (raw.startsWith("/")) return `${base}${raw}`;
+        return `${base}/${raw}`;
+    };
+
+    const normalizeProduct = (row) => {
+        const productId = row?.product_id ?? row?.id ?? null;
+        const imagePath = row?.image_path ?? row?.imagePath ?? null;
+        const imagesRaw = Array.isArray(row?.images) ? row.images : [];
+        const images = imagesRaw
+            .map((img) => ({
+                view: String(img?.view_type || "").trim().toLowerCase(),
+                path: String(img?.image_path || "").trim(),
+            }))
+            .filter((img) => img.view && img.path)
+            .map((img) => ({ ...img, url: resolveImageUrl(img.path) }));
+
+        const imageByView = {};
+        images.forEach((img) => {
+            imageByView[img.view] = img;
+        });
+
+        return {
+            id: productId != null ? String(productId) : "",
+            name: String(row?.product_name ?? row?.name ?? "").trim(),
+            category: String(row?.apparel_type ?? row?.category ?? "").trim(),
+            price: Number(row?.base_price ?? row?.price ?? 0),
+            imagePath: imagePath ? String(imagePath) : null,
+            imageUrl: resolveImageUrl(imagePath),
+            images,
+            imageByView,
+            updatedAt: row?.created_at ?? row?.updated_at ?? null,
+        };
+    };
+
+    const renderImagePreview = (product) => {
         if (!imagePreview) return;
         imagePreview.innerHTML = "";
-        if (!dataUrl) return;
 
-        const img = document.createElement("img");
-        img.src = dataUrl;
-        img.alt = "Product image preview";
-        img.loading = "lazy";
-        imagePreview.appendChild(img);
+        const views = ["front", "back", "lower", "full"];
+        const existing = product && typeof product === "object" ? product.imageByView || {} : {};
+
+        const cards = [];
+        views.forEach((view) => {
+            const fromDraft = imageDataInputs[view]?.value ? String(imageDataInputs[view].value) : "";
+            const fromExisting = existing[view]?.url ? String(existing[view].url) : "";
+            const src = fromDraft || fromExisting;
+            if (!src) return;
+
+            cards.push(`
+                <div style="display:grid;gap:6px;min-width:120px;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#7a7670;">${escapeHtml(view)}</div>
+                    <img src="${escapeAttr(src)}" alt="${escapeAttr(view)} preview" loading="lazy" style="width:100%;max-height:120px;object-fit:contain;border-radius:8px;border:1px solid #dad6cf;background:#fff;" />
+                </div>
+            `);
+        });
+
+        if (cards.length === 0) {
+            imagePreview.innerHTML = '<div style="font-size:12px;color:#8a867f;">No preview yet.</div>';
+            return;
+        }
+
+        imagePreview.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">${cards.join("")}</div>`;
     };
 
     const setForm = (product) => {
@@ -42,9 +124,13 @@
         productNameInput.value = product?.name || "";
         productCategoryInput.value = product?.category || "";
         productPriceInput.value = String(product?.price ?? "");
-        productImageDataUrlInput.value = product?.imageDataUrl || "";
-        renderImagePreview(product?.imageDataUrl || null);
-        if (productImageInput) productImageInput.value = "";
+        Object.values(imageDataInputs).forEach((el) => {
+            if (el) el.value = "";
+        });
+        Object.values(imageInputs).forEach((el) => {
+            if (el) el.value = "";
+        });
+        renderImagePreview(product || null);
     };
 
     const resetForm = () => setForm(null);
@@ -57,8 +143,45 @@
             reader.readAsDataURL(file);
         });
 
+    const fetchJson = async (path, { method = "GET", body = null, admin = false } = {}) => {
+        const headers = { Accept: "application/json" };
+        if (body !== null) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        if (admin) {
+            const key = getAdminApiKey();
+            if (key) headers["X-Admin-Api-Key"] = key;
+        }
+
+        const res = await fetch(getApiBaseUrl() + path, {
+            method,
+            headers,
+            body: body !== null ? JSON.stringify(body) : undefined,
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const msg = typeof data.error === "string" ? data.error : "Request failed";
+            const err = new Error(msg);
+            err.status = res.status;
+            err.data = data;
+            throw err;
+        }
+
+        return data;
+    };
+
+    let productsCache = [];
+
+    const loadProducts = async () => {
+        const data = await fetchJson("/api/products", { method: "GET" });
+        const rows = Array.isArray(data?.products) ? data.products : [];
+        productsCache = rows.map(normalizeProduct);
+    };
+
     const getFilteredProducts = () => {
-        const products = window.AdminStore.getProducts();
+        const products = productsCache;
         const q = String(searchInput?.value || "").trim().toLowerCase();
         if (!q) return products;
         return products.filter((p) =>
@@ -107,12 +230,22 @@
 
     const escapeAttr = (s) => escapeHtml(s);
 
-    productImageInput?.addEventListener("change", async () => {
-        const file = productImageInput.files?.[0];
-        if (!file) return;
-        const dataUrl = await readFileAsDataUrl(file);
-        productImageDataUrlInput.value = dataUrl;
-        renderImagePreview(dataUrl);
+    const getCurrentEditingProduct = () => {
+        const id = String(productIdInput.value || "").trim();
+        if (!id) return null;
+        return productsCache.find((p) => String(p.id) === id) || null;
+    };
+
+    ["front", "back", "lower", "full"].forEach((view) => {
+        imageInputs[view]?.addEventListener("change", async () => {
+            const file = imageInputs[view].files?.[0];
+            if (!file) return;
+            const dataUrl = await readFileAsDataUrl(file);
+            if (imageDataInputs[view]) {
+                imageDataInputs[view].value = dataUrl;
+            }
+            renderImagePreview(getCurrentEditingProduct());
+        });
     });
 
     searchInput?.addEventListener("input", () => {
@@ -123,20 +256,45 @@
         resetForm();
     });
 
-    productForm?.addEventListener("submit", (e) => {
+    const showError = async (message) => {
+        if (window.AVDialog?.alert) {
+            await window.AVDialog.alert(message, { title: "Products", tone: "danger" });
+            return;
+        }
+        window.alert(message);
+    };
+
+    productForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const product = {
-            id: productIdInput.value || undefined,
-            name: productNameInput.value,
-            category: productCategoryInput.value,
-            price: Number(productPriceInput.value || 0),
-            imageDataUrl: productImageDataUrlInput.value || null,
+        const payload = {
+            product_name: productNameInput.value,
+            apparel_type: productCategoryInput.value,
+            base_price: Number(productPriceInput.value || 0),
+            image_map: {
+                front: imageDataInputs.front?.value || "",
+                back: imageDataInputs.back?.value || "",
+                lower: imageDataInputs.lower?.value || "",
+                full: imageDataInputs.full?.value || "",
+            },
         };
 
-        const saved = window.AdminStore.upsertProduct(product);
-        setForm(saved);
-        renderTable();
+        const editingId = String(productIdInput.value || "").trim();
+
+        try {
+            if (editingId) {
+                payload.product_id = Number(editingId);
+                await fetchJson("/api/admin/products", { method: "PATCH", body: payload, admin: true });
+            } else {
+                await fetchJson("/api/admin/products", { method: "POST", body: payload, admin: true });
+            }
+
+            await loadProducts();
+            resetForm();
+            renderTable();
+        } catch (error) {
+            await showError(error instanceof Error ? error.message : "Failed to save product");
+        }
     });
 
     tbody?.addEventListener("click", (e) => {
@@ -147,7 +305,7 @@
         if (!action || !id) return;
 
         if (action === "edit") {
-            const products = window.AdminStore.getProducts();
+            const products = productsCache;
             const product = products.find((p) => String(p.id) === String(id));
             setForm(product || null);
             return;
@@ -165,9 +323,18 @@
                     : window.confirm("Delete this product?");
                 if (!ok) return;
 
-                window.AdminStore.deleteProduct(id);
-                if (productIdInput.value === id) resetForm();
-                renderTable();
+                try {
+                    await fetchJson("/api/admin/products", {
+                        method: "DELETE",
+                        body: { product_id: Number(id) },
+                        admin: true,
+                    });
+                    if (productIdInput.value === id) resetForm();
+                    await loadProducts();
+                    renderTable();
+                } catch (error) {
+                    await showError(error instanceof Error ? error.message : "Failed to delete product");
+                }
             };
 
             run();
@@ -175,6 +342,19 @@
     });
 
     // Page init
-    resetForm();
-    renderTable();
+    const init = async () => {
+        // Remove legacy local-only products to avoid mixed DB/local displays from older builds.
+        localStorage.removeItem("alix_products");
+
+        resetForm();
+        try {
+            await loadProducts();
+        } catch (error) {
+            await showError(error instanceof Error ? error.message : "Failed to load products");
+            productsCache = [];
+        }
+        renderTable();
+    };
+
+    init();
 })();

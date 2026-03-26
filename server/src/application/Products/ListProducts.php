@@ -24,6 +24,7 @@ final class ListProducts
                 'apparel_type' => $p->apparelType,
                 'base_price' => $p->basePrice,
                 'image_path' => $p->imagePath,
+                'images' => $p->images,
                 'stock_status' => $p->stockStatus,
                 'created_at' => $p->createdAt?->format('c'),
             ], $items),

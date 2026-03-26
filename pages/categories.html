@@ -71,7 +71,7 @@
                 <div class="catalog-controls">
                     <div class="group">
                         <span>Show</span>
-                        <select>
+                        <select id="catalogShow">
                             <option>8</option>
                             <option>12</option>
                             <option>16</option>
@@ -79,7 +79,7 @@
                     </div>
                     <div class="group">
                         <span>Sort By</span>
-                        <select>
+                        <select id="catalogSort">
                             <option>Price, Low to High</option>
                             <option>Price, High to Low</option>
                             <option>Newest</option>
@@ -87,55 +87,8 @@
                     </div>
                 </div>
 
-                <div class="product-grid">
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-image"></div>
-                        <div class="product-name">Lorem Lorem Lorem</div>
-                        <div class="product-price">₱1200</div>
-                        <a class="order-btn" href="product-order-individual.html">Order Now</a>
-                    </div>
+                <div class="product-grid" id="catalogGrid">
+                    <div class="catalog-empty">Loading products...</div>
                 </div>
             </section>
         </div>
@@ -169,6 +122,7 @@
             <span>Dummy legal links: Privacy Policy | Terms of Service</span>
         </div>
     </footer>
+    <script src="../js/categories.js"></script>
     <script src="../js/nav-auth.js"></script>
 </body>
 </html>

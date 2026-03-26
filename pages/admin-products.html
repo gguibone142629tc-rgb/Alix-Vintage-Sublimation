@@ -97,10 +97,30 @@
 
                         <div class="form-row">
                             <div class="field">
-                                <label class="field-label" for="productImage">Image</label>
-                                <input class="field-input" id="productImage" type="file" accept="image/*">
+                                <label class="field-label" for="productImageFront">Image (Front)</label>
+                                <input class="field-input" id="productImageFront" type="file" accept="image/*">
+                                <input type="hidden" id="productImageFrontDataUrl">
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="productImageBack">Image (Back)</label>
+                                <input class="field-input" id="productImageBack" type="file" accept="image/*">
+                                <input type="hidden" id="productImageBackDataUrl">
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="productImageLower">Image (Lower)</label>
+                                <input class="field-input" id="productImageLower" type="file" accept="image/*">
+                                <input type="hidden" id="productImageLowerDataUrl">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="field">
+                                <label class="field-label" for="productImageFull">Image (Full)</label>
+                                <input class="field-input" id="productImageFull" type="file" accept="image/*">
+                                <input type="hidden" id="productImageFullDataUrl">
+                            </div>
+                            <div class="field" style="grid-column: span 2;">
                                 <div class="image-preview" id="imagePreview" aria-label="Image preview"></div>
-                                <input type="hidden" id="productImageDataUrl">
                             </div>
                         </div>
 
@@ -137,7 +157,6 @@
 
     <script src="../js/ui-dialog.js"></script>
     <script src="../js/admin-auth.js"></script>
-    <script src="../js/admin-store.js"></script>
     <script src="../js/admin-products.js"></script>
 </body>
 </html>

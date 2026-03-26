@@ -23,8 +23,25 @@ This keeps SOLID boundaries:
 2. Copy env:
 	 - `copy .env.example .env`
 3. Set PostgreSQL credentials in `.env`.
+4. Initialize DB schema (from this `server/` folder):
+	 - `php tools/init-db.php`
 
 Composer is optional for this backend (it runs without external packages).
+
+## Share with teammates (without sharing your DB)
+
+Do this so your friend can run backend locally using their own PostgreSQL instance:
+
+1. Commit and push code (including `server/.env.example`, `server/src/Infrastructure/db/schema.sql`, and `server/tools/init-db.php`).
+2. Your friend clones repo and creates local env:
+	 - `copy .env.example .env`
+3. Your friend sets their own DB values in `.env` (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
+4. Your friend runs:
+	 - `php tools/init-db.php`
+5. Then run backend:
+	 - `php -S localhost:8000 -t public`
+
+Never commit your real `.env` with personal DB credentials.
 
 ## Run
 
