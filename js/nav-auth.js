@@ -4,13 +4,13 @@
             <div class="footer-col footer-brand">
                 <h3>ALIX VINTAGE</h3>
                 <p>Your trusted shop for custom sublimation jerseys, teamwear, and apparel.</p>
-                <p class="footer-note">ALIX VINTAGE delivers premium custom sublimation for teams, schools, and businesses with easy catalog ordering or design uploads, accurate roster personalization, transparent admin quoting, and reliable production-to-delivery updates.</p>
             </div>
             <div class="footer-col">
                 <h4>Contact Info</h4>
                 <p><strong>Phone:</strong> 0994 088 7463</p>
                 <p><strong>Email:</strong> alixvintagesublimation@gmail.com</p>
                 <p><strong>Address:</strong> STALL #04-A Tagum Cultural and Trade Center, Magugpo Poblacion, Tagum City</p>
+                <p><a href="faq.html">FAQ and Help Center</a></p>
             </div>
             <div class="footer-col">
                 <h4>Business Hours</h4>
@@ -25,7 +25,42 @@
         </div>
         <div class="footer-bottom">
             <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
-            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+            <span>
+                <a href="#" class="legal-summary-trigger">Privacy and Terms Summary</a>
+                | <a href="privacy-policy.html">Privacy Policy</a>
+                | <a href="terms-of-service.html">Terms of Service</a>
+            </span>
+        </div>
+    `;
+
+    const LEGAL_SUMMARY_MODAL_HTML = `
+        <div id="legal-summary-modal" class="legal-summary-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="legal-summary-title">
+            <div class="legal-summary-panel" role="document">
+                <button type="button" class="legal-summary-close" aria-label="Close legal summary">&times;</button>
+                <h3 id="legal-summary-title">Privacy and Terms Summary</h3>
+                <p>This summary is for quick guidance and does not replace the full policies.</p>
+
+                <h4>Privacy Highlights</h4>
+                <ul>
+                    <li>We collect account, order, design upload, and basic usage data to run the service.</li>
+                    <li>We use your data for order processing, support, fraud prevention, and legal compliance.</li>
+                    <li>We do not sell personal data and only share necessary information with service partners.</li>
+                </ul>
+
+                <h4>Terms Highlights</h4>
+                <ul>
+                    <li>Custom orders require approval before production and may have limited edits after approval.</li>
+                    <li>Pricing, timelines, and release depend on complete order details and payment terms.</li>
+                    <li>Uploaded designs must be lawful and owned or authorized by the customer.</li>
+                </ul>
+
+                <p class="legal-summary-links">
+                    Read full details:
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                    and
+                    <a href="terms-of-service.html">Terms of Service</a>.
+                </p>
+            </div>
         </div>
     `;
 
@@ -35,7 +70,14 @@
         });
     };
 
+    const ensureLegalSummaryModal = () => {
+        if (!document.getElementById("legal-summary-modal")) {
+            document.body.insertAdjacentHTML("beforeend", LEGAL_SUMMARY_MODAL_HTML);
+        }
+    };
+
     normalizeFooters();
+    ensureLegalSummaryModal();
 
     const style = document.createElement("style");
     style.textContent = `
@@ -167,6 +209,9 @@
             text-underline-offset: 2px !important;
             font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
         }
+        footer.site-footer .legal-summary-trigger {
+            font-weight: 700 !important;
+        }
         footer.site-footer .footer-note { opacity: 0.96 !important; }
         footer.site-footer .footer-bottom {
             width: min(1360px, 92%) !important;
@@ -191,8 +236,111 @@
             footer.site-footer .footer-col p,
             footer.site-footer .footer-col a { font-size: 12px !important; }
         }
+
+        .legal-summary-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: grid;
+            place-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 16px;
+        }
+        .legal-summary-panel {
+            width: min(760px, 100%);
+            max-height: min(82vh, 720px);
+            overflow: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(40, 40, 40, 0.16);
+            background: #ffffff;
+            color: #232323;
+            box-shadow: 0 24px 46px rgba(0, 0, 0, 0.28);
+            padding: 18px 18px 14px;
+            position: relative;
+        }
+        .legal-summary-close {
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            border: 0;
+            background: transparent;
+            color: #555;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .legal-summary-panel h3 {
+            font-size: 22px;
+            margin: 0 0 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .legal-summary-panel h4 {
+            font-size: 14px;
+            margin: 14px 0 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .legal-summary-panel p,
+        .legal-summary-panel li {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #444;
+        }
+        .legal-summary-panel ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+        .legal-summary-panel a {
+            color: #5b2b0f;
+            font-weight: 700;
+        }
+        .legal-summary-links {
+            margin-top: 10px;
+        }
+        .legal-summary-modal.is-hidden {
+            display: none;
+        }
     `;
     document.head.appendChild(style);
+
+    const legalSummaryModal = document.getElementById("legal-summary-modal");
+    const legalSummaryClose = legalSummaryModal ? legalSummaryModal.querySelector(".legal-summary-close") : null;
+
+    const openLegalSummary = () => {
+        if (!legalSummaryModal) return;
+        legalSummaryModal.classList.remove("is-hidden");
+        document.body.style.overflow = "hidden";
+    };
+
+    const closeLegalSummary = () => {
+        if (!legalSummaryModal) return;
+        legalSummaryModal.classList.add("is-hidden");
+        document.body.style.overflow = "";
+    };
+
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest(".legal-summary-trigger");
+        if (trigger) {
+            event.preventDefault();
+            openLegalSummary();
+            return;
+        }
+
+        if (legalSummaryModal && event.target === legalSummaryModal) {
+            closeLegalSummary();
+        }
+    });
+
+    if (legalSummaryClose) {
+        legalSummaryClose.addEventListener("click", closeLegalSummary);
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeLegalSummary();
+        }
+    });
 
     const LOGIN_KEY = "alix_is_logged_in";
     const LOGIN_AT_KEY = "alix_logged_in_at";
