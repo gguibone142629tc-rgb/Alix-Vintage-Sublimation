@@ -615,7 +615,8 @@ main > *:nth-child(4) {
     }
 
     header .logo-wrap span {
-        display: none;
+        display: inline;
+        white-space: nowrap;
     }
 
     header nav ul {

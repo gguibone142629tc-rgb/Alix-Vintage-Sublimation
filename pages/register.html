@@ -45,6 +45,16 @@
                     </svg>
                 </a>
             </div>
+            <button class="nav-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu-panel is-hidden" id="mobile-nav-menu" role="menu" aria-label="Mobile navigation">
+                <a href="categories.html" role="menuitem">Shop Now</a>
+                <a href="contact-us.html" role="menuitem">Contact</a>
+                <a href="login.html" role="menuitem">Log In</a>
+            </div>
         </div>
     </header>
 
@@ -143,11 +153,186 @@
         </div>
     </footer>
 
+    <div class="terms-modal-backdrop" id="terms-modal" aria-hidden="true">
+        <div class="terms-modal" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+            <div class="terms-modal-head">
+                <h2 id="terms-modal-title">Terms and Conditions</h2>
+                <p>Please review all terms. You can only agree after scrolling to the last line.</p>
+            </div>
+
+            <div class="terms-modal-body" id="terms-scroll" tabindex="0">
+                <p><strong>Effective Date:</strong> March 26, 2026</p>
+
+                <h3>1. Acceptance of Terms</h3>
+                <p>By using this website and placing orders, you agree to these Terms of Service.</p>
+
+                <h3>2. Accounts and Eligibility</h3>
+                <ul>
+                    <li>You must provide accurate and complete account information.</li>
+                    <li>You are responsible for activity under your account credentials.</li>
+                </ul>
+
+                <h3>3. Orders and Proof Approval</h3>
+                <ul>
+                    <li>All orders are subject to confirmation and production capacity.</li>
+                    <li>Custom work requires proof/mockup approval before final production.</li>
+                    <li>After approval, edits may be limited and may affect schedule or cost.</li>
+                </ul>
+
+                <h3>4. Pricing and Payment</h3>
+                <ul>
+                    <li>Displayed prices may change, but confirmed orders retain agreed pricing.</li>
+                    <li>Required payment terms must be met before production or release.</li>
+                </ul>
+
+                <h3>5. Intellectual Property and Uploads</h3>
+                <p>You retain ownership of your submitted designs but grant Alix Vintage permission to use them for order fulfillment. You confirm that uploaded content does not infringe third-party rights.</p>
+
+                <h3>6. Shipping, Returns, and Liability</h3>
+                <ul>
+                    <li>Production and delivery timelines are estimates and may vary.</li>
+                    <li>Custom or personalized items are generally non-returnable unless defective or incorrect due to our error.</li>
+                    <li>To the extent allowed by law, liability is limited to the amount paid for the affected order.</li>
+                </ul>
+
+                <h3>7. Prohibited Use</h3>
+                <p>You agree not to use the website for unlawful activity, unauthorized access attempts, or submission of harmful or infringing content.</p>
+
+                <h3>8. Governing Law and Contact</h3>
+                <p>These terms are governed by Philippine law.</p>
+                <p>Email: alixvintagesublimation@gmail.com</p>
+                <p>Phone: 0994 088 7463</p>
+
+                <p>These terms may be revised over time. Continued use means acceptance of updated terms.</p>
+            </div>
+
+            <div class="terms-modal-foot">
+                <p class="terms-scroll-note" id="terms-scroll-note">Scroll to the bottom to enable Agree.</p>
+                <div class="terms-modal-actions">
+                    <button type="button" class="terms-btn terms-btn-ghost" id="terms-cancel-btn">Cancel</button>
+                    <button type="button" class="terms-btn" id="terms-accept-btn" disabled>Agree</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/auth-client.js"></script>
     <script src="../js/ui-dialog.js"></script>
     <script>
         const passwordToggleButtons = document.querySelectorAll('.toggle-password');
         const registerFormElement = document.querySelector('.form-card');
+        const termsCheckboxElement = document.getElementById('agree-terms');
+        const termsModalElement = document.getElementById('terms-modal');
+        const termsScrollElement = document.getElementById('terms-scroll');
+        const termsAcceptButtonElement = document.getElementById('terms-accept-btn');
+        const termsCancelButtonElement = document.getElementById('terms-cancel-btn');
+        const termsScrollNoteElement = document.getElementById('terms-scroll-note');
+        let isTermsDialogOpen = false;
+        let isUpdatingTermsState = false;
+
+        const setTermsAcceptedState = (accepted) => {
+            isUpdatingTermsState = true;
+            termsCheckboxElement.checked = accepted;
+            isUpdatingTermsState = false;
+        };
+
+        const hasReachedTermsBottom = () => {
+            if (!termsScrollElement) {
+                return false;
+            }
+
+            return termsScrollElement.scrollTop + termsScrollElement.clientHeight >= termsScrollElement.scrollHeight - 2;
+        };
+
+        const updateTermsProgress = () => {
+            if (!termsAcceptButtonElement || !termsScrollNoteElement) {
+                return;
+            }
+
+            const reachedBottom = hasReachedTermsBottom();
+            termsAcceptButtonElement.disabled = !reachedBottom;
+            termsScrollNoteElement.textContent = reachedBottom
+                ? 'You reached the last line. You may now agree.'
+                : 'Scroll to the bottom to enable Agree.';
+        };
+
+        const openTermsModal = () => {
+            if (!termsModalElement || !termsScrollElement || !termsAcceptButtonElement) {
+                setTermsAcceptedState(false);
+                return;
+            }
+
+            isTermsDialogOpen = true;
+            termsModalElement.classList.add('is-open');
+            termsModalElement.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('terms-modal-open');
+
+            termsScrollElement.scrollTop = 0;
+            termsAcceptButtonElement.disabled = true;
+            updateTermsProgress();
+
+            setTimeout(() => {
+                termsScrollElement.focus();
+            }, 0);
+        };
+
+        const closeTermsModal = (accepted) => {
+            if (!termsModalElement) {
+                return;
+            }
+
+            termsModalElement.classList.remove('is-open');
+            termsModalElement.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('terms-modal-open');
+            isTermsDialogOpen = false;
+            setTermsAcceptedState(Boolean(accepted));
+        };
+
+        if (termsCheckboxElement) {
+            termsCheckboxElement.addEventListener('change', () => {
+                if (isUpdatingTermsState || !termsCheckboxElement.checked || isTermsDialogOpen) {
+                    return;
+                }
+
+                openTermsModal();
+            });
+        }
+
+        if (termsScrollElement) {
+            termsScrollElement.addEventListener('scroll', () => {
+                updateTermsProgress();
+            });
+        }
+
+        if (termsCancelButtonElement) {
+            termsCancelButtonElement.addEventListener('click', () => {
+                closeTermsModal(false);
+            });
+        }
+
+        if (termsAcceptButtonElement) {
+            termsAcceptButtonElement.addEventListener('click', () => {
+                if (termsAcceptButtonElement.disabled) {
+                    return;
+                }
+
+                closeTermsModal(true);
+            });
+        }
+
+        if (termsModalElement) {
+            termsModalElement.addEventListener('click', (event) => {
+                if (event.target === termsModalElement) {
+                    closeTermsModal(false);
+                }
+            });
+        }
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && isTermsDialogOpen) {
+                closeTermsModal(false);
+            }
+        });
 
         const splitName = (fullName) => {
             const cleaned = String(fullName || '').trim().replace(/\s+/g, ' ');
@@ -169,6 +354,11 @@
                 const phone_number = String(document.getElementById('mobile')?.value || '').trim();
                 const password = String(document.getElementById('password')?.value || '');
                 const confirmPassword = String(document.getElementById('confirm-password')?.value || '');
+
+                if (!termsCheckboxElement?.checked) {
+                    window.AVDialog?.alert('Please read and accept the Terms and Conditions before registering.', { title: 'Terms and Conditions', tone: 'danger' }) || alert('Please read and accept the Terms and Conditions before registering.');
+                    return;
+                }
 
                 if (password !== confirmPassword) {
                     window.AVDialog?.alert('Passwords do not match', { title: 'Registration', tone: 'danger' }) || alert('Passwords do not match');
