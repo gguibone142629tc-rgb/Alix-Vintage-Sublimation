@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
-    <title>Admin | Transactions</title>
+    <title>Admin Messages | Alix Vintage</title>
     <link rel="stylesheet" href="../css/admin-homepage.css">
     <link rel="stylesheet" href="../css/sublimation-theme.css">
 </head>
@@ -40,7 +40,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-title">System</div>
                 <nav class="sidebar-nav" aria-label="System menu">
-                    <a href="admin-messages.html" class="nav-item">Messages</a>
+                    <a href="admin-messages.html" class="nav-item active">Messages</a>
                     <a href="#" class="nav-item">Activity Logs</a>
                     <a href="#" class="nav-item">Settings</a>
                 </nav>
@@ -49,32 +49,42 @@
 
         <div class="admin-main">
             <div class="topbar" role="banner">
-                <div class="topbar-left">
-                    <div class="topbar-title">Transactions</div>
+                <div class="topbar-title">Messages</div>
+
+                <div class="topbar-right">
+                    <button class="admin-menu" type="button" aria-label="Admin menu">
+                        <span class="admin-avatar" aria-hidden="true">AD</span>
+                        <span class="admin-name">Admin</span>
+                        <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
             <div class="page-content">
-                <section class="panel panel-wide" aria-label="Transactions list">
+                <section class="panel panel-wide" aria-label="Customer inquiries">
                     <div class="panel-head">
-                        <h2 class="panel-title">Payment Transactions</h2>
+                        <h2 class="panel-title">Customer Inquiries</h2>
                     </div>
+
                     <div class="table-wrap">
-                        <table class="data-table" aria-label="Transactions">
+                        <table class="data-table" id="messagesTable">
                             <thead>
                                 <tr>
-                                    <th>Payment ID</th>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Method</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Receipt</th>
+                                    <th>Date</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Topic</th>
+                                    <th>Message</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="transactionsBody">
-                                <tr><td colspan="8">Loading transactions...</td></tr>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7">Loading messages...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -84,6 +94,6 @@
     </div>
 
     <script src="../js/admin-auth.js"></script>
-    <script src="../js/admin-transactions.js"></script>
+    <script src="../js/admin-messages.js"></script>
 </body>
 </html>

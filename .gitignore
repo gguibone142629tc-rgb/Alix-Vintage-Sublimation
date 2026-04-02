@@ -1,0 +1,11 @@
+# Ignore runtime upload artifacts
+uploads/proofs/
+uploads/products/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Node (if added later)
+node_modules/

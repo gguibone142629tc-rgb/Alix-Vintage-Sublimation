@@ -68,7 +68,7 @@
         if (!map.size) {
             const fallback = resolveImageUrl(product?.imagePath || null);
             if (fallback) {
-                map.set("front", fallback);
+                map.set("full", fallback);
             }
         }
 
@@ -88,7 +88,7 @@
     const renderViewButtons = (viewMap, productName) => {
         if (!viewSwitcher) return;
 
-        const orderedViews = ["front", "back", "lower"];
+        const orderedViews = ["full", "front", "back", "lower"];
         const available = orderedViews.filter((view) => viewMap.has(view));
 
         if (available.length === 0) {

@@ -152,16 +152,18 @@
     const pickCardImage = (product) => {
         const images = Array.isArray(product?.images) ? product.images : [];
         const imageByView = new Map(
-            images.map((img) => [String(img?.view_type || "").toLowerCase(), String(img?.image_path || "")])
+            images.map((img) => [String(img?.view_type || "").toLowerCase().trim(), String(img?.image_path || "").trim()])
         );
 
-        const preferred = ["front", "full", "back", "lower"];
+        // Prefer FULL jersey images in the catalog grid.
+        const preferred = ["full", "front", "back", "lower"];
         for (const view of preferred) {
             const path = imageByView.get(view);
             if (path) return resolveImageUrl(path);
         }
 
-        return resolveImageUrl(product?.image_path || null);
+        // Fallback to the mapped field name from fetchProducts() (`imagePath`).
+        return resolveImageUrl(product?.imagePath || product?.image_path || null);
     };
 
     let allProducts = [];

@@ -285,6 +285,17 @@
             } catch {}
 
             const groupName = (document.getElementById('group-name')?.value || '').trim();
+
+            const productIdFromQuery = (() => {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const raw = params.get('product_id');
+                    const id = Number(raw || 0);
+                    return Number.isFinite(id) && id > 0 ? id : 0;
+                } catch {
+                    return 0;
+                }
+            })();
             const rosterRows = Array.from(document.querySelectorAll('#group-roster tbody tr'));
             const roster = rosterRows
                 .map((tr) => {
@@ -299,6 +310,7 @@
             const quantity = Math.max(1, roster.length || 1);
             try {
                 await window.AlixCart.addItem({
+                    ...(productIdFromQuery ? { product_id: productIdFromQuery } : {}),
                     product_name: name,
                     apparel_type: 'jersey',
                     base_price: price,

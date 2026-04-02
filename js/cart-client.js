@@ -61,6 +61,9 @@
     const removeItem = (cartItemId) =>
         requestJson("/api/cart/items", { method: "DELETE", body: { cart_item_id: cartItemId } });
 
+    const updateItemQuantity = (cartItemId, quantity) =>
+        requestJson("/api/cart/items", { method: "PATCH", body: { cart_item_id: cartItemId, quantity } });
+
     const clearCart = () => requestJson("/api/cart", { method: "DELETE" });
 
     const checkout = (payload) => requestJson("/api/cart/checkout", { method: "POST", body: payload || {} });
@@ -85,6 +88,7 @@
         getCart,
         addItem,
         removeItem,
+        updateItemQuantity,
         clearCart,
         checkout,
         listOrders,

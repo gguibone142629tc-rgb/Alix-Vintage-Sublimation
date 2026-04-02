@@ -49,48 +49,33 @@
 
     <main class="cart-main">
         <div class="cart-card">
-            <div class="cart-header">
-                <h1>Your Cart</h1>
-                <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh</button>
+            <div class="cart-header cart-header--order">
+                <h1 class="cart-title">Order</h1>
+                <button id="refreshBtn" class="cart-edit" type="button">Edit Cart</button>
             </div>
 
-            <div class="cart-summary">
-                <div>
-                    <div class="summary-label">Items</div>
-                    <div id="cartItemCount" class="summary-value">0</div>
+            <div id="cartItems" class="cart-items" aria-label="Cart items">
+                <div class="muted">Loading…</div>
+            </div>
+
+            <div class="cart-totals" aria-label="Cart totals">
+                <div class="cart-totals-row">
+                    <div class="cart-totals-label">Subtotal</div>
+                    <div id="cartSubtotal" class="cart-totals-value">₱0.00</div>
                 </div>
-                <div>
-                    <div class="summary-label">Total</div>
-                    <div id="cartTotal" class="summary-value">₱0.00</div>
+                <div class="cart-totals-row">
+                    <div class="cart-totals-label">Shipping</div>
+                    <div id="cartShipping" class="cart-totals-value">₱0.00</div>
                 </div>
-                <div class="summary-actions">
-                    <button id="clearCartBtn" class="btn btn-danger" type="button">Clear Cart</button>
-                    <button id="checkoutBtn" class="btn btn-primary" type="button">Place Order</button>
+                <div class="cart-totals-row cart-totals-row--strong">
+                    <div class="cart-totals-label">Total</div>
+                    <div id="cartTotal" class="cart-totals-value">₱0.00</div>
                 </div>
             </div>
 
-            <div class="cart-table-wrap">
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Details</th>
-                            <th>Total</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cartItemsBody">
-                        <tr>
-                            <td colspan="6" class="muted">Loading…</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cart-footnote muted">
-                Orders are placed using your saved cart items.
+            <div class="cart-actions">
+                <button id="checkoutBtn" class="btn btn-primary cart-checkout" type="button">Place Order</button>
+                <button id="clearCartBtn" class="btn btn-danger cart-clear" type="button">Clear Cart</button>
             </div>
         </div>
     </main>
@@ -106,10 +91,35 @@
             return `₱${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         };
 
+        const getApiBaseUrl = () => {
+            if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
+                return window.AlixAuth.apiBaseUrl();
+            }
+            const origin = window.location && window.location.origin ? window.location.origin : "";
+            if (origin && origin !== "null") return origin;
+            return "http://localhost:8000";
+        };
+
+        const resolveAssetUrl = (path) => {
+            const raw = String(path || "").trim();
+            if (!raw) return "";
+            if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
+            const base = getApiBaseUrl().replace(/\/$/, "");
+            return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw}`;
+        };
+
         const safeText = (value) => {
             if (value === null || value === undefined) return '';
             return String(value);
         };
+
+        const escapeHtml = (value) =>
+            String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
 
         const renderMeta = (meta) => {
             if (!meta || typeof meta !== 'object') return '';
@@ -153,41 +163,56 @@
             const cart = cartEnvelope?.cart && typeof cartEnvelope.cart === 'object' ? cartEnvelope.cart : cartEnvelope;
             const items = Array.isArray(cart?.items) ? cart.items : [];
 
-            document.getElementById('cartItemCount').textContent = String(items.reduce((sum, it) => sum + Number(it.quantity || 0), 0));
-            document.getElementById('cartTotal').textContent = peso(cart?.total || cart?.total_amount || 0);
+            const subtotal = Number(cart?.total || cart?.total_amount || 0);
+            const shipping = 0;
+            const total = subtotal + shipping;
 
-            const body = document.getElementById('cartItemsBody');
-            body.innerHTML = '';
+            document.getElementById('cartSubtotal').textContent = peso(subtotal);
+            document.getElementById('cartShipping').textContent = peso(shipping);
+            document.getElementById('cartTotal').textContent = peso(total);
+
+            const wrap = document.getElementById('cartItems');
+            wrap.innerHTML = '';
 
             if (!items.length) {
-                body.innerHTML = `<tr><td colspan="6" class="muted">Your cart is empty.</td></tr>`;
+                wrap.innerHTML = `<div class="muted">Your cart is empty.</div>`;
                 return;
             }
 
             items.forEach((it) => {
-                const tr = document.createElement('tr');
-
                 const productName = safeText(it?.product?.product_name || it?.meta?.product_name || it.product_name || it.productName || 'Product');
-                const qty = Number(it.quantity || 0);
+                const qty = Math.max(1, Number(it.quantity || 1));
                 const lineTotal = Number(it.line_total || it.total_amount || 0);
-                const price = Number(it.unit_price || it?.product?.price || it.price || (qty ? lineTotal / qty : 0) || 0);
+                const price = Number(it.unit_price || it?.product?.base_price || it?.product?.price || it.price || (qty ? lineTotal / qty : 0) || 0);
                 const cartItemId = it.cart_item_id ?? it.id;
 
-                tr.innerHTML = `
-                    <td>
-                        <div class="cell-title">${productName}</div>
-                        <div class="muted">${safeText(it?.product?.category || it.product_category || '')}</div>
-                    </td>
-                    <td>${qty}</td>
-                    <td>${peso(price)}</td>
-                    <td class="cell-details">${renderMeta(it.meta)}</td>
-                    <td>${peso(lineTotal)}</td>
-                    <td class="cell-actions">
-                        <button class="btn btn-link" data-remove="${safeText(cartItemId)}" type="button">Remove</button>
-                    </td>
+                const imgPath = it?.product?.image_path || it?.meta?.image_path || it?.meta?.imagePath || '';
+                const imgUrl = imgPath ? resolveAssetUrl(imgPath) : '';
+
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cart-item';
+                itemEl.setAttribute('data-cart-item-id', safeText(cartItemId));
+                itemEl.setAttribute('data-product-name', safeText(productName));
+
+                itemEl.innerHTML = `
+                    <div class="cart-item-media">
+                        ${imgUrl ? `<img class="cart-item-thumb" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(productName)}" loading="lazy" />` : `<div class="cart-item-thumb cart-item-thumb--empty">No image</div>`}
+                    </div>
+                    <div class="cart-item-main">
+                        <div class="cart-item-head">
+                            <div class="cart-item-title">${escapeHtml(productName)}</div>
+                            <div class="cart-item-price">${peso(price)}</div>
+                        </div>
+                        <div class="cart-item-sub muted">Delivery 24th July</div>
+
+                        <div class="cart-item-foot">
+                            <div class="cart-qty" aria-label="Quantity">Qty: ${qty}</div>
+                            <button type="button" class="cart-remove" data-remove>Remove</button>
+                        </div>
+                    </div>
                 `;
 
-                body.appendChild(tr);
+                wrap.appendChild(itemEl);
             });
         };
 
@@ -198,8 +223,8 @@
             } catch (e) {
                 const msg = (e && e.message) ? e.message : 'Failed to load cart.';
                 alert(msg);
-                const body = document.getElementById('cartItemsBody');
-                body.innerHTML = `<tr><td colspan="6" class="muted">${safeText(msg)}</td></tr>`;
+                const wrap = document.getElementById('cartItems');
+                wrap.innerHTML = `<div class="muted">${safeText(msg)}</div>`;
             }
         };
 
@@ -227,18 +252,21 @@
                 }
             });
 
-            document.getElementById('cartItemsBody').addEventListener('click', async (e) => {
-                const btn = e.target.closest('button[data-remove]');
-                if (!btn) return;
+            document.getElementById('cartItems').addEventListener('click', async (e) => {
+                const item = e.target.closest('.cart-item');
+                if (!item) return;
 
-                const itemId = btn.getAttribute('data-remove');
+                const itemId = item.getAttribute('data-cart-item-id');
                 if (!itemId) return;
 
-                try {
-                    await window.AlixCart.removeItem(itemId);
-                    await refresh();
-                } catch (err) {
-                    alert(err?.message || 'Failed to remove item.');
+                if (e.target.closest('[data-remove]')) {
+                    try {
+                        await window.AlixCart.removeItem(itemId);
+                        await refresh();
+                    } catch (err) {
+                        alert(err?.message || 'Failed to remove item.');
+                    }
+                    return;
                 }
             });
 

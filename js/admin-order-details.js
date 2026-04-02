@@ -95,6 +95,94 @@
         return "http://localhost:8000";
     };
 
+    const resolveAssetUrl = (path) => {
+        const raw = String(path || "").trim();
+        if (!raw) return null;
+        if (/^(data:|blob:|https?:\/\/)/i.test(raw)) return raw;
+        const base = getApiBaseUrl().replace(/\/$/, "");
+        return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw}`;
+    };
+
+    let productsIndexLoaded = false;
+    let productsIndexPromise = null;
+    let productsById = new Map();
+
+    const ensureProductsIndex = async () => {
+        if (productsIndexPromise) return productsIndexPromise;
+
+        productsIndexPromise = (async () => {
+            try {
+                const res = await fetch(getApiBaseUrl() + "/api/products", {
+                    method: "GET",
+                    headers: { Accept: "application/json" },
+                });
+                const data = await res.json().catch(() => ({}));
+                const rows = Array.isArray(data?.products) ? data.products : [];
+                const next = new Map();
+
+                rows.forEach((p) => {
+                    const id = Number(p?.product_id || p?.id || 0);
+                    if (!Number.isFinite(id) || id <= 0) return;
+                    next.set(id, {
+                        id,
+                        name: String(p?.product_name || p?.name || "").trim() || null,
+                        imagePath: p?.image_path || null,
+                        images: Array.isArray(p?.images) ? p.images : [],
+                    });
+                });
+
+                productsById = next;
+            } catch {
+                // Non-blocking: design reference panel can fall back.
+            } finally {
+                productsIndexLoaded = true;
+            }
+        })();
+
+        return productsIndexPromise;
+    };
+
+    const pickReferenceImageFromProduct = (product) => {
+        if (!product || typeof product !== "object") return null;
+        const images = Array.isArray(product?.images) ? product.images : [];
+        const imageByView = new Map(
+            images.map((img) => [String(img?.view_type || "").trim().toLowerCase(), String(img?.image_path || "").trim()])
+        );
+
+        const preferred = ["full", "front", "back", "lower"];
+        for (const view of preferred) {
+            const path = imageByView.get(view);
+            const url = resolveAssetUrl(path);
+            if (url) return url;
+        }
+
+        return resolveAssetUrl(product?.imagePath || product?.image_path || null);
+    };
+
+    const getReferenceGalleryFromProduct = (product) => {
+        if (!product || typeof product !== "object") return [];
+
+        const images = Array.isArray(product?.images) ? product.images : [];
+        const imageByView = new Map(
+            images.map((img) => [String(img?.view_type || "").trim().toLowerCase(), String(img?.image_path || "").trim()])
+        );
+
+        const preferred = ["full", "front", "back", "lower"];
+        const out = [];
+        for (const view of preferred) {
+            const url = resolveAssetUrl(imageByView.get(view));
+            if (url) out.push({ view, url });
+        }
+
+        // If there are no per-view images, fall back to the main product image.
+        if (out.length === 0) {
+            const fallback = resolveAssetUrl(product?.imagePath || product?.image_path || null);
+            if (fallback) out.push({ view: "full", url: fallback });
+        }
+
+        return out;
+    };
+
     const getAdminApiKey = () => {
         const key = localStorage.getItem("alix_admin_api_key");
         return key && String(key).trim() ? String(key).trim() : null;
@@ -153,10 +241,7 @@
 
     const getOrderIdFromQuery = () => getQueryParam("id");
 
-    const isDbMode = () => {
-        const db = getQueryParam("db");
-        return String(db || "").trim() === "1";
-    };
+    // DB orders use numeric ids (or "ORD-<id>"). Demo/local orders use string ids (e.g., "DEMO-001").
 
     const extractNumericOrderId = (id) => {
         const raw = String(id || "").trim();
@@ -198,6 +283,7 @@
                 (it?.productId != null ? `Product #${it.productId}` : "Order Item");
             return {
                 id: it?.order_item_id ?? it?.orderItemId ?? it?.id ?? null,
+                productId: it?.productId ?? it?.product_id ?? meta?.productId ?? meta?.product_id ?? null,
                 name: title,
                 meta,
                 quantity: it?.quantity,
@@ -406,6 +492,10 @@
         if (designDetails) designDetails.textContent = "";
         renderOrderContentsNotice(order);
         renderOrderContents(order);
+        ensureProductsIndex().then(() => {
+            if (activeDbOrderId !== numericId) return;
+            renderOrderContents(order);
+        });
         renderComments(order);
         loadAndRenderDbProofHistory(numericId, order);
 
@@ -898,8 +988,9 @@
         };
 
         const getUploadCard = (title, dataUrl, fallbackText) => {
-            const box = dataUrl
-                ? `<img src="${dataUrl}" alt="${escapeHtml(title)}" loading="lazy">`
+            const safeUrl = resolveAssetUrl(dataUrl);
+            const box = safeUrl
+                ? `<img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(title)}" loading="lazy">`
                 : `<div class="mini-note">${escapeHtml(fallbackText)}</div>`;
             return `
                 <div class="upload-card">
@@ -907,6 +998,110 @@
                     <div class="upload-card-box">${box}</div>
                 </div>
             `;
+        };
+
+        const getWideUploadCard = (title, dataUrl, fallbackText) => {
+            const safeUrl = resolveAssetUrl(dataUrl);
+            const box = safeUrl
+                ? `<img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(title)}" loading="lazy">`
+                : `<div class="mini-note">${escapeHtml(fallbackText)}</div>`;
+
+            return `
+                <div class="upload-card upload-card--wide">
+                    <div class="upload-card-title">${escapeHtml(title)}</div>
+                    <div class="upload-card-box">${box}</div>
+                </div>
+            `;
+        };
+
+        const getWideUploadCardGallery = (title, images, fallbackText) => {
+            const list = Array.isArray(images) ? images : [];
+            if (list.length === 0) {
+                return `
+                    <div class="upload-card upload-card--wide">
+                        <div class="upload-card-title">${escapeHtml(title)}</div>
+                        <div class="upload-card-box"><div class="mini-note">${escapeHtml(fallbackText)}</div></div>
+                    </div>
+                `;
+            }
+
+            const tiles = list
+                .map((img) => {
+                    const view = String(img?.view || "").trim().toUpperCase();
+                    const url = resolveAssetUrl(img?.url);
+                    if (!url) return "";
+                    return `
+                        <div class="reference-tile">
+                            <div class="reference-tile-label">${escapeHtml(view || "VIEW")}</div>
+                            <img src="${escapeHtml(url)}" alt="${escapeHtml(title)} ${escapeHtml(view)}" loading="lazy">
+                        </div>
+                    `;
+                })
+                .filter(Boolean)
+                .join("");
+
+            const body = tiles
+                ? `<div class="reference-grid">${tiles}</div>`
+                : `<div class="mini-note">${escapeHtml(fallbackText)}</div>`;
+
+            return `
+                <div class="upload-card upload-card--wide">
+                    <div class="upload-card-title">${escapeHtml(title)}</div>
+                    <div class="upload-card-box">${body}</div>
+                </div>
+            `;
+        };
+
+        const getItemProductId = (it) => {
+            const direct = it?.productId;
+            if (direct != null && String(direct).trim() !== "") return Number(direct);
+            const meta = it?.meta && typeof it.meta === "object" ? it.meta : {};
+            const metaId = meta.productId ?? meta.product_id ?? meta.productID ?? meta.productID;
+            return metaId != null && String(metaId).trim() !== "" ? Number(metaId) : null;
+        };
+
+        const getProductNameForItem = (it) => {
+            const meta = it?.meta && typeof it.meta === "object" ? it.meta : {};
+            const metaName = String(
+                meta.productName || meta.product_name || meta.name || meta.product_title || ""
+            ).trim();
+            if (metaName) return metaName;
+
+            const productId = getItemProductId(it);
+            if (!Number.isFinite(Number(productId)) || Number(productId) <= 0) return "";
+            const product = productsById.get(Number(productId));
+            return String(product?.name || "").trim();
+        };
+
+        const getDesignReferenceGalleryForItem = (it) => {
+            const meta = it?.meta && typeof it.meta === "object" ? it.meta : {};
+
+            // Explicit reference from meta (if backend stores it there)
+            const directKeys = [
+                "designReference",
+                "design_reference",
+                "designReferenceUrl",
+                "design_reference_url",
+                "designReferencePath",
+                "design_reference_path",
+                "referenceImage",
+                "reference_image",
+                "referenceImagePath",
+                "reference_image_path",
+                "referencePath",
+                "reference_path",
+            ];
+
+            for (const k of directKeys) {
+                const v = meta?.[k];
+                const url = resolveAssetUrl(v);
+                if (url) return [{ view: "reference", url }];
+            }
+
+            const productId = getItemProductId(it);
+            if (!Number.isFinite(Number(productId)) || Number(productId) <= 0) return null;
+            const product = productsById.get(Number(productId));
+            return getReferenceGalleryFromProduct(product);
         };
 
         const buildProofVersionLinks = (proofs, itemId) => {
@@ -968,12 +1163,24 @@
 
         const contentsHtml = (items.length ? items : [{ name: orderLabel, meta: {} }])
             .map((it) => {
-                const title = it?.name || orderLabel;
+                const resolvedProductName = getProductNameForItem(it);
+                const rawTitle = it?.name || orderLabel;
+                const title = resolvedProductName && (rawTitle === orderLabel || /^Product\s+#\d+/i.test(rawTitle))
+                    ? resolvedProductName
+                    : rawTitle;
                 const meta = it?.meta && typeof it.meta === "object" ? it.meta : {};
                 const roster = buildRosterFromItem(it);
                 const itemId = it?.id ?? null;
+
+                const designReferenceGallery = getDesignReferenceGalleryForItem(it);
+                const productId = getItemProductId(it);
+                const designReferenceFallback = Number.isFinite(Number(productId)) && !productsIndexLoaded
+                    ? "Loading reference..."
+                    : "No reference available";
+
                 const uploadCards = `
                     <div class="upload-cards">
+                        ${getWideUploadCardGallery("Design Reference", designReferenceGallery, designReferenceFallback)}
                         ${getUploadCard("Uploaded Design", null, custom?.designType === "reference" ? "Reference only" : "No file uploaded")}
                         ${getUploadCard("Logo", null, "No logo uploaded")}
                         ${showProofCard ? getDesignProofCard(order.admin.proof.mockupDataUrl, itemId) : ""}
@@ -991,6 +1198,7 @@
                 };
 
                 const metaPairs = [];
+                if (resolvedProductName) metaPairs.push(["Product", resolvedProductName]);
                 const group = getMetaValue(["groupName", "group", "teamName", "team_name"]);
                 const note = getMetaValue(["note", "notes"]);
 
@@ -1542,6 +1750,9 @@
         renderStepper(order);
         renderDesignSummaryLine(order);
         renderOrderContents(order);
+        ensureProductsIndex().then(() => {
+            renderOrderContents(order);
+        });
         renderStageActions(orderId, order);
         renderComments(order);
     };
@@ -1554,14 +1765,9 @@
             return;
         }
 
-        if (isDbMode()) {
-            const numeric = extractNumericOrderId(id);
-            if (!Number.isFinite(numeric)) {
-                uiAlert("Invalid DB order id.", { title: "Order", tone: "danger" });
-                window.location.replace("admin-orders.html");
-                return;
-            }
-
+        const numeric = extractNumericOrderId(id);
+        if (Number.isFinite(numeric)) {
+            // Always treat numeric ids as DB-backed orders.
             setReadOnlyUi();
             loadDbOrderById(numeric)
                 .then((order) => {
@@ -1596,7 +1802,9 @@
             return;
         }
 
-        if (isDbMode()) {
+        // DB-backed orders: do not wire localStorage-based interactions.
+        const numeric = extractNumericOrderId(id);
+        if (Number.isFinite(numeric)) {
             loadAndRender();
             return;
         }

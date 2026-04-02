@@ -13,6 +13,8 @@ interface CartRepository
 
     public function addItem(int $cartId, int $productId, int $quantity, array $meta): CartItem;
 
+    public function updateItemQuantity(int $cartId, int $cartItemId, int $quantity): void;
+
     public function removeItem(int $cartId, int $cartItemId): void;
 
     public function clearCart(int $cartId): void;

@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
-    <title>Admin | Transactions</title>
+    <title>Admin | Product List</title>
     <link rel="stylesheet" href="../css/admin-homepage.css">
     <link rel="stylesheet" href="../css/sublimation-theme.css">
 </head>
@@ -33,7 +33,7 @@
                 <div class="sidebar-section-title">Product</div>
                 <nav class="sidebar-nav" aria-label="Product menu">
                     <a href="admin-products.html" class="nav-item">Add / Manage Products</a>
-                    <a href="admin-product-list.html" class="nav-item">Product List (Store)</a>
+                    <a href="admin-product-list.html" class="nav-item active">Product List (Store)</a>
                 </nav>
             </div>
 
@@ -49,34 +49,27 @@
 
         <div class="admin-main">
             <div class="topbar" role="banner">
-                <div class="topbar-left">
-                    <div class="topbar-title">Transactions</div>
+                <div class="topbar-title">Product List</div>
+
+                <div class="topbar-right">
+                    <button class="admin-menu" type="button" aria-label="Admin menu">
+                        <span class="admin-avatar" aria-hidden="true">AD</span>
+                        <span class="admin-name">Admin</span>
+                        <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
             <div class="page-content">
-                <section class="panel panel-wide" aria-label="Transactions list">
+                <section class="panel panel-wide" aria-label="Product catalog">
                     <div class="panel-head">
-                        <h2 class="panel-title">Payment Transactions</h2>
+                        <h2 class="panel-title">Catalog</h2>
                     </div>
-                    <div class="table-wrap">
-                        <table class="data-table" aria-label="Transactions">
-                            <thead>
-                                <tr>
-                                    <th>Payment ID</th>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Method</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Receipt</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsBody">
-                                <tr><td colspan="8">Loading transactions...</td></tr>
-                            </tbody>
-                        </table>
+
+                    <div class="admin-catalog-grid" id="adminCatalogGrid">
+                        <div class="admin-catalog-empty">Loading products...</div>
                     </div>
                 </section>
             </div>
@@ -84,6 +77,7 @@
     </div>
 
     <script src="../js/admin-auth.js"></script>
-    <script src="../js/admin-transactions.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/admin-product-list.js"></script>
 </body>
 </html>

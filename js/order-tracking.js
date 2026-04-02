@@ -1090,7 +1090,9 @@
     };
 
     uploadReceiptBtnEl?.addEventListener("click", () => {
-        uploadReceipt().catch(() => uiAlert("Upload failed. Please try again.", { title: "Receipt Upload", tone: "danger" }));
+        uploadReceipt().catch((err) =>
+            uiAlert(err?.message || "Upload failed. Please try again.", { title: "Receipt Upload", tone: "danger" }),
+        );
     });
 
     paymentReceiptUploadEl?.addEventListener("change", () => {

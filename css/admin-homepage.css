@@ -121,6 +121,143 @@ body {
     font-weight: 700;
 }
 
+/* Admin product catalog */
+.admin-catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.admin-catalog-empty {
+    padding: 14px;
+    border: 1px dashed rgba(58, 58, 58, 0.25);
+    border-radius: 12px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.admin-catalog-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    overflow: hidden;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+.admin-catalog-media {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.admin-catalog-thumb {
+    width: 100%;
+    height: 170px;
+    object-fit: contain;
+    display: block;
+    background: #ffffff;
+}
+
+.admin-catalog-thumb--empty {
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.admin-catalog-body {
+    padding: 12px 12px 14px;
+    display: grid;
+    gap: 8px;
+}
+
+.admin-catalog-name {
+    font-weight: 800;
+    color: var(--ink-strong);
+    letter-spacing: 0.4px;
+    font-size: 14px;
+}
+
+.admin-catalog-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* Admin messages: expanded row */
+.message-details-row td {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.message-details-box {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.86);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: grid;
+    gap: 8px;
+}
+
+.message-details-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-strong);
+}
+
+.message-details-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.message-reply {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.message-reply-meta {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.message-reply-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--ink);
+    background: #ffffff;
+    resize: vertical;
+    min-height: 96px;
+}
+
+.message-reply-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.message-reply-status {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.message-reply-status--error {
+    color: var(--danger);
+}
+
 .admin-main {
     flex: 1;
     min-width: 0;
@@ -505,6 +642,54 @@ body {
     max-height: 160px;
     object-fit: contain;
     display: block;
+}
+
+.upload-card--wide {
+    grid-column: 1 / -1;
+}
+
+.upload-card--wide .upload-card-box {
+    min-height: 240px;
+}
+
+.upload-card--wide .upload-card-box img {
+    max-height: 320px;
+}
+
+.reference-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.reference-tile {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #ffffff;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.reference-tile-label {
+    padding: 8px 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 800;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+}
+
+.reference-tile img {
+    width: 100%;
+    height: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    display: block;
+    padding: 8px;
 }
 
 .pricing-box {

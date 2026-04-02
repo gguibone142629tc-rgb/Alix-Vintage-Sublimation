@@ -16,6 +16,7 @@ final class CartRoutes
         $router->delete('/api/cart', [$controller, 'clear']);
         $router->post('/api/cart/items', [$controller, 'addItem']);
         $router->delete('/api/cart/items', [$controller, 'removeItem']);
+        $router->patch('/api/cart/items', [$controller, 'updateItemQuantity']);
         $router->post('/api/cart/checkout', [$controller, 'checkout']);
     }
 }

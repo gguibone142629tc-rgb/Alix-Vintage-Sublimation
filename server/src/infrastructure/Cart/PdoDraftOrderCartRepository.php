@@ -120,6 +120,20 @@ final class PdoDraftOrderCartRepository implements CartRepository
         );
     }
 
+    public function updateItemQuantity(int $cartId, int $cartItemId, int $quantity): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE order_items SET quantity = :quantity, updated_at = NOW() '
+            . 'WHERE order_id = :order_id AND order_item_id = :id'
+        );
+
+        $stmt->execute([
+            'quantity' => $quantity,
+            'order_id' => $cartId,
+            'id' => $cartItemId,
+        ]);
+    }
+
     public function removeItem(int $cartId, int $cartItemId): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM order_items WHERE order_id = :order_id AND order_item_id = :id');

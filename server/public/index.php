@@ -11,6 +11,8 @@ use App\Presentation\Products\ProductRoutes;
 use App\Presentation\Cart\CartRoutes;
 use App\Presentation\Orders\OrderRoutes;
 use App\Presentation\AdminOrders\AdminOrderRoutes;
+use App\Presentation\Contact\ContactRoutes;
+use App\Presentation\Contact\ContactAdminRoutes;
 use App\Infrastructure\Db\PdoConnectionFactory;
 use App\Infrastructure\Db\RoleSeeder;
 
@@ -43,5 +45,7 @@ ProductRoutes::register($router, $pdo);
 CartRoutes::register($router, $pdo);
 OrderRoutes::register($router, $pdo);
 AdminOrderRoutes::register($router, $pdo);
+ContactRoutes::register($router, $pdo);
+ContactAdminRoutes::register($router, $pdo);
 
 $router->dispatch();

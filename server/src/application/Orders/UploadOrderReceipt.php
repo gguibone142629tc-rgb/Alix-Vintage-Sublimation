@@ -88,7 +88,7 @@ final class UploadOrderReceipt
             0.0,
             'partial',
             'gcash',
-            $dataUrl,
+            null,
             false,
         );
         if ($paymentId === null || $paymentId <= 0) {

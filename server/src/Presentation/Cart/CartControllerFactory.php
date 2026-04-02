@@ -9,6 +9,7 @@ use App\Application\Cart\ClearCart;
 use App\Application\Cart\CheckoutCart;
 use App\Application\Cart\GetCart;
 use App\Application\Cart\RemoveCartItem;
+use App\Application\Cart\UpdateCartItemQuantity;
 use App\Infrastructure\Auth\JwtTokenVerifier;
 use App\Infrastructure\Cart\PdoDraftOrderCartRepository;
 use App\Infrastructure\Orders\PdoOrderRepository;
@@ -28,9 +29,10 @@ final class CartControllerFactory
         $get = new GetCart($cartRepo, $productRepo);
         $add = new AddCartItem($cartRepo, $productRepo);
         $remove = new RemoveCartItem($cartRepo);
+        $updateQty = new UpdateCartItemQuantity($cartRepo);
         $clear = new ClearCart($cartRepo);
         $checkout = new CheckoutCart($cartRepo, $productRepo, $orderRepo);
 
-        return new CartController($auth, $get, $add, $remove, $clear, $checkout);
+        return new CartController($auth, $get, $add, $remove, $updateQty, $clear, $checkout);
     }
 }
