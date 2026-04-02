@@ -8,6 +8,15 @@
     const sortSelect = qs("#catalogSort");
     const shirtTypeSelect = qs("#shirt-type");
     const checkRows = Array.from(document.querySelectorAll(".filter-box .check"));
+    const mobileFilterTrigger = qs("#mobileFilterTrigger");
+    const mobileSortTrigger = qs("#mobileSortTrigger");
+    const mobileFilterSheet = qs("#mobileFilterSheet");
+    const mobileSortSheet = qs("#mobileSortSheet");
+    const mobileFilterApply = qs("#mobileFilterApply");
+    const mobileSortApply = qs("#mobileSortApply");
+    const mobileSortLabel = qs("#mobileSortLabel");
+    const mobileTypeChecks = Array.from(document.querySelectorAll(".mobile-type-check"));
+    const mobileSortRadios = Array.from(document.querySelectorAll("input[name='mobile-sort']"));
 
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
@@ -41,6 +50,7 @@
         const v = String(value || "").trim().toLowerCase();
         if (!v || v.includes("all type")) return "all";
         if (v.includes("polo")) return "poloshirt";
+        if (v.includes("hoodie")) return "hoodie";
         if (v.includes("t-shirt") || v.includes("tshirt") || v.includes("tee")) return "tshirt";
         if (v.includes("jersey")) return "jersey";
         if (v.includes("short")) return "shorts";
@@ -64,10 +74,14 @@
             }
         }
 
+        if (apparel === "hoodie" || name.includes("hoodie")) {
+            keys.add("hoodie");
+        }
+
         // Fallback so products don't disappear unexpectedly.
         if (keys.size === 0) {
             if (apparel === "hoodie" || name.includes("hoodie")) {
-                keys.add("tshirt");
+                keys.add("hoodie");
             } else {
                 keys.add("jersey");
             }
@@ -87,6 +101,36 @@
             if (key !== "all") out.push(key);
         });
         return out;
+    };
+
+    const closeSheet = (sheet) => {
+        if (!sheet) return;
+        sheet.classList.add("is-hidden");
+    };
+
+    const openSheet = (sheet) => {
+        if (!sheet) return;
+        sheet.classList.remove("is-hidden");
+    };
+
+    const syncMobileSortLabel = () => {
+        if (!mobileSortLabel || !sortSelect) return;
+        mobileSortLabel.textContent = `Sort: ${String(sortSelect.value || "Price, Low to High")}`;
+    };
+
+    const syncMobileSortRadios = () => {
+        const selected = String(sortSelect?.value || "Price, Low to High");
+        mobileSortRadios.forEach((radio) => {
+            radio.checked = String(radio.value) === selected;
+        });
+    };
+
+    const syncMobileFilterChecks = () => {
+        const active = new Set(getCheckboxFilters());
+        mobileTypeChecks.forEach((check) => {
+            const key = normalizeTypeLabel(check.value);
+            check.checked = active.has(key);
+        });
     };
 
     const matchesTypeFilters = (product) => {
@@ -188,25 +232,93 @@
                 `;
             })
             .join("");
+
+            syncMobileSortLabel();
     };
 
     const init = async () => {
         try {
             await fetchProducts();
             render();
-        } catch (error) {
+        } catch {
             if (grid) {
-                grid.innerHTML = `<div class="catalog-empty">${escapeHtml(error instanceof Error ? error.message : "Failed to load products")}</div>`;
+                grid.innerHTML = '<div class="catalog-empty">Failed to fetch</div>';
             }
         }
     };
 
     showSelect?.addEventListener("change", render);
-    sortSelect?.addEventListener("change", render);
+    sortSelect?.addEventListener("change", () => {
+        syncMobileSortRadios();
+        render();
+    });
     shirtTypeSelect?.addEventListener("change", render);
     checkRows.forEach((row) => {
         const input = row.querySelector("input[type='checkbox']");
         input?.addEventListener("change", render);
+    });
+
+    mobileFilterTrigger?.addEventListener("click", () => {
+        syncMobileFilterChecks();
+        openSheet(mobileFilterSheet);
+    });
+
+    mobileSortTrigger?.addEventListener("click", () => {
+        syncMobileSortRadios();
+        openSheet(mobileSortSheet);
+    });
+
+    mobileFilterApply?.addEventListener("click", () => {
+        const selected = new Set(
+            mobileTypeChecks
+                .filter((check) => check.checked)
+                .map((check) => normalizeTypeLabel(check.value))
+        );
+
+        checkRows.forEach((row) => {
+            const input = row.querySelector("input[type='checkbox']");
+            if (!input) return;
+
+            const key = normalizeTypeLabel(String(row.textContent || ""));
+            input.checked = selected.has(key);
+        });
+
+        closeSheet(mobileFilterSheet);
+        render();
+    });
+
+    mobileSortApply?.addEventListener("click", () => {
+        const selected = mobileSortRadios.find((radio) => radio.checked);
+        if (selected && sortSelect) {
+            sortSelect.value = selected.value;
+        }
+
+        closeSheet(mobileSortSheet);
+        render();
+    });
+
+    document.querySelectorAll("[data-close-sheet]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const id = button.getAttribute("data-close-sheet");
+            if (!id) return;
+            closeSheet(document.getElementById(id));
+        });
+    });
+
+    [mobileFilterSheet, mobileSortSheet].forEach((sheet) => {
+        if (!sheet) return;
+        sheet.addEventListener("click", (event) => {
+            if (event.target === sheet) {
+                closeSheet(sheet);
+            }
+        });
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeSheet(mobileFilterSheet);
+            closeSheet(mobileSortSheet);
+        }
     });
 
     init();

@@ -615,14 +615,51 @@
         });
     });
 
+    const mobileMenuToggle = document.querySelector(".nav-menu-toggle");
+    const mobileMenuPanel = document.getElementById("mobile-nav-menu");
+
+    const closeMobileMenu = () => {
+        if (!mobileMenuToggle || !mobileMenuPanel) {
+            return;
+        }
+
+        mobileMenuPanel.classList.add("is-hidden");
+        mobileMenuToggle.setAttribute("aria-expanded", "false");
+    };
+
+    if (mobileMenuToggle && mobileMenuPanel) {
+        mobileMenuToggle.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const isOpen = !mobileMenuPanel.classList.contains("is-hidden");
+            closeAllAccountMenus();
+            mobileMenuPanel.classList.toggle("is-hidden", isOpen);
+            mobileMenuToggle.setAttribute("aria-expanded", isOpen ? "false" : "true");
+        });
+
+        mobileMenuPanel.addEventListener("click", (event) => {
+            const target = event.target;
+            if (target && target.closest("a")) {
+                closeMobileMenu();
+            }
+        });
+    }
+
     document.addEventListener("click", () => {
         closeAllAccountMenus();
+        closeMobileMenu();
     });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             closeAllAccountMenus();
+            closeMobileMenu();
         }
+    });
+
+    window.addEventListener("resize", () => {
+        closeMobileMenu();
     });
 })();
 

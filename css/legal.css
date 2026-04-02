@@ -108,11 +108,60 @@ ul li + li {
         padding: 18px 14px 32px;
     }
 
+    .legal-top {
+        margin-bottom: 12px;
+    }
+
+    .legal-back {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #f6efe3;
+        border: 1px solid #dfcfba;
+    }
+
     .legal-card {
         padding: 16px 14px;
+        border-radius: 12px;
     }
 
     h1 {
         font-size: 24px;
+        line-height: 1.1;
+    }
+
+    h2 {
+        font-size: 13px;
+    }
+
+    p,
+    li {
+        font-size: 13px;
+    }
+
+    section + section {
+        margin-top: 12px;
+        padding-top: 10px;
+    }
+
+    .contact-box {
+        padding: 10px;
+    }
+
+    .note {
+        margin-top: 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .legal-page {
+        padding: 14px 10px 28px;
+    }
+
+    .legal-card {
+        padding: 14px 12px;
     }
 }

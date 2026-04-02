@@ -24,24 +24,47 @@
             </nav>
             <div class="nav-icons" aria-label="Account and cart">
                 <a class="nav-contact-link" href="contact-us.html">Contact</a>
-                                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
-                <div class="nav-account-menu">
-                <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
+                <a class="nav-login-btn-link" href="login.html">Log In</a>
+                <a class="nav-account-link is-hidden" href="order-history.html" aria-label="Account profile">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                         <path d="M4 20a8 8 0 0 1 16 0" />
                     </svg>
                 </a>
-                <div class="nav-account-dropdown is-hidden" role="menu">
-                    <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
-                </div>
-                </div>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
+            </div>
+            <button class="nav-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu-panel is-hidden" id="mobile-nav-menu" role="menu" aria-label="Mobile navigation">
+                <a href="categories.html" role="menuitem">Shop Now</a>
+                <a href="contact-us.html" role="menuitem">Contact</a>
+                <a href="login.html" role="menuitem">Log In</a>
             </div>
         </div>
     </header>
 
     <main>
         <div class="page-title">Products</div>
+        <div class="mobile-control-row" aria-label="Mobile catalog controls">
+            <button class="mobile-control-btn" id="mobileFilterTrigger" type="button" aria-haspopup="dialog" aria-controls="mobileFilterSheet">
+                <span class="mobile-control-icon" aria-hidden="true">☰</span>
+                <span>Filter</span>
+            </button>
+            <button class="mobile-control-btn" id="mobileSortTrigger" type="button" aria-haspopup="dialog" aria-controls="mobileSortSheet">
+                <span class="mobile-control-icon" aria-hidden="true">↕</span>
+                <span id="mobileSortLabel">Sort: Price, Low to High</span>
+            </button>
+        </div>
         <div class="layout">
             <aside class="sidebar">
                 <h3>Collections</h3>
@@ -57,11 +80,13 @@
                         <option>All Types</option>
                         <option>Polo Shirt</option>
                         <option>T-shirt</option>
+                        <option>Hoodie</option>
                         <option>Jersey</option>
                         <option>Shorts</option>
                     </select>
                     <div class="check"><input type="checkbox"> Polo Shirt</div>
                     <div class="check"><input type="checkbox"> T-shirt</div>
+                    <div class="check"><input type="checkbox"> Hoodie</div>
                     <div class="check"><input type="checkbox"> Jersey</div>
                     <div class="check"><input type="checkbox"> Shorts</div>
                 </div>
@@ -91,6 +116,51 @@
                     <div class="catalog-empty">Loading products...</div>
                 </div>
             </section>
+        </div>
+
+        <div class="sheet-backdrop is-hidden" id="mobileFilterSheet" role="dialog" aria-modal="true" aria-labelledby="mobileFilterTitle">
+            <div class="sheet-panel" role="document">
+                <div class="sheet-head">
+                    <h2 id="mobileFilterTitle">Filters</h2>
+                    <button type="button" class="sheet-close" data-close-sheet="mobileFilterSheet" aria-label="Close filters">×</button>
+                </div>
+                <div class="sheet-body">
+                    <h3>Collections</h3>
+                    <ul class="sheet-collections">
+                        <li>Basketball Apparel</li>
+                        <li>Volleyball Uniforms</li>
+                        <li>Football &amp; Soccer Kits</li>
+                        <li>Corporate &amp; Event Wear</li>
+                    </ul>
+
+                    <h3>Shirt Type</h3>
+                    <label class="sheet-check"><input type="checkbox" class="mobile-type-check" value="poloshirt"> Polo Shirt</label>
+                    <label class="sheet-check"><input type="checkbox" class="mobile-type-check" value="tshirt"> T-shirt</label>
+                    <label class="sheet-check"><input type="checkbox" class="mobile-type-check" value="hoodie"> Hoodie</label>
+                    <label class="sheet-check"><input type="checkbox" class="mobile-type-check" value="jersey"> Jersey</label>
+                    <label class="sheet-check"><input type="checkbox" class="mobile-type-check" value="shorts"> Shorts</label>
+                </div>
+                <div class="sheet-foot">
+                    <button type="button" class="sheet-apply" id="mobileFilterApply">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-backdrop is-hidden" id="mobileSortSheet" role="dialog" aria-modal="true" aria-labelledby="mobileSortTitle">
+            <div class="sheet-panel" role="document">
+                <div class="sheet-head">
+                    <h2 id="mobileSortTitle">Sort Products</h2>
+                    <button type="button" class="sheet-close" data-close-sheet="mobileSortSheet" aria-label="Close sort">×</button>
+                </div>
+                <div class="sheet-body">
+                    <label class="sheet-radio"><input type="radio" name="mobile-sort" value="Price, Low to High"> Price, Low to High</label>
+                    <label class="sheet-radio"><input type="radio" name="mobile-sort" value="Price, High to Low"> Price, High to Low</label>
+                    <label class="sheet-radio"><input type="radio" name="mobile-sort" value="Newest"> Newest</label>
+                </div>
+                <div class="sheet-foot">
+                    <button type="button" class="sheet-apply" id="mobileSortApply">Apply Sort</button>
+                </div>
+            </div>
         </div>
     </main>
     <footer id="contact-us" class="site-footer">
