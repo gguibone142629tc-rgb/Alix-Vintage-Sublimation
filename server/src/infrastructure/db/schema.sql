@@ -8,7 +8,7 @@ BEGIN;
 -- Enums
 -- =========
 DO $$ BEGIN
-  CREATE TYPE order_status AS ENUM ('draft', 'pending', 'paid', 'proofing', 'processing', 'ready_to_ship', 'shipped', 'completed', 'cancelled');
+  CREATE TYPE order_status AS ENUM ('draft', 'pending', 'paid', 'proofing', 'processing', 'awaiting_final_payment', 'ready_to_ship', 'shipped', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Add missing enum values on existing databases.
@@ -53,6 +53,20 @@ BEGIN
     WHERE t.typname = 'order_status' AND e.enumlabel = 'ready_to_ship'
   ) THEN
     ALTER TYPE order_status ADD VALUE 'ready_to_ship';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_type t WHERE t.typname = 'order_status'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_status' AND e.enumlabel = 'awaiting_final_payment'
+  ) THEN
+    ALTER TYPE order_status ADD VALUE 'awaiting_final_payment';
   END IF;
 END $$;
 

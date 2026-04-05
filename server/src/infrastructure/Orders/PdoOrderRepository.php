@@ -308,6 +308,29 @@ final class PdoOrderRepository implements OrderRepository
         return is_string($row['status']) ? $row['status'] : null;
     }
 
+    public function getOrderMeta(int $orderId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT meta FROM orders WHERE order_id = :order_id AND status <> :draft::order_status'
+        );
+        $stmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+        $stmt->bindValue('draft', 'draft', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+        if (!is_array($row) || !array_key_exists('meta', $row)) {
+            return null;
+        }
+
+        $meta = $row['meta'];
+        if (is_string($meta)) {
+            $decoded = json_decode($meta, true);
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return is_array($meta) ? $meta : null;
+    }
+
     public function patchOrderMeta(int $orderId, array $metaPatch): bool
     {
         $metaJson = json_encode($metaPatch, JSON_UNESCAPED_SLASHES);
@@ -557,6 +580,30 @@ final class PdoOrderRepository implements OrderRepository
         }
 
         return is_string($row['status']) ? $row['status'] : null;
+    }
+
+    public function getOrderMetaForUser(int $orderId, int $userId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT meta FROM orders WHERE order_id = :order_id AND user_id = :user_id AND status <> :draft::order_status'
+        );
+        $stmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+        $stmt->bindValue('user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue('draft', 'draft', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+        if (!is_array($row) || !array_key_exists('meta', $row)) {
+            return null;
+        }
+
+        $meta = $row['meta'];
+        if (is_string($meta)) {
+            $decoded = json_decode($meta, true);
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return is_array($meta) ? $meta : null;
     }
 
     public function patchOrderMetaForUser(int $orderId, int $userId, array $metaPatch): bool

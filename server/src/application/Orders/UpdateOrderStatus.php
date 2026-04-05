@@ -8,7 +8,7 @@ use App\Domain\Orders\OrderRepository;
 
 final class UpdateOrderStatus
 {
-    private const ALLOWED = ['pending', 'paid', 'proofing', 'processing', 'ready_to_ship', 'shipped', 'completed', 'cancelled'];
+    private const ALLOWED = ['pending', 'paid', 'proofing', 'processing', 'awaiting_final_payment', 'ready_to_ship', 'shipped', 'completed', 'cancelled'];
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -28,6 +28,33 @@ final class UpdateOrderStatus
         $current = $this->orders->getOrderStatus($orderId);
         if ($current === null) {
             return ['ok' => false, 'status' => 404, 'error' => 'Order not found'];
+        }
+
+        $currentLower = strtolower((string) $current);
+
+        // Enforce staged final payment when only a downpayment was verified.
+        $meta = $this->orders->getOrderMeta($orderId);
+        $paymentMeta = is_array($meta) && isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
+        $verifiedType = isset($paymentMeta['verified_type']) && is_string($paymentMeta['verified_type']) ? strtolower(trim($paymentMeta['verified_type'])) : null;
+        $finalVerified = ($paymentMeta['final_verified'] ?? false) === true;
+
+        if ($status === 'awaiting_final_payment') {
+            if ($currentLower !== 'processing') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Order must be In Progress to request final payment'];
+            }
+            if ($verifiedType !== 'downpayment') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Final payment stage is only for downpayment orders'];
+            }
+            if ($finalVerified) {
+                return ['ok' => false, 'status' => 409, 'error' => 'Final payment is already verified'];
+            }
+        }
+
+        if ($status === 'ready_to_ship') {
+            $needsFinal = $verifiedType === 'downpayment' && !$finalVerified;
+            if ($needsFinal && ($currentLower === 'processing' || $currentLower === 'awaiting_final_payment')) {
+                return ['ok' => false, 'status' => 409, 'error' => 'Final payment must be verified before Ready to Ship'];
+            }
         }
 
         $ok = $this->orders->updateOrderStatus($orderId, $status);

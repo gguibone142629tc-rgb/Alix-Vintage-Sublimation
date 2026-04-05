@@ -63,24 +63,61 @@ final class UploadOrderReceipt
             return ['ok' => false, 'status' => 413, 'error' => 'Receipt image is too large (max 2MB)'];
         }
 
+        $stageRaw = $input['receipt_stage'] ?? null;
+        $stage = is_string($stageRaw) ? strtolower(trim($stageRaw)) : 'initial';
+        if ($stage === '') {
+            $stage = 'initial';
+        }
+        if (!in_array($stage, ['initial', 'final'], true)) {
+            return ['ok' => false, 'status' => 422, 'error' => 'Invalid receipt_stage'];
+        }
+
         $status = $this->orders->getOrderStatusForUser($orderId, $userId);
         if ($status === null) {
             return ['ok' => false, 'status' => 404, 'error' => 'Order not found'];
         }
 
-        if (strtolower($status) !== 'paid') {
-            return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting payment'];
+        $statusLower = strtolower($status);
+        if ($stage === 'initial') {
+            if ($statusLower !== 'paid') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting payment'];
+            }
+        } else {
+            if ($statusLower !== 'awaiting_final_payment') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting final payment'];
+            }
+
+            $meta = $this->orders->getOrderMetaForUser($orderId, $userId);
+            $paymentMeta = is_array($meta) && isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
+            $verifiedType = isset($paymentMeta['verified_type']) && is_string($paymentMeta['verified_type'])
+                ? strtolower(trim($paymentMeta['verified_type']))
+                : null;
+
+            if ($verifiedType !== 'downpayment') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Final receipt upload is only available for downpayment orders'];
+            }
         }
 
         $now = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(DATE_ATOM);
 
-        $payment = [
-            'receipt_data_url' => $dataUrl,
-            'receipt_mime' => $mime,
-            'receipt_size' => $size,
-            'receipt_uploaded_at' => $now,
-            'receipt_status' => 'submitted',
-        ];
+        $payment = [];
+        if ($stage === 'initial') {
+            $payment = [
+                'receipt_data_url' => $dataUrl,
+                'receipt_mime' => $mime,
+                'receipt_size' => $size,
+                'receipt_uploaded_at' => $now,
+                'receipt_status' => 'submitted',
+            ];
+        } else {
+            $payment = [
+                'final_receipt_data_url' => $dataUrl,
+                'final_receipt_mime' => $mime,
+                'final_receipt_size' => $size,
+                'final_receipt_uploaded_at' => $now,
+                'final_receipt_status' => 'submitted',
+            ];
+        }
 
         // Keep payments table in sync with receipt submission.
         $paymentId = $this->orders->upsertOrderPaymentRecord(
@@ -96,11 +133,27 @@ final class UploadOrderReceipt
         }
         $payment['payment_id'] = $paymentId;
 
-        $ok = $this->orders->patchOrderMetaForUser($orderId, $userId, ['payment' => $payment]);
+        // IMPORTANT: patchOrderMetaForUser merges only at the top-level.
+        // If we patch {payment: {final_*}} directly, it overwrites the entire payment object
+        // and can erase the initial receipt + verified_type fields.
+        $existingMeta = $this->orders->getOrderMetaForUser($orderId, $userId);
+        $existingPayment = is_array($existingMeta)
+            && isset($existingMeta['payment'])
+            && is_array($existingMeta['payment'])
+            ? $existingMeta['payment']
+            : [];
+
+        /** @var array<string,mixed> $mergedPayment */
+        $mergedPayment = array_merge($existingPayment, $payment);
+
+        $ok = $this->orders->patchOrderMetaForUser($orderId, $userId, ['payment' => $mergedPayment]);
         if (!$ok) {
             return ['ok' => false, 'status' => 500, 'error' => 'Failed to save receipt'];
         }
 
-        return ['ok' => true, 'order_id' => $orderId, 'payment' => $payment];
+        $metaOut = $this->orders->getOrderMetaForUser($orderId, $userId);
+        $paymentOut = is_array($metaOut) && isset($metaOut['payment']) && is_array($metaOut['payment']) ? $metaOut['payment'] : $payment;
+
+        return ['ok' => true, 'order_id' => $orderId, 'payment' => $paymentOut];
     }
 }

@@ -124,9 +124,10 @@
                     <div class="step" data-step="1"><span class="dot"></span><span class="label">Awaiting Payment</span></div>
                     <div class="step" data-step="2"><span class="dot"></span><span class="label">Proofing</span></div>
                     <div class="step" data-step="3"><span class="dot"></span><span class="label">In Progress</span></div>
-                    <div class="step" data-step="4"><span class="dot"></span><span class="label">Ready to Ship</span></div>
-                    <div class="step" data-step="5"><span class="dot"></span><span class="label">On Transit</span></div>
-                    <div class="step" data-step="6"><span class="dot"></span><span class="label">Completed</span></div>
+                    <div class="step" data-step="4"><span class="dot"></span><span class="label">Awaiting Final Payment</span></div>
+                    <div class="step" data-step="5"><span class="dot"></span><span class="label">Ready to Ship</span></div>
+                    <div class="step" data-step="6"><span class="dot"></span><span class="label">On Transit</span></div>
+                    <div class="step" data-step="7"><span class="dot"></span><span class="label">Completed</span></div>
                 </div>
 
                 <div class="status-card" aria-label="Current status">
@@ -155,6 +156,24 @@
                 <div id="orderContents"></div>
             </section>
 
+            <section class="panel" id="balancePanel" aria-label="Remaining balance">
+                <div class="panel-title">REMAINING BALANCE</div>
+                <div class="payment-grid" aria-label="Balance summary">
+                    <div class="payment-item">
+                        <div class="payment-k">Total Amount</div>
+                        <div class="payment-v" id="balanceTotal">-</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-k">Amount Paid</div>
+                        <div class="payment-v" id="balancePaid">-</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-k">Remaining Balance</div>
+                        <div class="payment-v" id="balanceRemaining">-</div>
+                    </div>
+                </div>
+            </section>
+
             <section class="panel" id="paymentPanel" aria-label="Payment" style="display:none">
                 <div class="panel-title">PAYMENT</div>
                 <div class="payment-note" id="paymentNote">-</div>
@@ -165,7 +184,7 @@
                         <div class="payment-v" id="paymentTotal">-</div>
                     </div>
                     <div class="payment-item">
-                        <div class="payment-k">Required Downpayment (50%)</div>
+                        <div class="payment-k" id="paymentRequiredLabel">Required Downpayment (50%)</div>
                         <div class="payment-v" id="paymentDownpayment">-</div>
                     </div>
                 </div>

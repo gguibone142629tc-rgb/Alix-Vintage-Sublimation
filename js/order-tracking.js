@@ -22,6 +22,12 @@
     const paymentReceiptPreviewEl = qs("#paymentReceiptPreview");
     const uploadReceiptBtnEl = qs("#uploadReceiptBtn");
     const paymentStateEl = qs("#paymentState");
+    const paymentRequiredLabelEl = qs("#paymentRequiredLabel");
+
+    const balancePanelEl = qs("#balancePanel");
+    const balanceTotalEl = qs("#balanceTotal");
+    const balancePaidEl = qs("#balancePaid");
+    const balanceRemainingEl = qs("#balanceRemaining");
 
     const proofPanelEl = qs("#proofPanel");
     const proofNoteEl = qs("#proofNote");
@@ -311,9 +317,10 @@
         if (wf === "Awaiting Payment") return 1;
         if (wf === "Proofing") return 2;
         if (wf === "In Progress") return 3;
-        if (wf === "Ready to Ship") return 4;
-        if (wf === "On Transit") return 5;
-        if (wf === "Completed") return 6;
+        if (wf === "Awaiting Final Payment") return 4;
+        if (wf === "Ready to Ship") return 5;
+        if (wf === "On Transit") return 6;
+        if (wf === "Completed") return 7;
         return 0;
     };
 
@@ -331,6 +338,7 @@
         if (s === "cancelled") return "Completed";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
+        if (s === "awaiting_final_payment") return "Awaiting Final Payment";
         if (s === "proofing") return "Proofing";
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";
@@ -373,7 +381,9 @@
                 orderType: String(o.order_type || ""),
                 tracking_number: o.tracking_number != null ? String(o.tracking_number) : null,
                 meta,
-                total: Number(o.base_price || 0) + Number(o.shipping_fee || 0),
+                base_price: Number(o.base_price || 0) || 0,
+                shipping_fee: Number(o.shipping_fee || 0) || 0,
+                total: 0,
                 items: items.map((it) => ({
                     name: it?.meta?.product_name || `Product #${it?.product_id ?? ""}`,
                     quantity: Number(it?.quantity || 0) || 0,
@@ -403,6 +413,13 @@
             return {
                 title: "AWAITING PAYMENT",
                 body: "Please pay the required 50% downpayment and upload your receipt screenshot. Admin will verify before proofing.",
+            };
+        }
+
+        if (wf === "Awaiting Final Payment") {
+            return {
+                title: "AWAITING FINAL PAYMENT",
+                body: "Please upload your final payment receipt screenshot (remaining balance). Admin will verify before shipping.",
             };
         }
 
@@ -476,11 +493,14 @@
     };
 
     const renderStepper = (workflowStatus) => {
-        const current = getWorkflowStepIndex(workflowStatus);
+        const wf = String(workflowStatus || "");
+        const current = getWorkflowStepIndex(wf);
+        const isCompleted = wf === "Completed";
         document.querySelectorAll(".stepper .step").forEach((el) => {
             const step = Number(el.getAttribute("data-step"));
-            el.classList.toggle("is-done", Number.isFinite(step) && step < current);
-            el.classList.toggle("is-active", Number.isFinite(step) && step === current);
+            const isStep = Number.isFinite(step);
+            el.classList.toggle("is-done", isStep && (step < current || (isCompleted && step === current)));
+            el.classList.toggle("is-active", isStep && step === current && !isCompleted);
         });
     };
 
@@ -657,9 +677,51 @@
     };
 
     const computeTotals = (order) => {
-        const total = Number(order?.total || 0);
+        const items = Array.isArray(order?.items) ? order.items : [];
+        const itemsTotal = items.reduce((sum, it) => sum + Number(it?.total_amount || 0), 0);
+
+        const base = Number(order?.base_price ?? order?.basePrice ?? 0);
+        const shipping = Number(order?.shipping_fee ?? order?.shippingFee ?? 0);
+
+        // Match backend computed total: use item totals when available,
+        // otherwise fall back to base_price.
+        const subtotal = itemsTotal > 0 ? itemsTotal : base;
+        const total = Math.round((subtotal + shipping) * 100) / 100;
         const downpayment = Math.round(total * 0.5 * 100) / 100;
         return { total, downpayment };
+    };
+
+    const computePaymentAmounts = (order) => {
+        const totals = computeTotals(order);
+        const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+
+        const verifiedType = typeof paymentMeta.verified_type === "string" ? paymentMeta.verified_type.toLowerCase() : null;
+        const isFinalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified";
+
+        let amountPaid = Number(paymentMeta.amount_paid);
+        if (!Number.isFinite(amountPaid) || amountPaid < 0) amountPaid = 0;
+
+        // Fallback if older records didn't store amount_paid.
+        if (amountPaid === 0) {
+            if (verifiedType === "full") amountPaid = totals.total;
+            if (verifiedType === "downpayment") amountPaid = totals.downpayment;
+        }
+
+        if (isFinalVerified) amountPaid = totals.total;
+
+        const remaining = Math.max(0, Math.round((totals.total - amountPaid) * 100) / 100);
+        return { total: totals.total, downpayment: totals.downpayment, amountPaid, remaining, verifiedType, isFinalVerified };
+    };
+
+    const renderBalancePanel = (order) => {
+        if (!balancePanelEl) return;
+        balancePanelEl.style.display = order ? "block" : "none";
+        if (!order) return;
+
+        const amounts = computePaymentAmounts(order);
+        if (balanceTotalEl) balanceTotalEl.textContent = formatMoney(amounts.total);
+        if (balancePaidEl) balancePaidEl.textContent = formatMoney(amounts.amountPaid);
+        if (balanceRemainingEl) balanceRemainingEl.textContent = formatMoney(amounts.remaining);
     };
 
     const renderStagePanels = (order) => {
@@ -667,24 +729,37 @@
         const stepIndex = getWorkflowStepIndex(workflowDisplay);
 
         if (paymentPanelEl) {
-            const showPayment = workflowDisplay === "Awaiting Payment";
+            const showPayment = workflowDisplay === "Awaiting Payment" || workflowDisplay === "Awaiting Final Payment";
             paymentPanelEl.style.display = showPayment ? "block" : "none";
 
             if (showPayment) {
-                const totals = computeTotals(order);
-                if (paymentTotalEl) paymentTotalEl.textContent = formatMoney(totals.total);
-                if (paymentDownpaymentEl) paymentDownpaymentEl.textContent = formatMoney(totals.downpayment);
-                if (paymentNoteEl) {
-                    paymentNoteEl.textContent =
-                        "Upload your downpayment receipt screenshot so admin can verify your payment.";
-                }
+                const amounts = computePaymentAmounts(order);
+                if (paymentTotalEl) paymentTotalEl.textContent = formatMoney(amounts.total);
 
                 const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
-                const receiptUrl = typeof paymentMeta.receipt_data_url === "string" ? paymentMeta.receipt_data_url : "";
+
+                const isFinal = workflowDisplay === "Awaiting Final Payment";
+                const requiredAmount = isFinal ? amounts.remaining : amounts.downpayment;
+                if (paymentDownpaymentEl) paymentDownpaymentEl.textContent = formatMoney(requiredAmount);
+                if (paymentRequiredLabelEl) paymentRequiredLabelEl.textContent = isFinal ? "Required Final Payment" : "Required Downpayment (50%)";
+
+                if (paymentNoteEl) {
+                    paymentNoteEl.textContent = isFinal
+                        ? "Upload your final payment receipt screenshot so admin can verify your payment."
+                        : "Upload your downpayment receipt screenshot so admin can verify your payment.";
+                }
+
+                const receiptUrl = isFinal
+                    ? (typeof paymentMeta.final_receipt_data_url === "string" ? paymentMeta.final_receipt_data_url : "")
+                    : (typeof paymentMeta.receipt_data_url === "string" ? paymentMeta.receipt_data_url : "");
                 renderImagePreview(paymentReceiptPreviewEl, receiptUrl, "Payment receipt");
 
-                const uploadedAt = typeof paymentMeta.receipt_uploaded_at === "string" ? paymentMeta.receipt_uploaded_at : "";
-                const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified";
+                const uploadedAt = isFinal
+                    ? (typeof paymentMeta.final_receipt_uploaded_at === "string" ? paymentMeta.final_receipt_uploaded_at : "")
+                    : (typeof paymentMeta.receipt_uploaded_at === "string" ? paymentMeta.receipt_uploaded_at : "");
+                const verified = isFinal
+                    ? (paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified")
+                    : (paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified");
                 if (paymentStateEl) {
                     if (!receiptUrl) {
                         paymentStateEl.textContent = "No receipt uploaded yet.";
@@ -849,6 +924,7 @@
             if (proofPanelEl) proofPanelEl.style.display = "none";
             if (shippingPanelEl) shippingPanelEl.style.display = "none";
             if (orderContentsEl) orderContentsEl.innerHTML = "";
+            if (balancePanelEl) balancePanelEl.style.display = "none";
             if (commentsPanelEl) commentsPanelEl.style.display = "none";
             renderStepper("Pending");
             return;
@@ -879,10 +955,18 @@
             const hasReceipt = typeof paymentMeta.receipt_data_url === "string" && String(paymentMeta.receipt_data_url).trim() !== "";
             const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified";
 
+            const amounts = computePaymentAmounts(order);
+            const fullyPaid = amounts.remaining <= 0.009;
+            const partiallyPaid = amounts.amountPaid > 0 && !fullyPaid;
+
             if (status === "paid") {
                 summaryPaymentEl.textContent = verified ? "Verified" : (hasReceipt ? "Pending Verification" : "Awaiting Receipt");
-            } else if (status === "proofing" || status === "processing" || status === "shipped" || status === "completed") {
-                summaryPaymentEl.textContent = "Verified";
+            } else if (status === "awaiting_final_payment") {
+                const finalHas = typeof paymentMeta.final_receipt_data_url === "string" && String(paymentMeta.final_receipt_data_url).trim() !== "";
+                const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified";
+                summaryPaymentEl.textContent = finalVerified ? "Fully Paid" : (finalHas ? "Final Payment Pending Verification" : "Awaiting Final Receipt");
+            } else if (status === "proofing" || status === "processing" || status === "ready_to_ship" || status === "shipped" || status === "completed") {
+                summaryPaymentEl.textContent = fullyPaid ? "Fully Paid" : (partiallyPaid ? "Partially Paid" : "Unpaid");
             } else {
                 summaryPaymentEl.textContent = "Unpaid";
             }
@@ -894,6 +978,7 @@
         renderStepper(workflowDisplay);
         renderStagePanels(order);
         renderOrderContents(order);
+        renderBalancePanel(order);
 
         if (commentsPanelEl) commentsPanelEl.style.display = "block";
         renderComments(order);
@@ -931,8 +1016,9 @@
         }
 
         const workflowDisplay = dbStatusToWorkflow(order?.status);
-        if (workflowDisplay !== "Awaiting Payment") {
-            uiAlert("Receipt upload is only available while the order is Awaiting Payment.", {
+        const stage = workflowDisplay === "Awaiting Final Payment" ? "final" : "initial";
+        if (workflowDisplay !== "Awaiting Payment" && workflowDisplay !== "Awaiting Final Payment") {
+            uiAlert("Receipt upload is only available while the order is Awaiting Payment or Awaiting Final Payment.", {
                 title: "Receipt Upload",
                 tone: "info",
             });
@@ -967,6 +1053,7 @@
             const res = await window.AlixCart.uploadOrderReceipt({
                 order_id: order.rawId,
                 receipt_data_url: dataUrl,
+                receipt_stage: stage,
             });
 
             order.meta = order.meta && typeof order.meta === "object" ? order.meta : {};

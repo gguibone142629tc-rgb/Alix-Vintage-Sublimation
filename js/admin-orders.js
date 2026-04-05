@@ -58,9 +58,10 @@
     const dbStatusToWorkflow = (status) => {
         const s = String(status || "pending").toLowerCase();
         if (s === "completed") return "Completed";
-        if (s === "cancelled") return "Completed";
+        if (s === "cancelled") return "Rejected";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
+        if (s === "awaiting_final_payment") return "Awaiting Final Payment";
         if (s === "proofing") return "Proofing";
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";

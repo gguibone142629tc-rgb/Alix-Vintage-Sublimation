@@ -24,6 +24,9 @@ interface OrderRepository
 
     public function getOrderStatus(int $orderId): ?string;
 
+    /** @return array<string,mixed>|null */
+    public function getOrderMeta(int $orderId): ?array;
+
     /** @param array<string,mixed> $metaPatch */
     public function patchOrderMeta(int $orderId, array $metaPatch): bool;
 
@@ -48,6 +51,9 @@ interface OrderRepository
     public function mergeOrderProofMeta(int $orderId, array $proofPatch): bool;
 
     public function getOrderStatusForUser(int $orderId, int $userId): ?string;
+
+    /** @return array<string,mixed>|null */
+    public function getOrderMetaForUser(int $orderId, int $userId): ?array;
 
     /** @param array<string,mixed> $metaPatch */
     public function patchOrderMetaForUser(int $orderId, int $userId, array $metaPatch): bool;

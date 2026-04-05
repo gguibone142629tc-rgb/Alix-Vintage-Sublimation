@@ -46,6 +46,16 @@ try {
     );
     $hasDraft = $enumStmt ? $enumStmt->fetchColumn() : null;
     echo 'order_status:draft:' . ($hasDraft ? 'OK' : 'MISSING') . PHP_EOL;
+
+    $enumStmt2 = $pdo->query(
+        "SELECT 1\n"
+        . "FROM pg_enum e\n"
+        . "JOIN pg_type t ON t.oid = e.enumtypid\n"
+        . "WHERE t.typname = 'order_status' AND e.enumlabel = 'awaiting_final_payment'\n"
+        . "LIMIT 1"
+    );
+    $hasFinal = $enumStmt2 ? $enumStmt2->fetchColumn() : null;
+    echo 'order_status:awaiting_final_payment:' . ($hasFinal ? 'OK' : 'MISSING') . PHP_EOL;
 } catch (Throwable $e) {
     fwrite(STDERR, "ERROR: " . $e->getMessage() . PHP_EOL);
     exit(1);

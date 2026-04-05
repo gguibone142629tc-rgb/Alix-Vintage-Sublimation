@@ -20,11 +20,40 @@ This keeps SOLID boundaries:
 ## Setup
 
 1. Install PHP 8.1+ (XAMPP is fine).
+	 - Make sure the PostgreSQL PDO extension is enabled (`pdo_pgsql`).
+	   - In XAMPP: open `php.ini` and enable `extension=pdo_pgsql` (and optionally `extension=pgsql`), then restart Apache / PHP.
 2. Copy env:
 	 - `copy .env.example .env`
 3. Set PostgreSQL credentials in `.env`.
 4. Initialize DB schema (from this `server/` folder):
 	 - `php tools/init-db.php`
+
+### PostgreSQL quick start (local)
+
+Your friend does **not** need your database. They should create their own local PostgreSQL database and then set the matching values in `server/.env`:
+
+- `DB_HOST` (usually `localhost`)
+- `DB_PORT` (usually `5432`)
+- `DB_NAME` (example: `alix_vintage`)
+- `DB_USER` / `DB_PASSWORD`
+
+Example SQL (run in `psql` as a superuser like `postgres`):
+
+```sql
+CREATE DATABASE alix_vintage;
+
+-- Optional: create a dedicated user instead of using postgres
+CREATE USER alix_user WITH PASSWORD 'alix_password';
+GRANT ALL PRIVILEGES ON DATABASE alix_vintage TO alix_user;
+```
+
+Then set in `server/.env`:
+
+```env
+DB_NAME=alix_vintage
+DB_USER=alix_user
+DB_PASSWORD=alix_password
+```
 
 Composer is optional for this backend (it runs without external packages).
 

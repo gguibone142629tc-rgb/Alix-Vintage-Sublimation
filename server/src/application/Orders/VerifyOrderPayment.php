@@ -8,7 +8,7 @@ use App\Domain\Orders\OrderRepository;
 
 final class VerifyOrderPayment
 {
-    private const ALLOWED = ['downpayment', 'full'];
+    private const ALLOWED = ['downpayment', 'full', 'final'];
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -34,29 +34,64 @@ final class VerifyOrderPayment
             return ['ok' => false, 'status' => 404, 'error' => 'Order not found'];
         }
 
-        if (strtolower($status) !== 'paid') {
-            return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting payment'];
+        $statusLower = strtolower($status);
+        if ($type === 'final') {
+            if ($statusLower !== 'awaiting_final_payment') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting final payment'];
+            }
+        } else {
+            if ($statusLower !== 'paid') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Order is not awaiting payment'];
+            }
         }
 
         $now = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(DATE_ATOM);
 
-        $paymentPatch = [
-            'verified' => true,
-            'verified_type' => $type,
-            'verified_at' => $now,
-            'receipt_status' => 'verified',
-        ];
+        $paymentPatch = [];
+
+        if ($type === 'final') {
+            $meta = $this->orders->getOrderMeta($orderId);
+            $paymentMeta = is_array($meta) && isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
+
+            $verifiedType = isset($paymentMeta['verified_type']) && is_string($paymentMeta['verified_type'])
+                ? strtolower(trim($paymentMeta['verified_type']))
+                : null;
+
+            if ($verifiedType !== 'downpayment') {
+                return ['ok' => false, 'status' => 409, 'error' => 'Final payment is only available after downpayment verification'];
+            }
+
+            $finalReceipt = isset($paymentMeta['final_receipt_data_url']) && is_string($paymentMeta['final_receipt_data_url'])
+                ? trim($paymentMeta['final_receipt_data_url'])
+                : '';
+            if ($finalReceipt === '') {
+                return ['ok' => false, 'status' => 409, 'error' => 'No final payment receipt uploaded yet'];
+            }
+
+            $paymentPatch = [
+                'final_verified' => true,
+                'final_verified_at' => $now,
+                'final_receipt_status' => 'verified',
+            ];
+        } else {
+            $paymentPatch = [
+                'verified' => true,
+                'verified_type' => $type,
+                'verified_at' => $now,
+                'receipt_status' => 'verified',
+            ];
+        }
 
         $orderTotal = $this->orders->getOrderComputedTotal($orderId);
         if ($orderTotal === null) {
             return ['ok' => false, 'status' => 500, 'error' => 'Failed to compute order total'];
         }
 
-        $amountPaid = $type === 'full'
+        $amountPaid = ($type === 'full' || $type === 'final')
             ? $orderTotal
             : round($orderTotal * 0.5, 2);
 
-        $paymentType = $type === 'full' ? 'full' : 'partial';
+        $paymentType = ($type === 'full' || $type === 'final') ? 'full' : 'partial';
         $paymentId = $this->orders->upsertOrderPaymentRecord(
             $orderId,
             $amountPaid,
@@ -76,10 +111,18 @@ final class VerifyOrderPayment
             return ['ok' => false, 'status' => 500, 'error' => 'Failed to update payment'];
         }
 
-        // After verification, move forward to proofing (production starts after proof approval).
-        $moved = $this->orders->updateOrderStatus($orderId, 'proofing');
-        if (!$moved) {
-            return ['ok' => false, 'status' => 500, 'error' => 'Failed to update status'];
+        // After verification, move forward.
+        if ($type === 'final') {
+            $moved = $this->orders->updateOrderStatus($orderId, 'ready_to_ship');
+            if (!$moved) {
+                return ['ok' => false, 'status' => 500, 'error' => 'Failed to update status'];
+            }
+        } else {
+            // Production starts after proof approval.
+            $moved = $this->orders->updateOrderStatus($orderId, 'proofing');
+            if (!$moved) {
+                return ['ok' => false, 'status' => 500, 'error' => 'Failed to update status'];
+            }
         }
 
         return ['ok' => true];

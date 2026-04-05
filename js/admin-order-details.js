@@ -35,6 +35,11 @@
     const pricingHint = qs("#pricingHint");
     const pricingBox = qs("#pricingBox");
 
+    const balanceTotalInput = qs("#balanceTotal");
+    const balancePaidInput = qs("#balancePaid");
+    const balanceRemainingInput = qs("#balanceRemaining");
+    const balanceHint = qs("#balanceHint");
+
     const stageUploads = qs("#stageUploads");
     const stageButtons = qs("#stageButtons");
     const stageHint = qs("#stageHint");
@@ -231,6 +236,114 @@
         container.appendChild(img);
     };
 
+    const tryParseJsonObject = (value) => {
+        if (!value) return null;
+        if (typeof value === "object") return value;
+        if (typeof value !== "string") return null;
+        const s = value.trim();
+        if (!s || (s[0] !== "{" && s[0] !== "[")) return null;
+        try {
+            const parsed = JSON.parse(s);
+            return parsed && typeof parsed === "object" ? parsed : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const appendReceiptPanel = ({ title, dataUrl, uploadedAt, viewBtnId, emptyTitle, emptySub } = {}) => {
+        if (!stageUploads) return;
+        const safeTitle = String(title || "Receipt");
+        const safeBtnId = String(viewBtnId || "viewReceiptBtn");
+        const url = typeof dataUrl === "string" ? String(dataUrl).trim() : "";
+        const whenIso = typeof uploadedAt === "string" ? uploadedAt : null;
+        const whenText = whenIso ? formatDate(whenIso) : "-";
+
+        if (!url) {
+            if (!emptyTitle && !emptySub) return;
+            stageUploads.insertAdjacentHTML(
+                "beforeend",
+                `
+                    <div class="receipt-panel">
+                        <div class="receipt-head">
+                            <div class="receipt-title">${escapeHtml(safeTitle)}</div>
+                        </div>
+                        <div class="receipt-wait">
+                            <div class="receipt-wait-title">${escapeHtml(String(emptyTitle || "Waiting for receipt"))}</div>
+                            <div class="receipt-wait-sub">${escapeHtml(String(emptySub || ""))}</div>
+                        </div>
+                    </div>
+                `
+            );
+            return;
+        }
+
+        stageUploads.insertAdjacentHTML(
+            "beforeend",
+            `
+                <div class="receipt-panel">
+                    <div class="receipt-head">
+                        <div class="receipt-title">${escapeHtml(safeTitle)}</div>
+                        <div><button class="table-btn" type="button" id="${escapeHtml(safeBtnId)}">View</button></div>
+                    </div>
+                    <div class="receipt-meta">Uploaded: ${escapeHtml(whenText)}</div>
+                    <div class="receipt-preview"><img src="${escapeHtml(url)}" alt="${escapeHtml(safeTitle)}" loading="lazy"></div>
+                </div>
+            `
+        );
+
+        const btn = qs(`#${safeBtnId}`);
+        btn?.addEventListener("click", () => openReceiptUrl(url));
+    };
+
+    const dataUrlToObjectUrl = (dataUrl) => {
+        const raw = typeof dataUrl === "string" ? dataUrl : "";
+        if (!raw.startsWith("data:")) return null;
+        const commaIdx = raw.indexOf(",");
+        if (commaIdx < 0) return null;
+        const header = raw.slice(5, commaIdx); // after 'data:'
+        const payload = raw.slice(commaIdx + 1);
+        const isBase64 = /;base64/i.test(header);
+        const mime = header.split(";")[0] || "application/octet-stream";
+
+        try {
+            let bytes;
+            if (isBase64) {
+                const bin = atob(payload);
+                bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            } else {
+                const text = decodeURIComponent(payload);
+                bytes = new TextEncoder().encode(text);
+            }
+            const blob = new Blob([bytes], { type: mime });
+            return URL.createObjectURL(blob);
+        } catch {
+            return null;
+        }
+    };
+
+    const openReceiptUrl = (url) => {
+        const raw = typeof url === "string" ? url.trim() : "";
+        if (!raw) return;
+
+        // Prefer blob URLs for large data URLs (avoids Chrome about:blank issues).
+        const objectUrl = raw.startsWith("data:") ? dataUrlToObjectUrl(raw) : null;
+        const href = objectUrl || raw;
+
+        const a = document.createElement("a");
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        if (objectUrl) {
+            // Revoke after the new tab has a moment to load.
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+        }
+    };
+
     const getQueryParam = (key) => {
         if (window.AdminStore && typeof window.AdminStore.getQueryParam === "function") {
             return window.AdminStore.getQueryParam(key);
@@ -257,10 +370,54 @@
         if (s === "cancelled") return "Rejected";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
+        if (s === "awaiting_final_payment") return "Awaiting Final Payment";
         if (s === "proofing") return "Proofing";
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";
         return "Pending";
+    };
+
+    const computeOrderTotal = (order) => {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        const itemsTotal = items.reduce((sum, it) => sum + Number(it?.totalAmount ?? it?.total_amount ?? 0), 0);
+        const base = Number(order?.admin?.quote?.basePrice ?? 0);
+        const shipping = Number(order?.admin?.quote?.shippingFee ?? 0);
+
+        // Match backend computed total: prefer explicit item totals when present,
+        // otherwise fall back to the base price.
+        const subtotal = itemsTotal > 0 ? itemsTotal : base;
+        const total = Math.round((subtotal + shipping) * 100) / 100;
+        return total >= 0 ? total : 0;
+    };
+
+    const computePaymentAmounts = (order) => {
+        const total = computeOrderTotal(order);
+        const payment = order?.admin?.payment || {};
+
+        const verifiedType = payment?.verifiedType != null ? String(payment.verifiedType).toLowerCase() : null;
+        const isFinalVerified = payment?.finalVerified === true;
+
+        let amountPaid = Number(payment?.amountPaid ?? 0);
+        if (!Number.isFinite(amountPaid) || amountPaid < 0) amountPaid = 0;
+
+        if (amountPaid === 0) {
+            if (verifiedType === "full") amountPaid = total;
+            if (verifiedType === "downpayment") amountPaid = Math.round(total * 0.5 * 100) / 100;
+        }
+
+        if (isFinalVerified) amountPaid = total;
+
+        const remaining = Math.max(0, Math.round((total - amountPaid) * 100) / 100);
+        return { total, amountPaid, remaining };
+    };
+
+    const renderRemainingBalance = (order) => {
+        if (!balanceTotalInput || !balancePaidInput || !balanceRemainingInput) return;
+        const amounts = computePaymentAmounts(order);
+        balanceTotalInput.value = formatMoney(amounts.total);
+        balancePaidInput.value = formatMoney(amounts.amountPaid);
+        balanceRemainingInput.value = formatMoney(amounts.remaining);
+        if (balanceHint) balanceHint.textContent = amounts.remaining <= 0.009 ? "Fully paid." : "Remaining balance must be paid before shipping.";
     };
 
     const normalizeDbOrderForPage = (row) => {
@@ -277,7 +434,8 @@
         const customerMobile = user?.phone_number != null ? String(user.phone_number) : "-";
 
         const mappedItems = items.map((it) => {
-            const meta = it?.meta && typeof it.meta === "object" ? it.meta : {};
+            const parsedMeta = tryParseJsonObject(it?.meta);
+            const meta = parsedMeta && typeof parsedMeta === "object" ? parsedMeta : (it?.meta && typeof it.meta === "object" ? it.meta : {});
             const title =
                 String(meta.productName || meta.name || meta.product_title || "").trim() ||
                 (it?.productId != null ? `Product #${it.productId}` : "Order Item");
@@ -287,11 +445,12 @@
                 name: title,
                 meta,
                 quantity: it?.quantity,
-                totalAmount: it?.totalAmount,
+                totalAmount: it?.total_amount ?? it?.totalAmount,
             };
         });
 
-        const metaFromOrder = o.meta && typeof o.meta === "object" ? o.meta : {};
+        const parsedOrderMeta = tryParseJsonObject(o.meta);
+        const metaFromOrder = parsedOrderMeta && typeof parsedOrderMeta === "object" ? parsedOrderMeta : (o.meta && typeof o.meta === "object" ? o.meta : {});
 
         const proofMeta = metaFromOrder?.proof && typeof metaFromOrder.proof === "object" ? metaFromOrder.proof : {};
 
@@ -316,10 +475,46 @@
         const trackingNumber = String(trackingFromDb || trackingFromMeta || "").trim() || null;
 
         const paymentMeta = metaFromOrder?.payment && typeof metaFromOrder.payment === "object" ? metaFromOrder.payment : {};
-        const receiptDataUrl = typeof paymentMeta.receipt_data_url === "string" ? paymentMeta.receipt_data_url : null;
-        const receiptUploadedAt = typeof paymentMeta.receipt_uploaded_at === "string" ? paymentMeta.receipt_uploaded_at : null;
-        const receiptMime = typeof paymentMeta.receipt_mime === "string" ? paymentMeta.receipt_mime : null;
-        const receiptSize = typeof paymentMeta.receipt_size === "number" ? paymentMeta.receipt_size : null;
+        const receiptDataUrl =
+            typeof paymentMeta.receipt_data_url === "string"
+                ? paymentMeta.receipt_data_url
+                : (typeof paymentMeta.receiptDataUrl === "string" ? paymentMeta.receiptDataUrl : null);
+        const receiptUploadedAt =
+            typeof paymentMeta.receipt_uploaded_at === "string"
+                ? paymentMeta.receipt_uploaded_at
+                : (typeof paymentMeta.receiptUploadedAt === "string" ? paymentMeta.receiptUploadedAt : null);
+        const receiptMime =
+            typeof paymentMeta.receipt_mime === "string"
+                ? paymentMeta.receipt_mime
+                : (typeof paymentMeta.receiptMime === "string" ? paymentMeta.receiptMime : null);
+        const receiptSize =
+            typeof paymentMeta.receipt_size === "number"
+                ? paymentMeta.receipt_size
+                : (typeof paymentMeta.receiptSize === "number" ? paymentMeta.receiptSize : null);
+
+        const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || paymentMeta.receiptStatus || "").toLowerCase() === "verified";
+        const verifiedType =
+            typeof paymentMeta.verified_type === "string"
+                ? paymentMeta.verified_type
+                : (typeof paymentMeta.verifiedType === "string" ? paymentMeta.verifiedType : null);
+        const amountPaid =
+            typeof paymentMeta.amount_paid === "number"
+                ? paymentMeta.amount_paid
+                : (typeof paymentMeta.amountPaid === "number" ? paymentMeta.amountPaid : null);
+
+        const finalReceiptDataUrl =
+            typeof paymentMeta.final_receipt_data_url === "string"
+                ? paymentMeta.final_receipt_data_url
+                : (typeof paymentMeta.finalReceiptDataUrl === "string" ? paymentMeta.finalReceiptDataUrl : null);
+        const finalReceiptUploadedAt =
+            typeof paymentMeta.final_receipt_uploaded_at === "string"
+                ? paymentMeta.final_receipt_uploaded_at
+                : (typeof paymentMeta.finalReceiptUploadedAt === "string" ? paymentMeta.finalReceiptUploadedAt : null);
+        const finalReceiptSize =
+            typeof paymentMeta.final_receipt_size === "number"
+                ? paymentMeta.final_receipt_size
+                : (typeof paymentMeta.finalReceiptSize === "number" ? paymentMeta.finalReceiptSize : null);
+        const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || paymentMeta.finalReceiptStatus || "").toLowerCase() === "verified";
 
         const rawComments = metaFromOrder?.comments;
         const mappedComments = Array.isArray(rawComments)
@@ -355,14 +550,22 @@
                 },
                 payment: {
                     method: "GCash",
-                    verified: false,
-                    verifiedType: null,
+                    verified,
+                    verifiedType,
+                    amountPaid,
                     receiptDataUrl,
                     receiptMeta: {
                         uploadedAt: receiptUploadedAt,
                         fileName: null,
                         size: receiptSize,
                     },
+                    finalReceiptDataUrl,
+                    finalReceiptMeta: {
+                        uploadedAt: finalReceiptUploadedAt,
+                        fileName: null,
+                        size: finalReceiptSize,
+                    },
+                    finalVerified,
                 },
                 proof: { status: proofStatus, mockupDataUrl: proofMockup, versionNumber: dpVersionNumber, revisionNote: dpRevisionNote },
                 trackingNumber,
@@ -489,6 +692,7 @@
         if (customerMobileEl) customerMobileEl.textContent = cust.mobile;
 
         renderStepper(order);
+        renderRemainingBalance(order);
         if (designDetails) designDetails.textContent = "";
         renderOrderContentsNotice(order);
         renderOrderContents(order);
@@ -553,7 +757,7 @@
                     viewBtn?.addEventListener("click", () => {
                         const url = order?.admin?.payment?.receiptDataUrl;
                         if (!url) return;
-                        window.open(url, "_blank", "noopener,noreferrer");
+                        openReceiptUrl(url);
                     });
                 }
 
@@ -606,7 +810,22 @@
                 });
             } else if (status === "proofing") {
                 addStageUpload("Upload layout mockup (image)", "mockupUpload", "image/*");
-                stageButtons.innerHTML = `<button class="table-btn" type="button" id="sendProofDbBtn">Send Proof</button>`;
+
+                // Place the action button directly under the upload.
+                if (stageUploads) {
+                    stageUploads.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="form-actions"><button class="table-btn" type="button" id="sendProofDbBtn">Send Proof</button></div>`
+                    );
+                }
+                if (stageButtons) stageButtons.innerHTML = "";
+
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptProofingBtn",
+                });
 
                 const preview = qs("#mockupUploadPreview");
                 renderPreview(preview, order?.admin?.proof?.mockupDataUrl || "", "Mockup preview");
@@ -635,25 +854,33 @@
                     if (!file) {
                         pendingMockup = "";
                         renderPreview(preview, "", "Mockup preview");
+                        updateBtn();
                         return;
                     }
                     if (!String(file.type || "").startsWith("image/")) {
                         uiAlert("Mockup must be an image.", { title: "Proofing", tone: "danger" });
                         upload.value = "";
+                        pendingMockup = "";
+                        updateBtn();
                         return;
                     }
                     const maxBytes = 2_000_000;
                     if (typeof file.size === "number" && file.size > maxBytes) {
                         uiAlert("Image is too large (max 2MB).", { title: "Proofing", tone: "danger" });
                         upload.value = "";
+                        pendingMockup = "";
+                        updateBtn();
                         return;
                     }
                     try {
                         const dataUrl = await readFileAsDataUrl(file);
                         pendingMockup = dataUrl;
                         renderPreview(preview, dataUrl, "Mockup preview");
+                        updateBtn();
                     } catch {
                         uiAlert("Failed to read file.", { title: "Proofing", tone: "danger" });
+                        pendingMockup = "";
+                        updateBtn();
                     }
                 });
 
@@ -687,27 +914,117 @@
                     }
                 });
             } else if (status === "processing") {
-                stageButtons.innerHTML = `<button class="table-btn" type="button" id="readyToShipDbBtn">Mark Ready to Ship</button>`;
-                if (stageHint) stageHint.textContent = "Production is ongoing. Mark Ready to Ship when finished.";
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptProcessingBtn",
+                });
 
-                const btn = qs("#readyToShipDbBtn");
+                const verifiedType = order?.admin?.payment?.verifiedType ? String(order.admin.payment.verifiedType).toLowerCase() : null;
+                const finalVerified = order?.admin?.payment?.finalVerified === true;
+
+                if (verifiedType === "downpayment" && !finalVerified) {
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="awaitFinalDbBtn">Set Awaiting Final Payment</button>`;
+                    if (stageHint) stageHint.textContent = "Downpayment verified. Request final payment before shipping.";
+
+                    const btn = qs("#awaitFinalDbBtn");
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Set this order to Awaiting Final Payment?", {
+                            title: "Awaiting Final Payment",
+                            tone: "danger",
+                            okText: "Confirm",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await requestJson("PATCH", "/api/admin/orders/status", { order_id: numericId, status: "awaiting_final_payment" });
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
+                        }
+                    });
+                } else {
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="readyToShipDbBtn">Mark Ready to Ship</button>`;
+                    if (stageHint) stageHint.textContent = "Production is ongoing. Mark Ready to Ship when finished.";
+
+                    const btn = qs("#readyToShipDbBtn");
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Mark this order as Ready to Ship?", {
+                            title: "Ready to Ship",
+                            tone: "danger",
+                            okText: "Mark Ready",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await markDbReadyToShip(numericId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
+                        }
+                    });
+                }
+            } else if (status === "awaiting_final_payment") {
+                if (stageUploads) stageUploads.innerHTML = "";
+
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptFinalStageBtn",
+                });
+
+                appendReceiptPanel({
+                    title: "Final Payment Receipt",
+                    dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewFinalReceiptFinalStageBtn",
+                    emptyTitle: "Waiting for customer final receipt",
+                    emptySub: "Customer uploads the final payment receipt screenshot. Verify it here once available.",
+                });
+
+                const hasReceipt = Boolean(order?.admin?.payment?.finalReceiptDataUrl);
+
+                stageButtons.innerHTML = `<button class="table-btn" type="button" id="verifyFinalBtn">Verify Final Payment</button>`;
+                const btn = qs("#verifyFinalBtn");
+                if (btn) btn.disabled = !hasReceipt;
+                if (stageHint) stageHint.textContent = hasReceipt ? "Verify final payment after reviewing the uploaded receipt." : "Waiting for customer to upload the final payment receipt.";
+
                 btn?.addEventListener("click", async () => {
-                    const ok = await uiConfirm("Mark this order as Ready to Ship?", {
-                        title: "Ready to Ship",
+                    const ok = await uiConfirm("Verify final payment for this order?", {
+                        title: "Verify Final Payment",
                         tone: "danger",
-                        okText: "Mark Ready",
+                        okText: "Verify",
                         cancelText: "Cancel",
                     });
                     if (!ok) return;
                     try {
-                        await markDbReadyToShip(numericId);
+                        await verifyDbPayment(numericId, "final");
                         const refreshed = await loadDbOrderById(numericId);
                         if (refreshed) renderReadOnly(numericId, refreshed);
                     } catch (e) {
-                        uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
+                        uiAlert(e?.message || "Failed to verify final payment.", { title: "Payment", tone: "danger" });
                     }
                 });
             } else if (status === "ready_to_ship") {
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptReadyBtn",
+                });
+
+                appendReceiptPanel({
+                    title: "Final Payment Receipt",
+                    dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewFinalReceiptReadyBtn",
+                });
+
+                // Keep tracking number right above the action button.
                 addStageTextInput("J&T Tracking Number", "trackingNumber", "e.g., JT123456789");
                 stageButtons.innerHTML = `<button class="table-btn" type="button" id="onTransitDbBtn">Set On Transit</button>`;
                 if (stageHint) stageHint.textContent = "Enter J&T tracking number, then set On Transit.";
@@ -739,6 +1056,23 @@
                     }
                 });
             } else if (status === "shipped") {
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptShippedBtn",
+                });
+
+                // Show final receipt when present (downpayment flow).
+                if (order?.admin?.payment?.finalReceiptDataUrl) {
+                    appendReceiptPanel({
+                        title: "Final Payment Receipt",
+                        dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
+                        uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
+                        viewBtnId: "viewFinalReceiptShippedBtn",
+                    });
+                }
+
                 stageButtons.innerHTML = `<button class="table-btn" type="button" id="completeDbBtn">Mark Completed</button>`;
                 const tracking = order?.admin?.trackingNumber ? String(order.admin.trackingNumber) : "-";
                 if (stageHint) stageHint.textContent = `Tracking: ${tracking}`;
@@ -761,6 +1095,22 @@
                     }
                 });
             } else if (status === "completed") {
+                appendReceiptPanel({
+                    title: "Downpayment Receipt",
+                    dataUrl: order?.admin?.payment?.receiptDataUrl || "",
+                    uploadedAt: order?.admin?.payment?.receiptMeta?.uploadedAt || null,
+                    viewBtnId: "viewDownReceiptCompletedBtn",
+                });
+
+                if (order?.admin?.payment?.finalReceiptDataUrl) {
+                    appendReceiptPanel({
+                        title: "Final Payment Receipt",
+                        dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
+                        uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
+                        viewBtnId: "viewFinalReceiptCompletedBtn",
+                    });
+                }
+
                 const tracking = order?.admin?.trackingNumber ? String(order.admin.trackingNumber) : "-";
                 stageButtons.innerHTML = "";
                 if (stageHint) stageHint.textContent = `Completed. Tracking: ${tracking}`;
@@ -786,9 +1136,10 @@
         if (wf === "Awaiting Payment") return 1;
         if (wf === "Proofing") return 2;
         if (wf === "In Progress") return 3;
-        if (wf === "Ready to Ship") return 4;
-        if (wf === "On Transit") return 5;
-        if (wf === "Completed") return 6;
+        if (wf === "Awaiting Final Payment") return 4;
+        if (wf === "Ready to Ship") return 5;
+        if (wf === "On Transit") return 6;
+        if (wf === "Completed") return 7;
         return 0; // Pending / Revision Requested / Rejected
     };
 
@@ -887,11 +1238,14 @@
     };
 
     const renderStepper = (order) => {
-        const current = getWorkflowStepIndex(order.admin.workflowStatus);
+        const wf = String(order?.admin?.workflowStatus || "");
+        const current = getWorkflowStepIndex(wf);
+        const isCompleted = wf === "Completed";
         document.querySelectorAll(".order-stepper .step").forEach((el) => {
             const step = Number(el.getAttribute("data-step"));
-            el.classList.toggle("is-done", Number.isFinite(step) && step < current);
-            el.classList.toggle("is-active", Number.isFinite(step) && step === current);
+            const isStep = Number.isFinite(step);
+            el.classList.toggle("is-done", isStep && (step < current || (isCompleted && step === current)));
+            el.classList.toggle("is-active", isStep && step === current && !isCompleted);
         });
     };
 
@@ -1466,7 +1820,13 @@
             stageHint.textContent = buildPaymentHint(order);
         } else if (wf === "Proofing") {
             addStageUpload("Upload layout mockup (image)", "mockupUpload", "image/*");
-            addStageButton("sendProofBtn", "Send Proof");
+            // Place Send Proof directly under the upload.
+            if (stageUploads) {
+                stageUploads.insertAdjacentHTML(
+                    "beforeend",
+                    `<div class="form-actions"><button class="table-btn" type="button" id="sendProofBtn">Send Proof</button></div>`
+                );
+            }
             stageHint.textContent = buildProofingHint(order);
         } else if (wf === "In Progress") {
             addStageButton("readyToShipBtn", "Mark Ready to Ship");
@@ -1589,7 +1949,7 @@
             const order = window.AdminStore.getOrderById(orderId);
             const dataUrl = order?.admin?.payment?.receiptDataUrl;
             if (!dataUrl) return;
-            window.open(dataUrl, "_blank", "noopener,noreferrer");
+            openReceiptUrl(dataUrl);
         });
 
         const verifyPayment = (type) => {
@@ -1748,6 +2108,7 @@
         if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
 
         renderStepper(order);
+        renderRemainingBalance(order);
         renderDesignSummaryLine(order);
         renderOrderContents(order);
         ensureProductsIndex().then(() => {
