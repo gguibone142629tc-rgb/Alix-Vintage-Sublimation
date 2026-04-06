@@ -64,6 +64,7 @@ final class ListMyOrders
                     'quantity' => $it->quantity,
                     'total_amount' => $it->totalAmount,
                     'meta' => $it->meta,
+                    'design_proof' => $proofByItemId[$it->id] ?? null,
                 ], $items),
                 'design_proof' => $latestProof,
             ];

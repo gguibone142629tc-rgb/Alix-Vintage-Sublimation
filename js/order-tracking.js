@@ -31,6 +31,8 @@
 
     const proofPanelEl = qs("#proofPanel");
     const proofNoteEl = qs("#proofNote");
+    const proofItemPickerEl = qs("#proofItemPicker");
+    const proofItemSelectEl = qs("#proofItemSelect");
     const proofPreviewEl = qs("#proofPreview");
     const approveProofBtnEl = qs("#approveProofBtn");
     const requestRevisionBtnEl = qs("#requestRevisionBtn");
@@ -92,6 +94,79 @@
             .replaceAll("'", "&#039;");
 
     const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+
+    const proofItemSelectionByOrder = new Map();
+
+    const getApiBaseUrl = () => {
+        if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
+            return window.AlixAuth.apiBaseUrl();
+        }
+
+        const origin = window.location && window.location.origin ? window.location.origin : "";
+        if (origin && origin !== "null") return origin;
+        return "http://localhost:8000";
+    };
+
+    const resolveImageUrl = (path) => {
+        const raw = String(path || "").trim();
+        if (!raw) return null;
+        if (/^data:/i.test(raw)) return raw;
+        if (/^https?:\/\//i.test(raw)) return raw;
+
+        const base = getApiBaseUrl().replace(/\/$/, "");
+        return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw.replace(/^[.\/]+/, "")}`;
+    };
+
+    let productsCache = null;
+    let productsCachePromise = null;
+
+    const loadProductsOnce = async () => {
+        if (Array.isArray(productsCache)) return productsCache;
+        if (productsCachePromise) return productsCachePromise;
+
+        productsCachePromise = fetch(getApiBaseUrl() + "/api/products", {
+            method: "GET",
+            headers: { Accept: "application/json" },
+        })
+            .then((res) =>
+                res
+                    .json()
+                    .catch(() => ({}))
+                    .then((data) => ({ res, data }))
+            )
+            .then(({ res, data }) => {
+                if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed to load products");
+                const rows = Array.isArray(data?.products) ? data.products : [];
+                productsCache = rows.map((p) => ({
+                    id: Number(p?.product_id || 0),
+                    name: String(p?.product_name || "").trim(),
+                    imagePath: p?.image_path || null,
+                    images: Array.isArray(p?.images) ? p.images : [],
+                }));
+                return productsCache;
+            })
+            .catch(() => {
+                productsCache = [];
+                return productsCache;
+            })
+            .finally(() => {
+                productsCachePromise = null;
+            });
+
+        return productsCachePromise;
+    };
+
+    const ensureProductsLoadedForImages = (orderRawId) => {
+        if (Array.isArray(productsCache) && productsCache.length) return;
+        if (productsCachePromise) return;
+
+        void loadProductsOnce().then(() => {
+            const current = getCurrentOrder();
+            if (!current) return;
+            if (orderRawId != null && String(current.rawId) !== String(orderRawId)) return;
+            renderOrderContents(current);
+        });
+    };
 
     let activeDialogCleanup = null;
 
@@ -385,13 +460,38 @@
                 shipping_fee: Number(o.shipping_fee || 0) || 0,
                 total: 0,
                 items: items.map((it) => ({
+                    id: it?.order_item_id ?? it?.orderItemId ?? null,
+                    product_id: it?.product_id ?? null,
                     name: it?.meta?.product_name || `Product #${it?.product_id ?? ""}`,
                     quantity: Number(it?.quantity || 0) || 0,
                     meta: it?.meta || {},
                     total_amount: Number(it?.total_amount || 0) || 0,
+                    design_proof: it?.design_proof && typeof it.design_proof === "object"
+                        ? {
+                            status: mapDesignProofStatus(it.design_proof.proof_status),
+                            mockup_data_url: String(it.design_proof.proof_file_path || ""),
+                            revision_note: it.design_proof.revision_note ?? null,
+                            version_number: it.design_proof.version_number ?? null,
+                        }
+                        : null,
                 })),
             };
         });
+    };
+
+    const getProofingItems = (order) => {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        return items.filter((it) => Number.isFinite(Number(it?.id)) && Number(it.id) > 0);
+    };
+
+    const getSelectedProofItem = (order) => {
+        const items = getProofingItems(order);
+        if (items.length === 0) return null;
+
+        const orderKey = String(order?.rawId ?? "");
+        const selectedId = Number(proofItemSelectionByOrder.get(orderKey) || 0);
+        const selected = items.find((it) => Number(it.id) === selectedId);
+        return selected || items[0];
     };
 
     const isInProcessOrder = (order) => {
@@ -507,6 +607,8 @@
     const renderOrderContents = (order) => {
         if (!orderContentsEl) return;
 
+        ensureProductsLoadedForImages(order?.rawId);
+
         const items = Array.isArray(order?.items) ? order.items : [];
         if (items.length === 0) {
             orderContentsEl.innerHTML = `<div class="empty-state"><p>No items found.</p></div>`;
@@ -595,6 +697,28 @@
                     .map((it) => {
                         const meta = it && typeof it.meta === "object" && it.meta ? it.meta : {};
 
+                        const itemProductId = it?.product_id != null ? Number(it.product_id) : 0;
+                        const metaImage = meta.image_path ?? meta.imagePath ?? meta.product_image ?? meta.productImage;
+
+                        let imageUrl = resolveImageUrl(metaImage);
+                        if (!imageUrl && itemProductId > 0 && Array.isArray(productsCache) && productsCache.length) {
+                            const product = productsCache.find((p) => p.id === itemProductId);
+                            const images = Array.isArray(product?.images) ? product.images : [];
+
+                            const viewMap = new Map(
+                                images
+                                    .map((img) => [String(img?.view_type || "").trim().toLowerCase(), resolveImageUrl(img?.image_path)])
+                                    .filter(([view, url]) => Boolean(view) && Boolean(url))
+                            );
+
+                            imageUrl =
+                                viewMap.get("full") ||
+                                viewMap.get("front") ||
+                                viewMap.get("back") ||
+                                viewMap.get("lower") ||
+                                resolveImageUrl(product?.imagePath || null);
+                        }
+
                         const groupName = meta.groupName ?? meta.teamName ?? meta.team_name;
                         const note = meta.note ?? meta.notes ?? meta.customRequest ?? meta.custom_request;
 
@@ -610,13 +734,22 @@
                             .filter(Boolean)
                             .join("");
 
+                        const imageHtml = imageUrl
+                            ? `<div class="order-content-media"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(it.name || "Product")}" loading="lazy" /></div>`
+                            : "";
+
                         return `
                             <div class="order-content-item">
-                                <div class="order-content-head">
-                                    <div class="order-content-name">${escapeHtml(it.name || "-")}</div>
-                                    <div class="order-content-sub">x${escapeHtml(qty)} • ${escapeHtml(formatMoney(lineTotal))}</div>
+                                <div class="order-content-top">
+                                    ${imageHtml}
+                                    <div class="order-content-main">
+                                        <div class="order-content-head">
+                                            <div class="order-content-name">${escapeHtml(it.name || "-")}</div>
+                                            <div class="order-content-sub">x${escapeHtml(qty)} • ${escapeHtml(formatMoney(lineTotal))}</div>
+                                        </div>
+                                        ${metaLines ? `<div class="order-content-meta">${metaLines}</div>` : ""}
+                                    </div>
                                 </div>
-                                ${metaLines ? `<div class="order-content-meta">${metaLines}</div>` : ""}
                                 ${renderRosterTable(roster)}
                             </div>
                         `;
@@ -777,19 +910,57 @@
             proofPanelEl.style.display = showProof ? "block" : "none";
 
             if (showProof) {
-                const proofMeta = order?.meta?.proof && typeof order.meta.proof === "object" ? order.meta.proof : {};
+                const proofingItems = getProofingItems(order);
+                const selectedItem = getSelectedProofItem(order);
+
+                if (proofItemPickerEl) {
+                    const showPicker = proofingItems.length > 1;
+                    proofItemPickerEl.style.display = showPicker ? "block" : "none";
+                }
+
+                if (proofItemSelectEl) {
+                    const options = proofingItems
+                        .map((it, idx) => {
+                            const name = String(it?.name || "").trim();
+                            const label = name ? `Order Item ${idx + 1} - ${name}` : `Order Item ${idx + 1}`;
+                            const selected = selectedItem && Number(selectedItem.id) === Number(it.id) ? " selected" : "";
+                            return `<option value="${escapeHtml(String(it.id))}"${selected}>${escapeHtml(label)}</option>`;
+                        })
+                        .join("");
+                    proofItemSelectEl.innerHTML = options;
+                }
+
+                const proofMeta = selectedItem?.design_proof && typeof selectedItem.design_proof === "object"
+                    ? selectedItem.design_proof
+                    : {};
                 const status = String(proofMeta.status || "Not Sent");
                 const dataUrl = String(proofMeta.mockup_data_url || proofMeta.mockupDataUrl || "").trim();
 
+                const selectedLabel = (() => {
+                    if (!selectedItem) return "";
+                    const idx = proofingItems.findIndex((it) => Number(it.id) === Number(selectedItem.id));
+                    if (idx < 0) return "";
+                    const name = String(selectedItem?.name || "").trim();
+                    return name ? `Order Item ${idx + 1} - ${name}` : `Order Item ${idx + 1}`;
+                })();
+
                 if (proofNoteEl) {
                     if (!dataUrl) {
-                        proofNoteEl.textContent = "Waiting for admin to send the design proof.";
+                        proofNoteEl.textContent = selectedLabel
+                            ? `${selectedLabel}: waiting for admin to send the design proof.`
+                            : "Waiting for admin to send the design proof.";
                     } else if (status === "Sent") {
-                        proofNoteEl.textContent = "Review the proof image, then approve or request a revision.";
+                        proofNoteEl.textContent = selectedLabel
+                            ? `${selectedLabel}: review the proof image, then approve or request a revision.`
+                            : "Review the proof image, then approve or request a revision.";
                     } else if (status === "Revision Requested") {
-                        proofNoteEl.textContent = "Revision requested. Waiting for updated proof.";
+                        proofNoteEl.textContent = selectedLabel
+                            ? `${selectedLabel}: revision requested. Waiting for updated proof.`
+                            : "Revision requested. Waiting for updated proof.";
                     } else if (status === "Approved") {
-                        proofNoteEl.textContent = "Proof approved. Production will start soon.";
+                        proofNoteEl.textContent = selectedLabel
+                            ? `${selectedLabel}: proof approved.`
+                            : "Proof approved.";
                     } else {
                         proofNoteEl.textContent = "Proofing.";
                     }
@@ -1096,7 +1267,14 @@
         }
 
         try {
-            await window.AlixCart.respondOrderProof({ order_id: order.rawId, action: "revision", message: msg });
+            const selectedItem = getSelectedProofItem(order);
+            const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
+            await window.AlixCart.respondOrderProof({
+                order_id: order.rawId,
+                action: "revision",
+                message: msg,
+                ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+            });
             await loadOrders();
             render();
             uiAlert("Revision requested.", { title: "Proofing", tone: "success" });
@@ -1127,7 +1305,13 @@
         if (!ok) return;
 
         try {
-            await window.AlixCart.respondOrderProof({ order_id: order.rawId, action: "approve" });
+            const selectedItem = getSelectedProofItem(order);
+            const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
+            await window.AlixCart.respondOrderProof({
+                order_id: order.rawId,
+                action: "approve",
+                ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+            });
             await loadOrders();
             render();
             uiAlert("Proof approved.", { title: "Proofing", tone: "success" });
@@ -1208,6 +1392,14 @@
 
     requestRevisionBtnEl?.addEventListener("click", requestRevision);
     approveProofBtnEl?.addEventListener("click", approveProof);
+    proofItemSelectEl?.addEventListener("change", () => {
+        const order = getCurrentOrder();
+        if (!order) return;
+        const selected = Number(proofItemSelectEl.value || 0);
+        if (!Number.isFinite(selected) || selected <= 0) return;
+        proofItemSelectionByOrder.set(String(order.rawId), selected);
+        renderStagePanels(order);
+    });
 
     const start = async () => {
         wireOrdersListControls();

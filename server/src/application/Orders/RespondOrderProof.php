@@ -38,6 +38,12 @@ final class RespondOrderProof
             return ['ok' => false, 'status' => 422, 'error' => 'Message too long'];
         }
 
+        $orderItemIdRaw = $input['order_item_id'] ?? $input['orderItemId'] ?? null;
+        $orderItemId = $orderItemIdRaw !== null && is_numeric($orderItemIdRaw) ? (int) $orderItemIdRaw : null;
+        if ($orderItemId !== null && $orderItemId <= 0) {
+            return ['ok' => false, 'status' => 422, 'error' => 'Invalid order_item_id'];
+        }
+
         $status = $this->orders->getOrderStatusForUser($orderId, $userId);
         if ($status === null) {
             return ['ok' => false, 'status' => 404, 'error' => 'Order not found'];
@@ -61,9 +67,9 @@ final class RespondOrderProof
 
         $proofStatus = $action === 'approve' ? 'approved' : 'rejected';
         $revisionNote = $action === 'revision' ? ($message !== '' ? $message : null) : null;
-        $proofOk = $this->orders->updateLatestDesignProofStatusForOrderForUser($orderId, $userId, $proofStatus, $revisionNote);
+        $proofOk = $this->orders->updateLatestDesignProofStatusForOrderForUser($orderId, $userId, $proofStatus, $revisionNote, $orderItemId);
         if (!$proofOk) {
-            return ['ok' => false, 'status' => 409, 'error' => 'No proof found for this order'];
+            return ['ok' => false, 'status' => 409, 'error' => 'No proof found for the selected order item'];
         }
 
         $comment = null;
@@ -87,9 +93,12 @@ final class RespondOrderProof
         }
 
         if ($action === 'approve') {
-            $moved = $this->orders->updateOrderStatus($orderId, 'processing');
-            if (!$moved) {
-                return ['ok' => false, 'status' => 500, 'error' => 'Failed to update status'];
+            $allApproved = $this->orders->areAllLatestDesignProofsApprovedForOrderForUser($orderId, $userId);
+            if ($allApproved) {
+                $moved = $this->orders->updateOrderStatus($orderId, 'processing');
+                if (!$moved) {
+                    return ['ok' => false, 'status' => 500, 'error' => 'Failed to update status'];
+                }
             }
         }
 

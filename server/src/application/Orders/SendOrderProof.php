@@ -80,6 +80,12 @@ final class SendOrderProof
             return ['ok' => false, 'status' => 422, 'error' => 'Mockup must be an image data URL'];
         }
 
+        $orderItemIdRaw = $input['order_item_id'] ?? $input['orderItemId'] ?? null;
+        $orderItemId = $orderItemIdRaw !== null && is_numeric($orderItemIdRaw) ? (int) $orderItemIdRaw : null;
+        if ($orderItemId !== null && $orderItemId <= 0) {
+            return ['ok' => false, 'status' => 422, 'error' => 'Invalid order_item_id'];
+        }
+
         $status = $this->orders->getOrderStatus($orderId);
         if ($status === null) {
             return ['ok' => false, 'status' => 404, 'error' => 'Order not found'];
@@ -97,9 +103,9 @@ final class SendOrderProof
             return ['ok' => false, 'status' => 500, 'error' => 'Failed to save proof file'];
         }
 
-        $created = $this->orders->createDesignProof($orderId, (string) $saved['path']);
+        $created = $this->orders->createDesignProof($orderId, (string) $saved['path'], $orderItemId);
         if ($created === null) {
-            return ['ok' => false, 'status' => 500, 'error' => 'Failed to create proof'];
+            return ['ok' => false, 'status' => 422, 'error' => 'Failed to create proof for selected item'];
         }
 
         return ['ok' => true, 'design_proof' => $created];

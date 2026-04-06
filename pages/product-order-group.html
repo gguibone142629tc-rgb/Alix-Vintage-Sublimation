@@ -214,6 +214,86 @@
     <script src="../js/cart-client.js"></script>
     <script src="../js/product-order-group.js"></script>
     <script>
+        // Logo upload functionality (preview + include in cart meta)
+        let uploadedLogo = null; // { dataUrl, fileName, mime, size }
+
+        const readFileAsDataUrl = (file) =>
+            new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ""));
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+        function initLogoUpload() {
+            const uploadBox = document.getElementById('upload-logo');
+            if (!uploadBox) return;
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            uploadBox.insertAdjacentElement('afterend', fileInput);
+
+            const setEmpty = () => {
+                uploadBox.innerHTML = 'Drag and drop here<br>Choose file';
+            };
+
+            const setPreview = (dataUrl, fileName) => {
+                const safeName = String(fileName || '').trim();
+                uploadBox.innerHTML = `
+                    <div style="display:grid; gap:8px; justify-items:center;">
+                        <img src="${dataUrl}" alt="Uploaded logo" style="max-width:100%; max-height:140px; object-fit:contain; border-radius:6px;" />
+                        <div style="font-size:11px; color:var(--muted);">${safeName ? safeName : 'Logo selected'}</div>
+                    </div>
+                `;
+            };
+
+            const handleFile = async (file) => {
+                if (!file) return;
+                if (!String(file.type || '').startsWith('image/')) {
+                    const message = 'Logo must be an image file.';
+                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                    return;
+                }
+
+                const maxBytes = 1_000_000; // 1MB (logos should be small)
+                if (typeof file.size === 'number' && file.size > maxBytes) {
+                    const message = 'Logo image is too large (max 1MB).';
+                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                    return;
+                }
+
+                try {
+                    const dataUrl = await readFileAsDataUrl(file);
+                    uploadedLogo = { dataUrl, fileName: file.name || null, mime: file.type || null, size: file.size || null };
+                    setPreview(dataUrl, file.name);
+                } catch {
+                    uploadedLogo = null;
+                    setEmpty();
+                    const message = 'Failed to read logo file.';
+                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                }
+            };
+
+            uploadBox.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async () => {
+                const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                if (!file) return;
+                await handleFile(file);
+            });
+
+            uploadBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            uploadBox.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0] ? e.dataTransfer.files[0] : null;
+                if (!file) return;
+                await handleFile(file);
+            });
+        }
+
         const groupRosterTableElement = document.getElementById("group-roster");
         const addGroupRowButton = document.getElementById("add-group-row");
         const removeGroupRowButton = document.getElementById("remove-group-row");
@@ -318,6 +398,7 @@
                     meta: {
                         groupName,
                         roster,
+                        ...(uploadedLogo?.dataUrl ? { logoDataUrl: uploadedLogo.dataUrl, logoFileName: uploadedLogo.fileName, logoMime: uploadedLogo.mime, logoSize: uploadedLogo.size } : {}),
                         customerName: profileName,
                         customerMobile: profilePhone,
                         customerEmail: profileEmail,
@@ -354,6 +435,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initLogoUpload();
             const btns = document.querySelectorAll('.order-panel .btn[type="button"]');
             btns.forEach(btn => {
                 btn.onclick = addOrderToHistory;

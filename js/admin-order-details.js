@@ -622,6 +622,8 @@
             renderOrderContentsNotice(order, proofs);
             // Re-render so proof cards can use the loaded history.
             renderOrderContents(order);
+            // Refresh stage actions so per-item proof statuses are reflected.
+            renderReadOnly(numericId, order, true);
         } catch {
             // Non-blocking: notice can still show revision text from latest proof.
         }
@@ -657,10 +659,11 @@
         });
     };
 
-    const sendDbProof = async (numericId, mockupDataUrl) => {
+    const sendDbProof = async (numericId, mockupDataUrl, orderItemId) => {
         await requestJson("PATCH", "/api/admin/orders/proof", {
             order_id: numericId,
             mockup_data_url: mockupDataUrl,
+            ...(Number.isFinite(Number(orderItemId)) && Number(orderItemId) > 0 ? { order_item_id: Number(orderItemId) } : {}),
         });
     };
 
@@ -681,7 +684,7 @@
         if (stageHint) stageHint.textContent = "-";
     };
 
-    const renderReadOnly = (numericId, order) => {
+    const renderReadOnly = (numericId, order, skipProofHistoryLoad = false) => {
         activeDbOrderId = numericId;
         if (orderIdEl) orderIdEl.textContent = order.id;
         if (orderDateEl) orderDateEl.textContent = formatDate(order.date);
@@ -701,7 +704,9 @@
             renderOrderContents(order);
         });
         renderComments(order);
-        loadAndRenderDbProofHistory(numericId, order);
+        if (!skipProofHistoryLoad) {
+            loadAndRenderDbProofHistory(numericId, order);
+        }
 
         // Minimal admin action for DB orders.
         clearStageArea();
@@ -809,6 +814,76 @@
                     }
                 });
             } else if (status === "proofing") {
+                const mapProofStatusLabel = (rawStatus) => {
+                    const v = String(rawStatus || "").trim().toLowerCase();
+                    if (v === "approved") return "Approved";
+                    if (v === "rejected" || v === "revision requested") return "Revision Requested";
+                    if (v === "submitted" || v === "reviewing" || v === "sent") return "Sent";
+                    return "Not Sent";
+                };
+
+                const mapProofStatusClass = (statusLabel) => {
+                    const v = String(statusLabel || "").trim().toLowerCase();
+                    if (v === "approved") return "proof-status-badge is-approved";
+                    if (v === "revision requested") return "proof-status-badge is-revision";
+                    if (v === "sent") return "proof-status-badge is-sent";
+                    return "proof-status-badge is-not-sent";
+                };
+
+                const latestProofForItem = (proofs, itemId) => {
+                    const list = Array.isArray(proofs) ? proofs : [];
+                    const filtered = list
+                        .filter((p) => Number(p?.order_item_id) === Number(itemId) && p?.proof_file_path)
+                        .slice()
+                        .sort((a, b) => {
+                            const aV = Number(a?.version_number) || 0;
+                            const bV = Number(b?.version_number) || 0;
+                            if (aV !== bV) return bV - aV;
+                            return (Number(b?.proof_id) || 0) - (Number(a?.proof_id) || 0);
+                        });
+                    return filtered[0] || null;
+                };
+
+                const proofs = Array.isArray(order?.admin?.proof?.history) ? order.admin.proof.history : [];
+                const orderItems = Array.isArray(order?.items) ? order.items : [];
+                const validItems = orderItems
+                    .filter((it) => Number.isFinite(Number(it?.id)) && Number(it.id) > 0)
+                    .map((it, idx) => {
+                        const latest = latestProofForItem(proofs, Number(it.id));
+                        const proofStatusLabel = latest
+                            ? mapProofStatusLabel(latest?.proof_status)
+                            : mapProofStatusLabel(order?.admin?.proof?.status || "Not Sent");
+                        const productName = String(it?.name || "").trim();
+                        const title = productName
+                            ? `Order Item ${idx + 1} - ${productName}`
+                            : `Order Item ${idx + 1}`;
+                        return {
+                            id: Number(it.id),
+                            title,
+                            proofStatusLabel,
+                            isApproved: proofStatusLabel === "Approved",
+                        };
+                    });
+
+                const selectedProofItemId = validItems[0]?.id ?? null;
+
+                if (stageUploads && validItems.length > 1) {
+                    const options = validItems
+                        .map((it, idx) => `<option value="${escapeHtml(String(it.id))}" ${idx === 0 ? "selected" : ""}>${escapeHtml(`${it.title} (${it.proofStatusLabel})`)}</option>`)
+                        .join("");
+
+                    stageUploads.insertAdjacentHTML(
+                        "beforeend",
+                        `
+                        <div class="field">
+                            <label class="field-label" for="proofOrderItemSelect">Target product for this mockup</label>
+                            <select class="field-input" id="proofOrderItemSelect">${options}</select>
+                            <div class="mini-note" id="proofSelectedStatusWrap">Current status: <span id="proofSelectedStatusBadge" class="proof-status-badge is-not-sent">Not Sent</span></div>
+                        </div>
+                    `
+                    );
+                }
+
                 addStageUpload("Upload layout mockup (image)", "mockupUpload", "image/*");
 
                 // Place the action button directly under the upload.
@@ -848,7 +923,50 @@
                 }
 
                 let pendingMockup = order?.admin?.proof?.mockupDataUrl || "";
+                let pendingOrderItemId = selectedProofItemId;
                 const upload = qs("#mockupUpload");
+                const sendProofBtn = qs("#sendProofDbBtn");
+                const proofSelectedStatusBadge = qs("#proofSelectedStatusBadge");
+
+                const getSelectedItemMeta = () => validItems.find((it) => Number(it.id) === Number(pendingOrderItemId)) || null;
+
+                const syncProofStageUi = () => {
+                    const selectedMeta = getSelectedItemMeta();
+                    const selectedStatus = selectedMeta?.proofStatusLabel || "Not Sent";
+                    const isApprovedItem = selectedMeta?.isApproved === true;
+
+                    if (proofSelectedStatusBadge) {
+                        proofSelectedStatusBadge.className = mapProofStatusClass(selectedStatus);
+                        proofSelectedStatusBadge.textContent = selectedStatus;
+                    }
+
+                    if (stageHint) {
+                        if (isApprovedItem) {
+                            stageHint.textContent = `This item is already Approved. Sending a new proof is disabled for ${selectedMeta?.title || "this item"}.`;
+                        } else if (selectedStatus === "Revision Requested") {
+                            stageHint.textContent = `Revision requested on ${selectedMeta?.title || "this item"}. Upload updated mockup and resend proof.`;
+                        } else if (selectedStatus === "Sent") {
+                            stageHint.textContent = `Proof sent for ${selectedMeta?.title || "this item"}. Waiting for customer action.`;
+                        }
+                    }
+
+                    if (sendProofBtn) {
+                        sendProofBtn.disabled = !pendingMockup || isApprovedItem;
+                    }
+                };
+
+                const proofOrderItemSelect = qs("#proofOrderItemSelect");
+                if (proofOrderItemSelect) {
+                    const selected = Number(proofOrderItemSelect.value || 0);
+                    pendingOrderItemId = Number.isFinite(selected) && selected > 0 ? selected : selectedProofItemId;
+
+                    proofOrderItemSelect.addEventListener("change", () => {
+                        const next = Number(proofOrderItemSelect.value || 0);
+                        pendingOrderItemId = Number.isFinite(next) && next > 0 ? next : selectedProofItemId;
+                        syncProofStageUi();
+                    });
+                }
+
                 upload?.addEventListener("change", async () => {
                     const file = upload.files?.[0];
                     if (!file) {
@@ -885,11 +1003,10 @@
                 });
 
                 const btn = qs("#sendProofDbBtn");
-                btn && (btn.disabled = !pendingMockup);
                 const updateBtn = () => {
-                    const b = qs("#sendProofDbBtn");
-                    if (b) b.disabled = !pendingMockup;
+                    syncProofStageUi();
                 };
+                syncProofStageUi();
                 upload?.addEventListener("change", updateBtn);
 
                 btn?.addEventListener("click", async () => {
@@ -897,6 +1014,16 @@
                         uiAlert("Upload a mockup first.", { title: "Proofing", tone: "info" });
                         return;
                     }
+
+                    const selectedMeta = getSelectedItemMeta();
+                    if (selectedMeta?.isApproved) {
+                        uiAlert("This order item is already approved. You cannot send a new proof for it.", {
+                            title: "Proofing",
+                            tone: "info",
+                        });
+                        return;
+                    }
+
                     const ok = await uiConfirm("Send this proof to the customer?", {
                         title: "Send Proof",
                         tone: "danger",
@@ -906,7 +1033,7 @@
                     if (!ok) return;
 
                     try {
-                        await sendDbProof(numericId, pendingMockup);
+                        await sendDbProof(numericId, pendingMockup, pendingOrderItemId);
                         const refreshed = await loadDbOrderById(numericId);
                         if (refreshed) renderReadOnly(numericId, refreshed);
                     } catch (e) {
@@ -1487,20 +1614,59 @@
             return { count: filtered.length, linksHtml };
         };
 
+        const getLatestProofForItem = (proofs, itemId) => {
+            const safe = Array.isArray(proofs) ? proofs : [];
+            const filtered = itemId != null
+                ? safe.filter((p) => Number(p?.order_item_id) === Number(itemId) && p?.proof_file_path)
+                : safe.filter((p) => p?.proof_file_path);
+
+            if (filtered.length === 0) return null;
+
+            return filtered
+                .slice()
+                .sort((a, b) => {
+                    const aV = Number(a?.version_number) || 0;
+                    const bV = Number(b?.version_number) || 0;
+                    if (aV !== bV) return bV - aV;
+                    return (Number(b?.proof_id) || 0) - (Number(a?.proof_id) || 0);
+                })[0] || null;
+        };
+
+        const mapProofStatusLabel = (rawStatus) => {
+            const v = String(rawStatus || "").trim().toLowerCase();
+            if (v === "approved") return "Approved";
+            if (v === "rejected" || v === "revision requested") return "Revision Requested";
+            if (v === "submitted" || v === "reviewing" || v === "sent") return "Sent";
+            return "Not Sent";
+        };
+
+        const mapProofStatusClass = (statusLabel) => {
+            const v = String(statusLabel || "").trim().toLowerCase();
+            if (v === "approved") return "proof-status-badge is-approved";
+            if (v === "revision requested") return "proof-status-badge is-revision";
+            if (v === "sent") return "proof-status-badge is-sent";
+            return "proof-status-badge is-not-sent";
+        };
+
         const getDesignProofCard = (dataUrl, itemId) => {
             const proofs = Array.isArray(order?.admin?.proof?.history) ? order.admin.proof.history : [];
             const { count, linksHtml } = buildProofVersionLinks(proofs, itemId);
-            const hasAnyProof = Boolean(String(dataUrl || "").trim());
+            const latestProof = getLatestProofForItem(proofs, itemId);
+            const latestProofUrl = resolveAssetUrl(latestProof?.proof_file_path || null);
+            const displayUrl = latestProofUrl || resolveAssetUrl(dataUrl);
+            const hasAnyProof = Boolean(String(displayUrl || "").trim());
             const canView = count > 0 || hasAnyProof;
             const toggleLabel = count > 0 ? `View versions (${count})` : "View versions";
+            const statusLabel = latestProof ? mapProofStatusLabel(latestProof?.proof_status) : "Not Sent";
 
-            const box = dataUrl
-                ? `<img src="${dataUrl}" alt="Design Proof" loading="lazy">`
+            const box = displayUrl
+                ? `<img src="${escapeHtml(displayUrl)}" alt="Design Proof" loading="lazy">`
                 : `<div class="mini-note">No proof uploaded</div>`;
 
             return `
                 <div class="upload-card">
                     <div class="upload-card-title">Design Proof</div>
+                    <div class="mini-note" style="padding:0 0 8px">Status: <span class="${escapeHtml(mapProofStatusClass(statusLabel))}">${escapeHtml(statusLabel)}</span></div>
                     <div class="upload-card-box">${box}</div>
                     <div class="order-contents-notice-actions" style="margin-top:12px">
                         <button class="table-btn" type="button" data-act="toggle-proof-versions" data-item-id="${itemId != null ? escapeHtml(String(itemId)) : ""}" data-label="${escapeHtml(toggleLabel)}" ${canView ? "" : "disabled"}>${escapeHtml(toggleLabel)}</button>
@@ -1532,11 +1698,21 @@
                     ? "Loading reference..."
                     : "No reference available";
 
+                const logoDataUrl = [
+                    meta.logoDataUrl,
+                    meta.logo_data_url,
+                    meta.logoUrl,
+                    meta.logo_url,
+                    meta.logo,
+                ]
+                    .map((v) => String(v || "").trim())
+                    .find((v) => v.length > 0) || null;
+
                 const uploadCards = `
                     <div class="upload-cards">
                         ${getWideUploadCardGallery("Design Reference", designReferenceGallery, designReferenceFallback)}
                         ${getUploadCard("Uploaded Design", null, custom?.designType === "reference" ? "Reference only" : "No file uploaded")}
-                        ${getUploadCard("Logo", null, "No logo uploaded")}
+                        ${getUploadCard("Logo", logoDataUrl, "No logo uploaded")}
                         ${showProofCard ? getDesignProofCard(order.admin.proof.mockupDataUrl, itemId) : ""}
                     </div>
                 `;

@@ -795,14 +795,21 @@ final class PdoOrderRepository implements OrderRepository
         return $out;
     }
 
-    public function createDesignProof(int $orderId, string $filePath): ?array
+    public function createDesignProof(int $orderId, string $filePath, ?int $orderItemId = null): ?array
     {
         $this->pdo->beginTransaction();
 
         try {
-            $itemStmt = $this->pdo->prepare(
-                'SELECT order_item_id FROM order_items WHERE order_id = :order_id ORDER BY order_item_id ASC LIMIT 1'
-            );
+            if ($orderItemId !== null && $orderItemId > 0) {
+                $itemStmt = $this->pdo->prepare(
+                    'SELECT order_item_id FROM order_items WHERE order_id = :order_id AND order_item_id = :order_item_id LIMIT 1'
+                );
+                $itemStmt->bindValue('order_item_id', $orderItemId, \PDO::PARAM_INT);
+            } else {
+                $itemStmt = $this->pdo->prepare(
+                    'SELECT order_item_id FROM order_items WHERE order_id = :order_id ORDER BY order_item_id ASC LIMIT 1'
+                );
+            }
             $itemStmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
             $itemStmt->execute();
             $itemRow = $itemStmt->fetch();
@@ -859,7 +866,9 @@ final class PdoOrderRepository implements OrderRepository
         int $userId,
         string $proofStatus,
         ?string $revisionNote,
+        ?int $orderItemId = null,
     ): bool {
+        $whereOrderItem = $orderItemId !== null ? ' AND dp2.order_item_id = :order_item_id ' : '';
         $stmt = $this->pdo->prepare(
             'UPDATE design_proofs dp '
             . 'SET proof_status = :proof_status::proof_status, revision_note = :revision_note '
@@ -869,6 +878,7 @@ final class PdoOrderRepository implements OrderRepository
             . '  JOIN order_items oi ON oi.order_item_id = dp2.order_item_id '
             . '  JOIN orders o ON o.order_id = oi.order_id '
             . '  WHERE o.order_id = :order_id AND o.user_id = :user_id AND o.status <> :draft::order_status '
+            . $whereOrderItem
             . '  ORDER BY dp2.version_number DESC, dp2.proof_id DESC '
             . '  LIMIT 1'
             . ')'
@@ -878,8 +888,46 @@ final class PdoOrderRepository implements OrderRepository
         $stmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
         $stmt->bindValue('user_id', $userId, \PDO::PARAM_INT);
         $stmt->bindValue('draft', 'draft', \PDO::PARAM_STR);
+        if ($orderItemId !== null) {
+            $stmt->bindValue('order_item_id', $orderItemId, \PDO::PARAM_INT);
+        }
         $stmt->execute();
 
         return $stmt->rowCount() > 0;
+    }
+
+    public function areAllLatestDesignProofsApprovedForOrderForUser(int $orderId, int $userId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT oi.order_item_id, latest.proof_status '
+            . 'FROM order_items oi '
+            . 'JOIN orders o ON o.order_id = oi.order_id '
+            . 'LEFT JOIN LATERAL ( '
+            . '  SELECT dp.proof_status '
+            . '  FROM design_proofs dp '
+            . '  WHERE dp.order_item_id = oi.order_item_id '
+            . '  ORDER BY dp.version_number DESC, dp.proof_id DESC '
+            . '  LIMIT 1 '
+            . ') latest ON TRUE '
+            . 'WHERE o.order_id = :order_id AND o.user_id = :user_id AND o.status <> :draft::order_status'
+        );
+        $stmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+        $stmt->bindValue('user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue('draft', 'draft', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($rows) || count($rows) === 0) {
+            return false;
+        }
+
+        foreach ($rows as $row) {
+            $status = strtolower((string) ($row['proof_status'] ?? ''));
+            if ($status !== 'approved') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

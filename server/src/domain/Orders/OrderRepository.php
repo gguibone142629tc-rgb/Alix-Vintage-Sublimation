@@ -78,12 +78,15 @@ interface OrderRepository
     /** @param array<int,int> $orderItemIds */
     public function getLatestDesignProofsForOrderItems(array $orderItemIds): array;
 
-    public function createDesignProof(int $orderId, string $filePath): ?array;
+    public function createDesignProof(int $orderId, string $filePath, ?int $orderItemId = null): ?array;
 
     public function updateLatestDesignProofStatusForOrderForUser(
         int $orderId,
         int $userId,
         string $proofStatus,
         ?string $revisionNote,
+        ?int $orderItemId = null,
     ): bool;
+
+    public function areAllLatestDesignProofsApprovedForOrderForUser(int $orderId, int $userId): bool;
 }
