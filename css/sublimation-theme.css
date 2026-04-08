@@ -205,11 +205,14 @@ header,
 
 .av-dialog {
     width: min(520px, 92vw);
+    max-height: min(70vh, 560px);
     border-radius: 18px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.92);
     border: 1px solid var(--theme-line);
     box-shadow: var(--theme-shadow);
+    display: flex;
+    flex-direction: column;
 }
 
 .av-dialog-head {
@@ -235,12 +238,14 @@ header,
 
 .av-dialog-body {
     padding: 16px 18px;
+    overflow: auto;
 }
 
 .av-dialog-desc {
     color: var(--theme-text);
     font-size: 14px;
     line-height: 1.55;
+    white-space: normal;
 }
 
 .av-dialog-actions {

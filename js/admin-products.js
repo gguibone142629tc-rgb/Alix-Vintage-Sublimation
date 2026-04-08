@@ -7,6 +7,7 @@
     const productIdInput = qs("#productId");
     const productNameInput = qs("#productName");
     const productCategoryInput = qs("#productCategory");
+    const productCollectionInput = qs("#productCollection");
     const productPriceInput = qs("#productPrice");
     const imageInputs = {
         front: qs("#productImageFront"),
@@ -80,6 +81,7 @@
             id: productId != null ? String(productId) : "",
             name: String(row?.product_name ?? row?.name ?? "").trim(),
             category: String(row?.apparel_type ?? row?.category ?? "").trim(),
+            collection: String(row?.collection ?? "").trim(),
             price: Number(row?.base_price ?? row?.price ?? 0),
             imagePath: imagePath ? String(imagePath) : null,
             imageUrl: resolveImageUrl(imagePath),
@@ -123,6 +125,9 @@
         productIdInput.value = product?.id || "";
         productNameInput.value = product?.name || "";
         productCategoryInput.value = product?.category || "";
+        if (productCollectionInput) {
+            productCollectionInput.value = String(product?.collection || "");
+        }
         productPriceInput.value = String(product?.price ?? "");
         Object.values(imageDataInputs).forEach((el) => {
             if (el) el.value = "";
@@ -185,7 +190,7 @@
         const q = String(searchInput?.value || "").trim().toLowerCase();
         if (!q) return products;
         return products.filter((p) =>
-            [p.name, p.category, p.id].some((v) => String(v || "").toLowerCase().includes(q))
+            [p.name, p.category, p.collection, p.id].some((v) => String(v || "").toLowerCase().includes(q))
         );
     };
 
@@ -258,7 +263,7 @@
 
     const showError = async (message) => {
         if (window.AVDialog?.alert) {
-            await window.AVDialog.alert(message, { title: "Products", tone: "danger" });
+            await window.AVDialog.alert(message, { title: "Error", tone: "danger" });
             return;
         }
         window.alert(message);
@@ -270,6 +275,7 @@
         const payload = {
             product_name: productNameInput.value,
             apparel_type: productCategoryInput.value,
+            collection: String(productCollectionInput?.value || "").trim(),
             base_price: Number(productPriceInput.value || 0),
             image_map: {
                 front: imageDataInputs.front?.value || "",
@@ -315,7 +321,7 @@
             const run = async () => {
                 const ok = window.AVDialog?.confirm
                     ? await window.AVDialog.confirm("Delete this product?", {
-                          title: "Delete Product",
+                          title: "Confirm",
                           tone: "danger",
                           okText: "Delete",
                           cancelText: "Cancel",

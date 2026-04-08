@@ -253,14 +253,14 @@
                 if (!file) return;
                 if (!String(file.type || '').startsWith('image/')) {
                     const message = 'Logo must be an image file.';
-                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     return;
                 }
 
                 const maxBytes = 1_000_000; // 1MB (logos should be small)
                 if (typeof file.size === 'number' && file.size > maxBytes) {
                     const message = 'Logo image is too large (max 1MB).';
-                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     return;
                 }
 
@@ -272,7 +272,7 @@
                     uploadedLogo = null;
                     setEmpty();
                     const message = 'Failed to read logo file.';
-                    window.AVDialog?.alert(message, { title: 'Upload Logo', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             };
 
@@ -336,7 +336,7 @@
             const token = localStorage.getItem('alix_auth_token');
             if (!token) {
                 const message = 'Please log in first before adding items to cart/order history.';
-                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
                 window.location.href = 'login.html';
                 return;
             }
@@ -406,7 +406,7 @@
                 });
             } catch (error) {
                 const message = error?.message || 'Failed to add to cart.';
-                window.AVDialog?.alert(message, { title: 'Cart', tone: 'danger' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 return;
             }
 

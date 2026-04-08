@@ -22,6 +22,7 @@ final class ListProducts
                 'product_id' => $p->id,
                 'product_name' => $p->name,
                 'apparel_type' => $p->apparelType,
+                'collection' => $p->collection,
                 'base_price' => $p->basePrice,
                 'image_path' => $p->imagePath,
                 'images' => $p->images,

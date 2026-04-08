@@ -73,27 +73,28 @@ final class PdoProductRepository implements ProductRepository
         return Product::fromRow($row);
     }
 
-    public function findOrCreate(string $name, string $apparelType, float $basePrice, ?string $imagePath): Product
+    public function findOrCreate(string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): Product
     {
         $existing = $this->findByNameAndPrice($name, $basePrice);
         if ($existing !== null) {
             return $existing;
         }
 
-        return $this->create($name, $apparelType, $basePrice, $imagePath);
+        return $this->create($name, $apparelType, $collection, $basePrice, $imagePath);
     }
 
-    public function create(string $name, string $apparelType, float $basePrice, ?string $imagePath): Product
+    public function create(string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): Product
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO products (product_name, apparel_type, base_price, image_path, stock_status) '
-            . 'VALUES (:name, :apparel_type, :base_price, :image_path, TRUE) '
+            'INSERT INTO products (product_name, apparel_type, collection, base_price, image_path, stock_status) '
+            . 'VALUES (:name, :apparel_type, :collection, :base_price, :image_path, TRUE) '
             . 'RETURNING *'
         );
 
         $stmt->execute([
             'name' => $name,
             'apparel_type' => $apparelType,
+            'collection' => $collection,
             'base_price' => $basePrice,
             'image_path' => $imagePath,
         ]);
@@ -107,11 +108,11 @@ final class PdoProductRepository implements ProductRepository
         return $product->withImages($product->id !== null ? $this->listImagesByProductId($product->id) : []);
     }
 
-    public function update(int $productId, string $name, string $apparelType, float $basePrice, ?string $imagePath): ?Product
+    public function update(int $productId, string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): ?Product
     {
         $stmt = $this->pdo->prepare(
             'UPDATE products '
-            . 'SET product_name = :name, apparel_type = :apparel_type, base_price = :base_price, image_path = :image_path '
+            . 'SET product_name = :name, apparel_type = :apparel_type, collection = :collection, base_price = :base_price, image_path = :image_path '
             . 'WHERE product_id = :id '
             . 'RETURNING *'
         );
@@ -119,6 +120,7 @@ final class PdoProductRepository implements ProductRepository
         $stmt->execute([
             'name' => $name,
             'apparel_type' => $apparelType,
+            'collection' => $collection,
             'base_price' => $basePrice,
             'image_path' => $imagePath,
             'id' => $productId,

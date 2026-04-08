@@ -254,7 +254,7 @@
                 const otp_code = collectOtp();
                 if (!pendingEmail) {
                     const message = 'Missing email for verification. Please register again.';
-                    window.AVDialog?.alert(message, { title: 'OTP Verification', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
@@ -267,7 +267,7 @@
                     window.location.href = 'homepage.html';
                 } catch (error) {
                     const message = error?.message || 'OTP verification failed';
-                    window.AVDialog?.alert(message, { title: 'OTP Verification', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             });
         }
@@ -281,7 +281,7 @@
 
                 if (!pendingEmail) {
                     const message = 'Missing email for resend. Please register again.';
-                    window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
@@ -289,11 +289,11 @@
                 try {
                     await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
                     const message = 'OTP sent. Please check your email.';
-                    window.AVDialog?.alert(message, { title: 'OTP Sent', tone: 'success' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Success', tone: 'success' }) || alert(message);
                     startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend OTP';
-                    window.AVDialog?.alert(message, { title: 'Resend OTP', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             });
         }

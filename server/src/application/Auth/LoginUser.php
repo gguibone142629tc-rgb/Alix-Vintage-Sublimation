@@ -55,6 +55,7 @@ final class LoginUser
                 'lastname' => $user->lastname,
                 'email' => $user->email,
                 'phone_number' => $user->phoneNumber,
+                'address' => $user->address,
                 'role_id' => $user->roleId,
                 'is_verified' => $user->isVerified,
                 'created_at' => $user->createdAt?->format('c'),

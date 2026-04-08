@@ -49,12 +49,14 @@
                     <button type="button" class="av-dialog-btn" data-av-ok>${escapeHtml(okLabel)}</button>
                 `;
 
+        const messageHtml = escapeHtml(safeMessage).replaceAll("\n", "<br>");
+
         dialog.innerHTML = `
             <div class="av-dialog-head">
                 <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
             </div>
             <div class="av-dialog-body">
-                <div class="av-dialog-desc">${escapeHtml(safeMessage)}</div>
+                <div class="av-dialog-desc">${messageHtml}</div>
             </div>
             <div class="av-dialog-actions">
                 ${actionsHtml}
@@ -106,6 +108,18 @@
                 // avoid accidental submissions in text fields; only accept if focus isn't in an input/textarea.
                 const tag = String(document.activeElement?.tagName || "").toLowerCase();
                 if (tag !== "input" && tag !== "textarea") {
+                    if (safeVariant === "confirm") {
+                        if (document.activeElement === cancelBtn) {
+                            close(false);
+                            return;
+                        }
+                        if (document.activeElement === okBtn) {
+                            close(true);
+                            return;
+                        }
+                        return;
+                    }
+
                     close(true);
                 }
             }

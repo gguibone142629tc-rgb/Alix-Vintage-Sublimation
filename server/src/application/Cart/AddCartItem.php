@@ -51,7 +51,7 @@ final class AddCartItem
 
             $imagePath = isset($input['image_path']) ? (string) $input['image_path'] : null;
 
-            $resolvedProduct = $this->products->findOrCreate($name, $apparelType, $basePrice, $imagePath);
+            $resolvedProduct = $this->products->findOrCreate($name, $apparelType, null, $basePrice, $imagePath);
             $productId = (int) ($resolvedProduct->id ?? 0);
         }
 

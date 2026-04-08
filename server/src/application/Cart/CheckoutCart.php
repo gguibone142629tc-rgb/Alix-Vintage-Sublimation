@@ -32,6 +32,35 @@ final class CheckoutCart
             $orderMeta = [];
         }
 
+        $deliveryRaw = $orderMeta['delivery_address'] ?? $orderMeta['deliveryAddress'] ?? null;
+        $delivery = is_array($deliveryRaw) ? $deliveryRaw : [];
+
+        $country = trim((string) ($delivery['country'] ?? ''));
+        $province = trim((string) ($delivery['province'] ?? ''));
+        $city = trim((string) ($delivery['city'] ?? ''));
+        $street = trim((string) ($delivery['street'] ?? ''));
+        $postalCode = trim((string) ($delivery['postal_code'] ?? $delivery['postalCode'] ?? ''));
+
+        $missing = [];
+        if ($country === '') $missing[] = 'country';
+        if ($province === '') $missing[] = 'province';
+        if ($city === '') $missing[] = 'city';
+        if ($street === '') $missing[] = 'street';
+        if ($postalCode === '') $missing[] = 'postal_code';
+
+        if (count($missing) > 0) {
+            return ['ok' => false, 'status' => 422, 'error' => 'Missing delivery address fields: ' . implode(', ', $missing)];
+        }
+
+        // Normalize meta key names.
+        $orderMeta['delivery_address'] = [
+            'country' => $country,
+            'province' => $province,
+            'city' => $city,
+            'street' => $street,
+            'postal_code' => $postalCode,
+        ];
+
         $orderItems = [];
         $basePriceTotal = 0.0;
 

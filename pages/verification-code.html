@@ -200,7 +200,7 @@
                 if (otpCode.length !== otpInputElements.length) {
                     event.preventDefault();
                     const message = 'Please enter the complete 6-digit verification code.';
-                    window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     return;
                 }
 
@@ -217,7 +217,7 @@
 
                 if (!pendingResetEmail) {
                     const message = 'Missing email for resend. Please start again.';
-                    window.AVDialog?.alert(message, { title: 'Resend Code', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'forgot-password.html';
                     return;
                 }
@@ -225,11 +225,11 @@
                 try {
                     await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingResetEmail });
                     const message = 'A new verification code has been sent.';
-                    window.AVDialog?.alert(message, { title: 'Verification Code', tone: 'success' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Success', tone: 'success' }) || alert(message);
                     startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend verification code';
-                    window.AVDialog?.alert(message, { title: 'Resend Code', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             });
         }

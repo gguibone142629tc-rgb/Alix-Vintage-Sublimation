@@ -252,6 +252,50 @@ nav a.active {
             margin-bottom: 16px;
         }
 
+        .autocomplete-wrap {
+            position: relative;
+        }
+
+        .address-suggestions {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+            max-height: 220px;
+            overflow: auto;
+            z-index: 20;
+        }
+
+        .address-suggestions.is-hidden {
+            display: none;
+        }
+
+        .address-suggestion {
+            width: 100%;
+            text-align: left;
+            border: 0;
+            background: transparent;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #2f2f2f;
+            line-height: 1.35;
+        }
+
+        .address-suggestion + .address-suggestion {
+            border-top: 1px solid #efefef;
+        }
+
+        .address-suggestion:hover,
+        .address-suggestion:focus {
+            outline: none;
+            background: #f6f6f6;
+        }
+
         .password-wrap {
             position: relative;
         }

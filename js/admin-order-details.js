@@ -4,8 +4,10 @@
     const qs = (sel) => document.querySelector(sel);
 
     const uiAlert = (message, opts = {}) => {
+        const tone = String(opts.tone || "info").trim() || "info";
+        const title = tone === "success" ? "Success" : tone === "danger" ? "Error" : "Notice";
         if (window.AVDialog?.alert) {
-            window.AVDialog.alert(message, opts);
+            window.AVDialog.alert(message, { ...opts, title });
             return;
         }
         window.alert(message);
@@ -13,7 +15,7 @@
 
     const uiConfirm = async (message, opts = {}) => {
         if (window.AVDialog?.confirm) {
-            return await window.AVDialog.confirm(message, opts);
+            return await window.AVDialog.confirm(message, { ...opts, title: "Confirm" });
         }
         return window.confirm(message);
     };
@@ -21,6 +23,7 @@
     const orderIdEl = qs("#orderId");
     const customerNameEl = qs("#customerName");
     const customerMobileEl = qs("#customerMobile");
+    const customerAddressEl = qs("#customerAddress");
     const orderDateEl = qs("#orderDate");
     const workflowPill = qs("#workflowPill");
 
@@ -80,6 +83,51 @@
             name: full || email || null,
             mobile: phone || null,
         };
+    };
+
+    const normalizeDeliveryAddress = (details) => {
+        const d = details && typeof details === "object" ? details : {};
+        const raw = d.delivery_address || d.deliveryAddress || d.shipping_address || d.shippingAddress || null;
+        if (!raw || typeof raw !== "object") return null;
+
+        const country = String(raw.country || "").trim();
+        const province = String(raw.province || "").trim();
+        const city = String(raw.city || "").trim();
+        const street = String(raw.street || "").trim();
+        const postalCode = String(raw.postal_code || raw.postalCode || "").trim();
+
+        if (!country && !province && !city && !street && !postalCode) return null;
+
+        return { country, province, city, street, postalCode };
+    };
+
+    const renderDeliveryAddress = (order) => {
+        if (!customerAddressEl) return;
+
+        const addressCardEl = customerAddressEl.closest(".order-header-item");
+
+        const addr = normalizeDeliveryAddress(order?.details);
+        if (!addr) {
+            customerAddressEl.textContent = "-";
+            customerAddressEl.removeAttribute("title");
+            addressCardEl?.removeAttribute("title");
+            return;
+        }
+
+        const parts = [addr.street, addr.city, addr.province, addr.country, addr.postalCode]
+            .map((v) => String(v || "").trim())
+            .filter(Boolean);
+
+        const text = parts.join(", ");
+        customerAddressEl.textContent = text || "-";
+
+        if (text) {
+            customerAddressEl.setAttribute("title", text);
+            addressCardEl?.setAttribute("title", text);
+        } else {
+            customerAddressEl.removeAttribute("title");
+            addressCardEl?.removeAttribute("title");
+        }
     };
 
     const formatDate = (iso) => {
@@ -697,6 +745,7 @@
         renderStepper(order);
         renderRemainingBalance(order);
         if (designDetails) designDetails.textContent = "";
+        renderDeliveryAddress(order);
         renderOrderContentsNotice(order);
         renderOrderContents(order);
         ensureProductsIndex().then(() => {

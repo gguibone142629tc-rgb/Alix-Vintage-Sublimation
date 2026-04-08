@@ -232,7 +232,7 @@
                         window.location.href = 'otp.html';
                         return;
                     }
-                    window.AVDialog?.alert(message, { title: 'Login Failed', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             });
         }
@@ -251,7 +251,7 @@
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';
-                    window.AVDialog?.alert(message, { title: 'Admin Login Failed', tone: 'danger' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 }
             });
         }

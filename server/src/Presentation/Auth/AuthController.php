@@ -38,6 +38,7 @@ final class AuthController
             'lastname' => (string) ($data['lastname'] ?? ''),
             'email' => (string) ($data['email'] ?? ''),
             'phone_number' => $phoneNumber,
+            'address' => (string) ($data['address'] ?? ''),
             'password' => (string) ($data['password'] ?? ''),
             'role' => 'customer',
         ]);

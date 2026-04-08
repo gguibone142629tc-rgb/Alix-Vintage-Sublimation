@@ -10,6 +10,7 @@ final class Product
         public readonly ?int $id,
         public readonly string $name,
         public readonly string $apparelType,
+        public readonly ?string $collection,
         public readonly float $basePrice,
         public readonly ?string $imagePath,
         /** @var array<int, array{view_type:string,image_path:string}> */
@@ -24,11 +25,17 @@ final class Product
     {
         $id = isset($row['product_id']) ? (int) $row['product_id'] : null;
         $createdAt = isset($row['created_at']) ? new \DateTimeImmutable((string) $row['created_at']) : null;
+        $collectionRaw = $row['collection'] ?? $row['product_collection'] ?? null;
+        $collection = is_string($collectionRaw) ? trim($collectionRaw) : null;
+        if ($collection === '') {
+            $collection = null;
+        }
 
         return new self(
             $id,
             (string) ($row['product_name'] ?? ''),
             (string) ($row['apparel_type'] ?? 'other'),
+            $collection,
             (float) ($row['base_price'] ?? 0),
             isset($row['image_path']) ? (string) $row['image_path'] : null,
             [],
@@ -44,6 +51,7 @@ final class Product
             $this->id,
             $this->name,
             $this->apparelType,
+            $this->collection,
             $this->basePrice,
             $this->imagePath,
             $images,

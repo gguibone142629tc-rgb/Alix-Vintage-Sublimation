@@ -52,6 +52,7 @@ final class VerifyOtp
                 'lastname' => $fresh->lastname,
                 'email' => $fresh->email,
                 'phone_number' => $fresh->phoneNumber,
+                'address' => $fresh->address,
                 'role_id' => $fresh->roleId,
                 'is_verified' => $fresh->isVerified,
                 'created_at' => $fresh->createdAt?->format('c'),

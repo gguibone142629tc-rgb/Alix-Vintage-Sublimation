@@ -304,10 +304,12 @@
         });
 
     const uiAlert = (message, opts = {}) => {
+        const tone = String(opts.tone || "info").trim() || "info";
+        const title = tone === "success" ? "Success" : tone === "danger" ? "Error" : "Notice";
         showThemedDialog({
-            title: opts.title || "Notice",
+            title,
             message,
-            tone: opts.tone || "info",
+            tone,
         });
     };
 
@@ -318,9 +320,9 @@
                     ? { ...opts, message: messageOrOptions }
                     : (messageOrOptions && typeof messageOrOptions === "object" ? messageOrOptions : {});
 
-            const { message, title, tone, okText, cancelText } = options;
+            const { message, tone, okText, cancelText } = options;
 
-            const safeTitle = String(title || "Confirm").trim() || "Confirm";
+            const safeTitle = "Confirm";
             const safeMessage = String(message || "Are you sure?").trim() || "Are you sure?";
             const safeTone = String(tone || "danger").trim() || "danger";
             const safeOkText = String(okText || "OK").trim() || "OK";
@@ -566,7 +568,7 @@
     const loadOrders = async () => {
         if (!isAuthed()) {
             const message = "Please log in first to view your orders.";
-            window.AVDialog?.alert(message, { title: "Login Required", tone: "info" }) || alert(message);
+            window.AVDialog?.alert(message, { title: "Notice", tone: "info" }) || alert(message);
             window.location.href = "login.html";
             return;
         }
@@ -576,7 +578,7 @@
             orders = normalizeOrders(res?.orders);
         } catch (error) {
             const message = error?.message || "Failed to load orders.";
-            uiAlert(message, { title: "Orders", tone: "danger" });
+            uiAlert(message, { tone: "danger" });
             orders = [];
         }
     };

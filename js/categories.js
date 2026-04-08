@@ -17,6 +17,10 @@
     const mobileSortLabel = qs("#mobileSortLabel");
     const mobileTypeChecks = Array.from(document.querySelectorAll(".mobile-type-check"));
     const mobileSortRadios = Array.from(document.querySelectorAll("input[name='mobile-sort']"));
+    const desktopCollectionButtons = Array.from(document.querySelectorAll(".collection-list .collection-link[data-collection]"));
+    const mobileCollectionButtons = Array.from(document.querySelectorAll(".sheet-collections .collection-link[data-collection]"));
+
+    const allowedCollections = new Set(["basketball", "volleyball", "football-soccer", "corporate-event"]);
 
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
@@ -55,6 +59,33 @@
         if (v.includes("jersey")) return "jersey";
         if (v.includes("short")) return "shorts";
         return "all";
+    };
+
+    const normalizeCollectionKey = (value) => {
+        const v = String(value || "").trim().toLowerCase();
+        if (!v) return null;
+
+        const normalized = v.replaceAll("_", "-").replaceAll(" ", "-");
+
+        const map = {
+            "basketball-apparel": "basketball",
+            basketball: "basketball",
+            "volleyball-uniforms": "volleyball",
+            volleyball: "volleyball",
+            "football-and-soccer-kits": "football-soccer",
+            "football-soccer-kits": "football-soccer",
+            "football-soccer": "football-soccer",
+            football: "football-soccer",
+            soccer: "football-soccer",
+            "corporate-and-event-wear": "corporate-event",
+            "corporate-event-wear": "corporate-event",
+            "corporate-event": "corporate-event",
+            corporate: "corporate-event",
+            event: "corporate-event",
+        };
+
+        const key = map[normalized] || normalized;
+        return allowedCollections.has(key) ? key : null;
     };
 
     const inferProductTypeKeys = (product) => {
@@ -133,6 +164,55 @@
         });
     };
 
+    const setActiveClass = (button, active) => {
+        if (!button) return;
+        button.classList.toggle("is-active", Boolean(active));
+    };
+
+    let activeCollection = null;
+    let pendingMobileCollection = null;
+
+    const syncCollectionButtons = () => {
+        desktopCollectionButtons.forEach((btn) => {
+            const key = normalizeCollectionKey(btn.getAttribute("data-collection"));
+            setActiveClass(btn, key && key === activeCollection);
+        });
+
+        const mobileKey = pendingMobileCollection != null ? pendingMobileCollection : activeCollection;
+        mobileCollectionButtons.forEach((btn) => {
+            const key = normalizeCollectionKey(btn.getAttribute("data-collection"));
+            setActiveClass(btn, key && key === mobileKey);
+        });
+    };
+
+    const writeCollectionToUrl = (key) => {
+        try {
+            const url = new URL(window.location.href);
+            if (!key) {
+                url.searchParams.delete("collection");
+            } else {
+                url.searchParams.set("collection", key);
+            }
+
+            window.history.replaceState({}, "", url.toString());
+        } catch {
+            // ignore
+        }
+    };
+
+    const setCollectionFilter = (key, { updateUrl = true } = {}) => {
+        activeCollection = normalizeCollectionKey(key);
+        if (updateUrl) writeCollectionToUrl(activeCollection);
+        syncCollectionButtons();
+        render();
+    };
+
+    const matchesCollectionFilter = (product) => {
+        if (!activeCollection) return true;
+        const key = normalizeCollectionKey(product?.collection || "");
+        return key === activeCollection;
+    };
+
     const matchesTypeFilters = (product) => {
         const productTypes = inferProductTypeKeys(product);
 
@@ -184,6 +264,7 @@
             id: Number(p?.product_id || 0),
             name: String(p?.product_name || "").trim(),
             apparelType: String(p?.apparel_type || "").trim(),
+            collection: normalizeCollectionKey(p?.collection) || null,
             basePrice: Number(p?.base_price || 0),
             imagePath: p?.image_path || null,
             images: Array.isArray(p?.images) ? p.images : [],
@@ -195,7 +276,7 @@
         const showCount = Number(showSelect?.value || 8) || 8;
         const sort = String(sortSelect?.value || "Price, Low to High").toLowerCase();
 
-        const list = allProducts.filter(matchesTypeFilters);
+        const list = allProducts.filter(matchesTypeFilters).filter(matchesCollectionFilter);
 
         if (sort.includes("high")) {
             list.sort((a, b) => b.basePrice - a.basePrice);
@@ -239,6 +320,14 @@
     };
 
     const init = async () => {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = normalizeCollectionKey(params.get("collection"));
+        if (fromUrl) {
+            activeCollection = fromUrl;
+        }
+
+        syncCollectionButtons();
+
         try {
             await fetchProducts();
             render();
@@ -262,6 +351,8 @@
 
     mobileFilterTrigger?.addEventListener("click", () => {
         syncMobileFilterChecks();
+        pendingMobileCollection = activeCollection;
+        syncCollectionButtons();
         openSheet(mobileFilterSheet);
     });
 
@@ -284,6 +375,11 @@
             const key = normalizeTypeLabel(String(row.textContent || ""));
             input.checked = selected.has(key);
         });
+
+        activeCollection = pendingMobileCollection;
+        writeCollectionToUrl(activeCollection);
+        pendingMobileCollection = null;
+        syncCollectionButtons();
 
         closeSheet(mobileFilterSheet);
         render();
@@ -321,6 +417,29 @@
             closeSheet(mobileFilterSheet);
             closeSheet(mobileSortSheet);
         }
+    });
+
+    desktopCollectionButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const key = normalizeCollectionKey(btn.getAttribute("data-collection"));
+            if (key && key === activeCollection) {
+                setCollectionFilter(null);
+                return;
+            }
+            setCollectionFilter(key);
+        });
+    });
+
+    mobileCollectionButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const key = normalizeCollectionKey(btn.getAttribute("data-collection"));
+            if (key && key === pendingMobileCollection) {
+                pendingMobileCollection = null;
+            } else {
+                pendingMobileCollection = key;
+            }
+            syncCollectionButtons();
+        });
     });
 
     init();

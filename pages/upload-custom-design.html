@@ -43,6 +43,16 @@
                     <circle cx="17" cy="19" r="1" />
                 </svg>
             </div>
+            <button class="nav-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu-panel is-hidden" id="mobile-nav-menu" role="menu" aria-label="Mobile navigation">
+                <a href="categories.html" role="menuitem">Shop Now</a>
+                <a href="contact-us.html" role="menuitem">Contact</a>
+                <a href="login.html" role="menuitem">Log In</a>
+            </div>
         </div>
     </header>
 
@@ -544,14 +554,14 @@
             const token = localStorage.getItem('alix_auth_token');
             if (!token) {
                 const message = "Please log in first before submitting a custom request.";
-                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
                 window.location.href = "login.html";
                 return;
             }
 
             if (!termsAckInput?.checked) {
                 const message = "Please acknowledge the payment obligation and terms before submitting.";
-                window.AVDialog?.alert(message, { title: 'Terms Required', tone: 'danger' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 return;
             }
 
@@ -601,7 +611,7 @@
                 });
             } catch (error) {
                 const message = error?.message || 'Failed to submit request.';
-                window.AVDialog?.alert(message, { title: 'Request', tone: 'danger' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 return;
             }
 

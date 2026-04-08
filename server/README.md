@@ -107,6 +107,7 @@ Body:
 	"lastname": "Dela Cruz",
 	"email": "juan@example.com",
 	"phone_number": "09123456789",
+	"address": "Purok 1, Example Street, Tagum City, Davao del Norte, Philippines",
 	"password": "password123"
 }
 ```

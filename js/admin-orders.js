@@ -150,7 +150,7 @@
         const ok = window.AVDialog?.confirm
             ? await window.AVDialog.confirm(
                   "Seed demo orders for all workflow phases? This will ADD demo orders (DEMO-*) to your current orders.",
-                  { title: "Seed Demo Orders", tone: "danger", okText: "Seed", cancelText: "Cancel" }
+                                    { title: "Confirm", tone: "danger", okText: "Seed", cancelText: "Cancel" }
               )
             : window.confirm("Seed demo orders for all workflow phases? This will ADD demo orders (DEMO-*) to your current orders.");
         if (ok) {

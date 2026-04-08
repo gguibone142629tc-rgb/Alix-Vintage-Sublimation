@@ -58,6 +58,32 @@
                 <div class="muted">Loading…</div>
             </div>
 
+            <div class="cart-section" aria-label="Delivery address">
+                <h2 class="cart-section-title">Delivery Address</h2>
+                <div class="cart-form-grid">
+                    <div class="cart-field">
+                        <label for="shipCountry">Country</label>
+                        <input id="shipCountry" type="text" value="Philippines" placeholder="Philippines" required>
+                    </div>
+                    <div class="cart-field">
+                        <label for="shipProvince">Province</label>
+                        <input id="shipProvince" type="text" placeholder="Davao del Norte" required>
+                    </div>
+                    <div class="cart-field">
+                        <label for="shipCity">City</label>
+                        <input id="shipCity" type="text" placeholder="Tagum City" required>
+                    </div>
+                    <div class="cart-field">
+                        <label for="shipStreet">Street</label>
+                        <input id="shipStreet" type="text" placeholder="Purok / Street / Barangay" required>
+                    </div>
+                    <div class="cart-field">
+                        <label for="shipPostalCode">Postal Code</label>
+                        <input id="shipPostalCode" type="text" placeholder="8100" required>
+                    </div>
+                </div>
+            </div>
+
             <div class="cart-totals" aria-label="Cart totals">
                 <div class="cart-totals-row">
                     <div class="cart-totals-label">Subtotal</div>
@@ -82,6 +108,7 @@
 
     <footer class="site-footer"></footer>
 
+    <script src="../js/ui-dialog.js"></script>
     <script src="../js/nav-auth.js"></script>
     <script src="../js/cart-client.js"></script>
 
@@ -120,6 +147,21 @@
                 .replaceAll(">", "&gt;")
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#039;");
+
+        const uiAlert = async (message, opts = {}) => {
+            if (window.AVDialog?.alert) {
+                await window.AVDialog.alert(String(message || ''), opts);
+                return;
+            }
+            window.alert(String(message || ''));
+        };
+
+        const uiConfirm = async (message, opts = {}) => {
+            if (window.AVDialog?.confirm) {
+                return await window.AVDialog.confirm(String(message || ''), opts);
+            }
+            return window.confirm(String(message || ''));
+        };
 
         const renderMeta = (meta) => {
             if (!meta || typeof meta !== 'object') return '';
@@ -222,7 +264,7 @@
                 renderCart(cartEnvelope);
             } catch (e) {
                 const msg = (e && e.message) ? e.message : 'Failed to load cart.';
-                alert(msg);
+                await uiAlert(msg, { title: 'Error', tone: 'danger' });
                 const wrap = document.getElementById('cartItems');
                 wrap.innerHTML = `<div class="muted">${safeText(msg)}</div>`;
             }
@@ -232,23 +274,63 @@
             document.getElementById('refreshBtn').addEventListener('click', refresh);
 
             document.getElementById('clearCartBtn').addEventListener('click', async () => {
-                if (!confirm('Clear all items in your cart?')) return;
+                const ok = await uiConfirm('Clear all items in your cart?', {
+                    title: 'Confirm',
+                    tone: 'danger',
+                    okText: 'Clear',
+                    cancelText: 'Cancel',
+                });
+                if (!ok) return;
                 try {
                     await window.AlixCart.clearCart();
                     await refresh();
                 } catch (e) {
-                    alert(e?.message || 'Failed to clear cart.');
+                    await uiAlert(e?.message || 'Failed to clear cart.', { title: 'Error', tone: 'danger' });
                 }
             });
 
             document.getElementById('checkoutBtn').addEventListener('click', async () => {
-                if (!confirm('Place order for all items in your cart?')) return;
+                const country = String(document.getElementById('shipCountry')?.value || '').trim();
+                const province = String(document.getElementById('shipProvince')?.value || '').trim();
+                const city = String(document.getElementById('shipCity')?.value || '').trim();
+                const street = String(document.getElementById('shipStreet')?.value || '').trim();
+                const postal_code = String(document.getElementById('shipPostalCode')?.value || '').trim();
+
+                const missing = [];
+                if (!country) missing.push('Country');
+                if (!province) missing.push('Province');
+                if (!city) missing.push('City');
+                if (!street) missing.push('Street');
+                if (!postal_code) missing.push('Postal Code');
+
+                if (missing.length) {
+                    await uiAlert(`Please fill up your Delivery Address: ${missing.join(', ')}`, { title: 'Error', tone: 'danger' });
+                    return;
+                }
+
+                const ok = await uiConfirm('Place order for all items in your cart?', {
+                    title: 'Confirm',
+                    tone: 'info',
+                    okText: 'Place Order',
+                    cancelText: 'Cancel',
+                });
+                if (!ok) return;
                 try {
-                    await window.AlixCart.checkout();
-                    alert('Order placed successfully.');
+                    await window.AlixCart.checkout({
+                        meta: {
+                            delivery_address: {
+                                country,
+                                province,
+                                city,
+                                street,
+                                postal_code,
+                            },
+                        },
+                    });
+                    await uiAlert('Order placed successfully.', { title: 'Success', tone: 'success', okText: 'Continue' });
                     window.location.href = 'order-history.html';
                 } catch (e) {
-                    alert(e?.message || 'Checkout failed.');
+                    await uiAlert(e?.message || 'Checkout failed.', { title: 'Error', tone: 'danger' });
                 }
             });
 
@@ -260,11 +342,18 @@
                 if (!itemId) return;
 
                 if (e.target.closest('[data-remove]')) {
+                    const ok = await uiConfirm('Remove this item from your cart?', {
+                        title: 'Confirm',
+                        tone: 'danger',
+                        okText: 'Remove',
+                        cancelText: 'Cancel',
+                    });
+                    if (!ok) return;
                     try {
                         await window.AlixCart.removeItem(itemId);
                         await refresh();
                     } catch (err) {
-                        alert(err?.message || 'Failed to remove item.');
+                        await uiAlert(err?.message || 'Failed to remove item.', { title: 'Error', tone: 'danger' });
                     }
                     return;
                 }

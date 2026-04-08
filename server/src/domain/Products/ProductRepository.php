@@ -17,11 +17,11 @@ interface ProductRepository
      * Used for the current static frontend pages that don't know product_id yet.
      * Creates a product record when it doesn't exist.
      */
-    public function findOrCreate(string $name, string $apparelType, float $basePrice, ?string $imagePath): Product;
+    public function findOrCreate(string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): Product;
 
-    public function create(string $name, string $apparelType, float $basePrice, ?string $imagePath): Product;
+    public function create(string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): Product;
 
-    public function update(int $productId, string $name, string $apparelType, float $basePrice, ?string $imagePath): ?Product;
+    public function update(int $productId, string $name, string $apparelType, ?string $collection, float $basePrice, ?string $imagePath): ?Product;
 
     public function delete(int $productId): bool;
 

@@ -52,7 +52,7 @@
         };
 
         if (!payload.name || !payload.email || !payload.topic || !payload.message) {
-            await showDialog("Please complete the required fields.", { title: "Missing info", tone: "danger" });
+            await showDialog("Please complete the required fields.", { title: "Error", tone: "danger" });
             return;
         }
 
@@ -68,18 +68,18 @@
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 const msg = String(data?.error || "Failed to send inquiry.");
-                await showDialog(msg, { title: "Send failed", tone: "danger" });
+                await showDialog(msg, { title: "Error", tone: "danger" });
                 return;
             }
 
             form.reset();
             await showDialog("Your inquiry was sent. We'll get back to you soon.", {
-                title: "Sent",
+                title: "Success",
                 tone: "success",
                 okText: "OK",
             });
         } catch {
-            await showDialog("Network error. Please try again.", { title: "Send failed", tone: "danger" });
+            await showDialog("Network error. Please try again.", { title: "Error", tone: "danger" });
         } finally {
             setBusy(false);
         }

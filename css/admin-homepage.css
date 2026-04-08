@@ -440,7 +440,7 @@ body {
 
 .order-header-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 12px;
     flex: 1;
     min-width: 0;
@@ -470,6 +470,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 
 .order-header-status {
     flex: 0 0 auto;

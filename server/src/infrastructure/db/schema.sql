@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS users (
   lastname  VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   phone_number VARCHAR(30),
+  address TEXT,
   password_hash VARCHAR(255) NOT NULL,
   role_id BIGINT REFERENCES roles(role_id),
   is_verified BOOLEAN NOT NULL DEFAULT FALSE,
@@ -129,6 +130,9 @@ CREATE TABLE IF NOT EXISTS users (
   otp_expiry TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- Evolve existing databases (CREATE TABLE IF NOT EXISTS will not add new columns).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
 
 -- =========
 -- Activity logs
@@ -155,11 +159,14 @@ CREATE TABLE IF NOT EXISTS products (
   product_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   product_name VARCHAR(255) NOT NULL,
   apparel_type apparel_type NOT NULL,
+  collection VARCHAR(80),
   base_price NUMERIC(12,2) NOT NULL,
   image_path VARCHAR(500),
   stock_status BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS collection VARCHAR(80);
 
 CREATE TABLE IF NOT EXISTS product_images (
   product_image_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

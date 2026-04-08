@@ -25,6 +25,7 @@ final class RegisterUser
         $lastname = trim((string) ($input['lastname'] ?? ''));
         $email = strtolower(trim((string) ($input['email'] ?? '')));
         $phone = isset($input['phone_number']) ? trim((string) $input['phone_number']) : null;
+        $address = isset($input['address']) ? trim((string) $input['address']) : null;
         $password = (string) ($input['password'] ?? '');
         $roleName = (string) ($input['role'] ?? 'customer');
 
@@ -38,6 +39,10 @@ final class RegisterUser
 
         if (strlen($password) < 8) {
             return ['ok' => false, 'status' => 422, 'error' => 'Password must be at least 8 characters'];
+        }
+
+        if ($roleName === 'customer' && ($address === null || $address === '')) {
+            return ['ok' => false, 'status' => 422, 'error' => 'Missing address'];
         }
 
         if ($this->users->findByEmail($email) !== null) {
@@ -54,6 +59,7 @@ final class RegisterUser
             lastname: $lastname,
             email: $email,
             phoneNumber: $phone === '' ? null : $phone,
+            address: $address === '' ? null : $address,
             passwordHash: $this->passwordHasher->hash($password),
             roleId: $roleId,
         );
@@ -68,6 +74,7 @@ final class RegisterUser
                 'lastname' => $created->lastname,
                 'email' => $created->email,
                 'phone_number' => $created->phoneNumber,
+                'address' => $created->address,
                 'role_id' => $created->roleId,
                 'is_verified' => $created->isVerified,
                 'created_at' => $created->createdAt?->format('c'),

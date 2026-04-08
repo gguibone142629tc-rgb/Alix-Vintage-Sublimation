@@ -232,6 +232,24 @@ nav a.active {
             margin-bottom: 18px;
         }
 
+        .collection-link {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .collection-link.is-active {
+            color: var(--ink-strong);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
         .filter-box {
             border: 1px solid var(--line);
             border-radius: 8px;

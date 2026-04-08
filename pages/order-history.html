@@ -227,7 +227,7 @@
         const loadAndDisplay = async () => {
             if (!isAuthed()) {
                 const message = 'Please log in first to view your cart and orders.';
-                window.AVDialog?.alert(message, { title: 'Login Required', tone: 'info' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
                 window.location.href = 'login.html';
                 return;
             }
@@ -237,7 +237,7 @@
                 orders = normalizeOrders(ordersRes?.orders);
             } catch (error) {
                 const message = error?.message || 'Failed to load orders.';
-                window.AVDialog?.alert(message, { title: 'Orders', tone: 'danger' }) || alert(message);
+                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 orders = [];
             }
 
@@ -324,7 +324,7 @@
                         .map((it) => `- ${it.name} x${it.quantity}`)
                         .join('\n');
                     const message = `${order.id}\nStatus: ${order.status}\nTotal: ${formatMoney(order.total)}\n\nItems:\n${lines || '-'}`;
-                    window.AVDialog?.alert(message, { title: 'Order', tone: 'info' }) || alert(message);
+                    window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
                 });
             });
         };
@@ -361,11 +361,13 @@
             });
 
             document.getElementById('filterBtn')?.addEventListener('click', () => {
-                alert('Filter options are not implemented yet.');
+                window.AVDialog?.alert('Filter options are not implemented yet.', { title: 'Notice', tone: 'info' })
+                    || alert('Filter options are not implemented yet.');
             });
 
             document.getElementById('dateRangeBtn')?.addEventListener('click', () => {
-                alert('Date range selection is not implemented yet.');
+                window.AVDialog?.alert('Date range selection is not implemented yet.', { title: 'Notice', tone: 'info' })
+                    || alert('Date range selection is not implemented yet.');
             });
 
             document.getElementById('clearBtn')?.addEventListener('click', () => {

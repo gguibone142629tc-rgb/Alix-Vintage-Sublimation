@@ -14,6 +14,12 @@ use App\Shared\Config\Env;
 final class ProductController
 {
     private const MAX_PRODUCT_IMAGE_BYTES = 8_000_000; // 8MB
+    private const ALLOWED_COLLECTIONS = [
+        'basketball',
+        'volleyball',
+        'football-soccer',
+        'corporate-event',
+    ];
 
     public function __construct(
         private readonly ListProducts $listProducts,
@@ -49,12 +55,51 @@ final class ProductController
             'product_id' => $product->id,
             'product_name' => $product->name,
             'apparel_type' => $product->apparelType,
+            'collection' => $product->collection,
             'base_price' => $product->basePrice,
             'image_path' => $product->imagePath,
             'images' => $product->images,
             'stock_status' => $product->stockStatus,
             'created_at' => $product->createdAt?->format('c'),
         ];
+    }
+
+    private function normalizeCollection(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $v = strtolower(trim($value));
+        if ($v === '' || $v === 'none' || $v === 'null') {
+            return null;
+        }
+
+        $v = str_replace(['_', ' '], '-', $v);
+
+        $map = [
+            'basketball-apparel' => 'basketball',
+            'basketball' => 'basketball',
+            'volleyball-uniforms' => 'volleyball',
+            'volleyball' => 'volleyball',
+            'football-and-soccer-kits' => 'football-soccer',
+            'football-soccer-kits' => 'football-soccer',
+            'football-soccer' => 'football-soccer',
+            'football' => 'football-soccer',
+            'soccer' => 'football-soccer',
+            'corporate-and-event-wear' => 'corporate-event',
+            'corporate-event-wear' => 'corporate-event',
+            'corporate-event' => 'corporate-event',
+            'corporate' => 'corporate-event',
+            'event' => 'corporate-event',
+        ];
+
+        $normalized = $map[$v] ?? $v;
+        if (!in_array($normalized, self::ALLOWED_COLLECTIONS, true)) {
+            return '__invalid__';
+        }
+
+        return $normalized;
     }
 
     private function normalizeApparelType(string $value): string
@@ -179,10 +224,12 @@ final class ProductController
     {
         $nameRaw = $body['product_name'] ?? $body['name'] ?? null;
         $apparelRaw = $body['apparel_type'] ?? $body['category'] ?? null;
+        $collectionRaw = $body['collection'] ?? $body['product_collection'] ?? null;
         $priceRaw = $body['base_price'] ?? $body['price'] ?? null;
 
         $name = is_string($nameRaw) ? trim($nameRaw) : '';
         $apparelType = is_string($apparelRaw) ? $this->normalizeApparelType($apparelRaw) : '';
+        $collection = is_string($collectionRaw) || $collectionRaw === null ? $this->normalizeCollection(is_string($collectionRaw) ? $collectionRaw : null) : '__invalid__';
         $basePrice = is_numeric($priceRaw) ? (float) $priceRaw : -1;
 
         if ($name === '') {
@@ -197,12 +244,17 @@ final class ProductController
             return ['ok' => false, 'status' => 422, 'error' => 'Invalid base_price'];
         }
 
+        if ($collection === '__invalid__') {
+            return ['ok' => false, 'status' => 422, 'error' => 'Invalid collection'];
+        }
+
         $imageMap = $this->parseImageMap($body);
 
         return [
             'ok' => true,
             'name' => $name,
             'apparel_type' => $apparelType,
+            'collection' => $collection,
             'base_price' => $basePrice,
             'image_map' => $imageMap,
         ];
@@ -238,6 +290,7 @@ final class ProductController
         $created = $this->products->create(
             (string) $parsed['name'],
             (string) $parsed['apparel_type'],
+            $parsed['collection'] !== null ? (string) $parsed['collection'] : null,
             (float) $parsed['base_price'],
             $imagePath,
         );
@@ -309,6 +362,7 @@ final class ProductController
             $productId,
             (string) $parsed['name'],
             (string) $parsed['apparel_type'],
+            $parsed['collection'] !== null ? (string) $parsed['collection'] : null,
             (float) $parsed['base_price'],
             $imagePath,
         );
