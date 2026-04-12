@@ -6,6 +6,7 @@
     const state = {
         inquiriesById: new Map(),
         openId: null,
+        lastMaxId: 0,
     };
 
     const getApiBaseUrl = () => {
@@ -108,6 +109,20 @@
             if (!id) return;
             state.inquiriesById.set(id, m);
         });
+
+        state.lastMaxId = list.reduce((max, item) => {
+            const id = Number(item?.inquiry_id || 0);
+            return Number.isFinite(id) && id > max ? id : max;
+        }, 0);
+
+        // Mark as seen whenever the list is successfully rendered.
+        // This keeps the realtime badge from re-counting old inquiries.
+        try {
+            localStorage.setItem("alix_admin_messages_last_seen_id", String(state.lastMaxId || 0));
+            localStorage.setItem("alix_admin_messages_last_seen_count", "0");
+        } catch {
+            // ignore storage failures
+        }
 
         tbody.innerHTML = list
             .map((m) => {
@@ -263,4 +278,17 @@
     };
 
     start();
+
+    // Optional external refresh hook for the realtime badge poller.
+    // Keeps behavior minimal: refresh list and close any open details row.
+    window.AlixAdminMessages = {
+        refresh: (inquiries) => {
+            try {
+                closeOpenDetails();
+            } catch {
+                // ignore
+            }
+            render(inquiries);
+        },
+    };
 })();

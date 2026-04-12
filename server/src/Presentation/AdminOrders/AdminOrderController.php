@@ -9,6 +9,7 @@ use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
+use App\Application\Orders\UpdateOrderPricing;
 use App\Application\Orders\UpdateOrderStatus;
 use App\Application\Orders\VerifyOrderPayment;
 use App\Presentation\Http\Request;
@@ -21,6 +22,7 @@ final class AdminOrderController
         private readonly \PDO $pdo,
         private readonly ListAllOrders $listAllOrders,
         private readonly UpdateOrderStatus $updateOrderStatus,
+        private readonly UpdateOrderPricing $updateOrderPricing,
         private readonly VerifyOrderPayment $verifyOrderPayment,
         private readonly SetOrderOnTransit $setOrderOnTransit,
         private readonly SendOrderProof $sendOrderProof,
@@ -124,6 +126,19 @@ final class AdminOrderController
         $status = is_string($statusRaw) ? $statusRaw : '';
 
         $result = $this->updateOrderStatus->handle($orderId, $status);
+        if (!($result['ok'] ?? false)) {
+            Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
+        }
+
+        Response::json(['ok' => true], 200);
+    }
+
+    public function updatePricing(Request $request): void
+    {
+        $this->assertAdmin($request);
+
+        $body = $request->json();
+        $result = $this->updateOrderPricing->handle(is_array($body) ? $body : []);
         if (!($result['ok'] ?? false)) {
             Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
         }

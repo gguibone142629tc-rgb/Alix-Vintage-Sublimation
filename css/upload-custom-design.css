@@ -276,6 +276,13 @@ main {
     margin-bottom: 16px;
 }
 
+.upload-file-name {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-word;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;

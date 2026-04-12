@@ -73,9 +73,47 @@
         return list.map((row) => {
             const o = row?.order || {};
             const user = row?.user || null;
+            const items = Array.isArray(row?.items) ? row.items : [];
             const idNum = o.order_id;
             const typeRaw = String(o.order_type || "").toLowerCase();
-            const orderType = typeRaw === "custom" ? "custom" : "fixed";
+
+            const isCustomDesign = (() => {
+                if (typeRaw === "custom") return true;
+                const orderMeta = (() => {
+                    const raw = o?.meta;
+                    if (!raw) return {};
+                    if (typeof raw === "object") return raw;
+                    if (typeof raw === "string") {
+                        try {
+                            const parsed = JSON.parse(raw);
+                            return parsed && typeof parsed === "object" ? parsed : {};
+                        } catch {
+                            return {};
+                        }
+                    }
+                    return {};
+                })();
+
+                const src = String(orderMeta?.source || "").toLowerCase();
+                if (src === "custom_design") return true;
+
+                for (const it of items) {
+                    const meta = it?.meta;
+                    if (meta && typeof meta === "object" && meta.custom_design) return true;
+                    if (typeof meta === "string") {
+                        try {
+                            const parsed = JSON.parse(meta);
+                            if (parsed && typeof parsed === "object" && parsed.custom_design) return true;
+                        } catch {
+                            // ignore
+                        }
+                    }
+                }
+
+                return false;
+            })();
+
+            const orderType = isCustomDesign ? "custom" : "fixed";
             const name = user ? `${String(user.firstname || "").trim()} ${String(user.lastname || "").trim()}`.trim() : "";
             const fallbackCustomer = String(o?.meta?.customerName || o?.meta?.customer_fullname || "").trim();
             return {

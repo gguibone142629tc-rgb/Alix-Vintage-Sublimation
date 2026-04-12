@@ -1,6 +1,8 @@
 # Ignore runtime upload artifacts
 uploads/proofs/
 uploads/products/
+uploads/custom-design/
+tmp_roster.json
 
 # OS / editor
 .DS_Store

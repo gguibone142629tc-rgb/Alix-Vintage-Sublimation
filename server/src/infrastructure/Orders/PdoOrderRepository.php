@@ -276,6 +276,45 @@ final class PdoOrderRepository implements OrderRepository
         }
     }
 
+    public function updateOrderPricing(int $orderId, float $basePrice, float $shippingFee): bool
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE orders SET base_price = :base_price, shipping_fee = :shipping_fee WHERE order_id = :order_id'
+            );
+            $stmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+            $stmt->bindValue('base_price', $basePrice);
+            $stmt->bindValue('shipping_fee', $shippingFee);
+            $stmt->execute();
+
+            // For custom request orders, there is typically a single order item.
+            // Update its line total so the UI can display the quoted amount.
+            $countStmt = $this->pdo->prepare('SELECT COUNT(*) FROM order_items WHERE order_id = :order_id');
+            $countStmt->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+            $countStmt->execute();
+            $count = (int) $countStmt->fetchColumn();
+
+            if ($count === 1) {
+                $itemUpd = $this->pdo->prepare(
+                    'UPDATE order_items SET total_amount = :total_amount WHERE order_id = :order_id'
+                );
+                $itemUpd->bindValue('order_id', $orderId, \PDO::PARAM_INT);
+                $itemUpd->bindValue('total_amount', $basePrice);
+                $itemUpd->execute();
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     public function markOrderShipped(int $orderId, string $trackingNumber): bool
     {
         $trackingNumber = trim($trackingNumber);

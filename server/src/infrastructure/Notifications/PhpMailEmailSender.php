@@ -53,8 +53,11 @@ final class PhpMailEmailSender implements EmailSender
     {
         $host = Env::require('SMTP_HOST');
         $port = (int) Env::get('SMTP_PORT', '587');
-        $username = Env::require('SMTP_USERNAME');
+        $username = trim(Env::require('SMTP_USERNAME'));
         $password = Env::require('SMTP_PASSWORD');
+        // Gmail app passwords are often copied with spaces (e.g. "abcd efgh ijkl mnop").
+        // Strip all whitespace so AUTH LOGIN succeeds.
+        $password = preg_replace('/\s+/', '', $password ?? '');
         $encryption = strtolower((string) Env::get('SMTP_ENCRYPTION', 'tls')); // tls|ssl|none
         $timeout = (int) Env::get('SMTP_TIMEOUT_SECONDS', '15');
 

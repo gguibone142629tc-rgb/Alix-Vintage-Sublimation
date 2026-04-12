@@ -15,6 +15,7 @@ final class AdminOrderRoutes
         $router->get('/api/admin/orders/proofs', [$controller, 'listProofs']);
         $router->get('/api/admin/transactions', [$controller, 'listTransactions']);
         $router->patch('/api/admin/orders/status', [$controller, 'updateStatus']);
+        $router->patch('/api/admin/orders/pricing', [$controller, 'updatePricing']);
         $router->patch('/api/admin/orders/payment/verify', [$controller, 'verifyPayment']);
         $router->patch('/api/admin/orders/shipping', [$controller, 'setOnTransit']);
         $router->patch('/api/admin/orders/proof', [$controller, 'sendProof']);

@@ -20,6 +20,8 @@ interface OrderRepository
 
     public function updateOrderStatus(int $orderId, string $status): bool;
 
+    public function updateOrderPricing(int $orderId, float $basePrice, float $shippingFee): bool;
+
     public function markOrderShipped(int $orderId, string $trackingNumber): bool;
 
     public function getOrderStatus(int $orderId): ?string;

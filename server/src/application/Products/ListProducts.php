@@ -16,6 +16,16 @@ final class ListProducts
     {
         $items = $this->products->listAll();
 
+        // Hide the internal placeholder product used to attach custom design orders to a valid product_id.
+        // It should not appear in the public catalog.
+        $items = array_values(array_filter($items, static function ($p): bool {
+            $name = strtolower(trim((string) ($p->name ?? '')));
+            $collection = strtolower(trim((string) ($p->collection ?? '')));
+            $price = (float) ($p->basePrice ?? 0);
+
+            return !($name === 'custom design' && $price === 0.0 && ($collection === '' || $collection === 'custom'));
+        }));
+
         return [
             'ok' => true,
             'products' => array_map(static fn($p) => [

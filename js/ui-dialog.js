@@ -13,6 +13,9 @@
 
     let activeCleanup = null;
 
+    let toastStack = null;
+    let toastTimers = new Set();
+
     const closeActive = () => {
         if (typeof activeCleanup === "function") {
             activeCleanup();
@@ -25,7 +28,7 @@
 
         const safeTitle = String(title || "Notice").trim() || "Notice";
         const safeMessage = String(message || "").trim();
-        const safeTone = String(tone || "info").trim() || "info"; // info | success | danger
+        const safeTone = String(tone || "info").trim() || "info"; // info | success | warning | danger
         const safeVariant = String(variant || "alert").trim() || "alert"; // alert | confirm
 
         const backdrop = document.createElement("div");
@@ -39,26 +42,63 @@
         const okLabel = String(okText || "OK").trim() || "OK";
         const cancelLabel = String(cancelText || "Cancel").trim() || "Cancel";
 
+        const iconSvg = (() => {
+            if (safeTone === "success") {
+                return `
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M9.1 16.2 4.9 12l-1.4 1.4 5.6 5.6L20.5 7.6 19.1 6.2z"></path>
+                    </svg>
+                `;
+            }
+            if (safeTone === "danger") {
+                return `
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"></path>
+                    </svg>
+                `;
+            }
+
+            if (safeTone === "warning") {
+                return `
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
+                    </svg>
+                `;
+            }
+
+            // info
+            return `
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+                </svg>
+            `;
+        })();
+
         const actionsHtml =
             safeVariant === "confirm"
                 ? `
-                    <button type="button" class="av-dialog-btn av-dialog-btn--ghost" data-av-cancel>${escapeHtml(cancelLabel)}</button>
-                    <button type="button" class="av-dialog-btn" data-av-ok>${escapeHtml(okLabel)}</button>
+                    <button type="button" class="av-dialog-btn av-dialog-btn--cancel" data-av-cancel>${escapeHtml(cancelLabel)}</button>
+                    <button type="button" class="av-dialog-btn av-dialog-btn--primary" data-av-ok>${escapeHtml(okLabel)}</button>
                 `
                 : `
-                    <button type="button" class="av-dialog-btn" data-av-ok>${escapeHtml(okLabel)}</button>
+                    <button type="button" class="av-dialog-btn av-dialog-btn--primary" data-av-ok>${escapeHtml(okLabel)}</button>
                 `;
 
         const messageHtml = escapeHtml(safeMessage).replaceAll("\n", "<br>");
 
         dialog.innerHTML = `
-            <div class="av-dialog-head">
-                <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
+            <button type="button" class="av-dialog-close" aria-label="Close" data-av-close>
+                <span aria-hidden="true">×</span>
+            </button>
+
+            <div class="av-dialog-icon" aria-hidden="true">
+                ${iconSvg}
             </div>
-            <div class="av-dialog-body">
-                <div class="av-dialog-desc">${messageHtml}</div>
-            </div>
-            <div class="av-dialog-actions">
+
+            <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
+            <div class="av-dialog-desc">${messageHtml}</div>
+
+            <div class="av-dialog-actions av-dialog-actions--${escapeHtml(safeVariant)}">
                 ${actionsHtml}
             </div>
         `;
@@ -68,6 +108,7 @@
 
         const okBtn = dialog.querySelector("[data-av-ok]");
         const cancelBtn = dialog.querySelector("[data-av-cancel]");
+        const closeBtn = dialog.querySelector("[data-av-close]");
 
         let resolver = null;
         const promise = new Promise((resolve) => {
@@ -79,6 +120,7 @@
             backdrop.removeEventListener("click", onBackdropClick);
             okBtn?.removeEventListener("click", onOk);
             cancelBtn?.removeEventListener("click", onCancel);
+            closeBtn?.removeEventListener("click", onClose);
             backdrop.remove();
         };
 
@@ -92,6 +134,7 @@
 
         const onOk = () => close(true);
         const onCancel = () => close(false);
+        const onClose = () => close(safeVariant === "confirm" ? false : true);
 
         const onBackdropClick = (e) => {
             if (e.target !== backdrop) return;
@@ -131,12 +174,79 @@
         window.addEventListener("keydown", onKeyDown, true);
         okBtn?.addEventListener("click", onOk);
         cancelBtn?.addEventListener("click", onCancel);
+        closeBtn?.addEventListener("click", onClose);
 
         setTimeout(() => {
             (safeVariant === "confirm" ? cancelBtn : okBtn)?.focus();
         }, 0);
 
         return promise;
+    };
+
+    const ensureToastStack = () => {
+        if (toastStack && toastStack.isConnected) return toastStack;
+        const el = document.createElement("div");
+        el.className = "av-toast-stack";
+        el.setAttribute("aria-live", "polite");
+        el.setAttribute("aria-atomic", "true");
+        document.body.appendChild(el);
+        toastStack = el;
+        return el;
+    };
+
+    const toast = (message, opts = {}) => {
+        const stack = ensureToastStack();
+        const safeTone = String(opts.tone || "info").trim() || "info"; // info | success | danger
+        const duration = Number.isFinite(Number(opts.duration)) ? Number(opts.duration) : 4000;
+
+        const wrap = document.createElement("div");
+        wrap.className = `av-toast av-toast--${safeTone}`;
+        wrap.setAttribute("role", "status");
+
+        const msg = escapeHtml(String(message ?? "").trim()).replaceAll("\n", "<br>");
+        wrap.innerHTML = `
+            <div class="av-toast-icon" aria-hidden="true"></div>
+            <div class="av-toast-message">${msg}</div>
+            <button type="button" class="av-toast-close" aria-label="Close">×</button>
+        `;
+
+        const closeBtn = wrap.querySelector(".av-toast-close");
+        const cleanup = () => {
+            wrap.remove();
+        };
+
+        const close = () => {
+            wrap.classList.add("is-hiding");
+            window.setTimeout(cleanup, 180);
+        };
+
+        closeBtn?.addEventListener("click", close);
+        stack.appendChild(wrap);
+
+        // auto-dismiss
+        if (duration > 0) {
+            const t = window.setTimeout(() => {
+                toastTimers.delete(t);
+                close();
+            }, duration);
+            toastTimers.add(t);
+        }
+
+        return { close };
+    };
+
+    const clearToasts = () => {
+        for (const t of toastTimers) {
+            try {
+                clearTimeout(t);
+            } catch {
+                // ignore
+            }
+        }
+        toastTimers.clear();
+        if (toastStack && toastStack.isConnected) {
+            toastStack.innerHTML = "";
+        }
     };
 
     window.AVDialog = {
@@ -158,5 +268,13 @@
                 okText: opts.okText || "OK",
                 cancelText: opts.cancelText || "Cancel",
             }),
+    };
+
+    window.AVToast = {
+        show: (message, opts = {}) => toast(message, opts),
+        info: (message, opts = {}) => toast(message, { ...opts, tone: "info" }),
+        success: (message, opts = {}) => toast(message, { ...opts, tone: "success" }),
+        danger: (message, opts = {}) => toast(message, { ...opts, tone: "danger" }),
+        clear: clearToasts,
     };
 })();

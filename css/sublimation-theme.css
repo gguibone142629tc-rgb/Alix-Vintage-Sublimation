@@ -207,38 +207,22 @@ header,
     width: min(520px, 92vw);
     max-height: min(70vh, 560px);
     border-radius: 18px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid var(--theme-line);
     box-shadow: var(--theme-shadow);
-    display: flex;
-    flex-direction: column;
-}
-
-.av-dialog-head {
-    padding: 16px 18px;
-    background: linear-gradient(92deg, #2c1a12 0%, #3a2418 54%, #4a3022 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.av-dialog--success .av-dialog-head {
-    background: linear-gradient(92deg, var(--theme-ok) 0%, rgba(11, 143, 98, 0.78) 100%);
-}
-
-.av-dialog--danger .av-dialog-head {
-    background: linear-gradient(92deg, var(--theme-danger) 0%, rgba(179, 53, 45, 0.78) 100%);
+    display: grid;
+    gap: 10px;
+    padding: 22px 22px 18px;
+    position: relative;
 }
 
 .av-dialog-title {
-    color: rgba(255, 255, 255, 0.94);
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-}
-
-.av-dialog-body {
-    padding: 16px 18px;
-    overflow: auto;
+    text-align: center;
+    color: rgba(36, 25, 20, 0.92);
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: none;
+    font-size: 22px;
 }
 
 .av-dialog-desc {
@@ -246,35 +230,236 @@ header,
     font-size: 14px;
     line-height: 1.55;
     white-space: normal;
+    text-align: center;
+    opacity: 0.82;
+    overflow: auto;
+    max-height: min(36vh, 280px);
+}
+
+.av-dialog-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(36, 25, 20, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    color: rgba(36, 25, 20, 0.75);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.av-dialog-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.34);
+}
+
+.av-dialog-icon {
+    width: 66px;
+    height: 66px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    margin: 4px auto 2px;
+    background: rgba(224, 192, 144, 0.22);
+}
+
+.av-dialog-icon svg {
+    width: 34px;
+    height: 34px;
+    fill: rgba(36, 25, 20, 0.72);
+}
+
+.av-dialog--success .av-dialog-icon {
+    background: rgba(11, 143, 98, 0.12);
+}
+
+.av-dialog--success .av-dialog-icon svg {
+    fill: var(--theme-ok);
+}
+
+.av-dialog--danger .av-dialog-icon {
+    background: rgba(179, 53, 45, 0.12);
+}
+
+.av-dialog--danger .av-dialog-icon svg {
+    fill: var(--theme-danger);
+}
+
+.av-dialog--warning .av-dialog-icon {
+    background: rgba(199, 155, 109, 0.18);
+}
+
+.av-dialog--warning .av-dialog-icon svg {
+    fill: var(--theme-brand-3);
 }
 
 .av-dialog-actions {
-    padding: 0 18px 18px;
-    display: flex;
-    justify-content: flex-end;
+    padding-top: 6px;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
 }
 
-.av-dialog-btn {
-    border: 1px solid rgba(36, 25, 20, 0.2);
-    background: linear-gradient(90deg, var(--theme-brand-2), #f0d9b5, var(--theme-brand-3));
-    color: rgba(36, 25, 20, 0.92);
-    border-radius: 999px;
-    padding: 10px 18px;
-    font-weight: 800;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    cursor: pointer;
+.av-dialog-actions--confirm {
+    grid-template-columns: 1fr 1fr;
 }
 
-.av-dialog-btn--ghost {
-    background: rgba(255, 255, 255, 0.86);
-    color: rgba(36, 25, 20, 0.88);
+.av-dialog-btn {
+    border: 1px solid rgba(36, 25, 20, 0.16);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: none;
+    cursor: pointer;
+    width: 100%;
+}
+
+.av-dialog-btn--cancel {
+    background: rgba(255, 255, 255, 0.88);
+    color: rgba(36, 25, 20, 0.78);
+}
+
+.av-dialog-btn--primary {
+    background: linear-gradient(120deg, var(--theme-brand), var(--theme-brand-2) 45%, var(--theme-brand-3));
+    color: rgba(36, 25, 20, 0.92);
+}
+
+.av-dialog--success .av-dialog-btn--primary {
+    background: var(--theme-ok);
+    border-color: rgba(11, 143, 98, 0.3);
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.av-dialog--danger .av-dialog-btn--primary {
+    background: var(--theme-danger);
+    border-color: rgba(179, 53, 45, 0.28);
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.av-dialog--warning .av-dialog-btn--primary {
+    background: var(--theme-brand-3);
+    border-color: rgba(181, 131, 93, 0.32);
+    color: rgba(255, 255, 255, 0.96);
 }
 
 .av-dialog-btn:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.38);
+}
+
+/* Toast notifications (used for "Order added" etc.) */
+.av-toast-stack {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10000;
+    display: grid;
+    gap: 10px;
+    width: min(420px, calc(100vw - 40px));
+}
+
+.av-toast {
+    display: grid;
+    grid-template-columns: 22px 1fr 28px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+    color: rgba(255, 255, 255, 0.96);
+    animation: avToastIn 0.22s ease;
+}
+
+.av-toast.is-hiding {
+    animation: avToastOut 0.18s ease forwards;
+}
+
+.av-toast-message {
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.av-toast-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.av-toast-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.28);
+}
+
+.av-toast-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+}
+
+.av-toast--success {
+    background: var(--theme-ok);
+}
+
+.av-toast--danger {
+    background: var(--theme-danger);
+}
+
+.av-toast--info {
+    background: linear-gradient(92deg, #2c1a12 0%, #3a2418 54%, #4a3022 100%);
+}
+
+.av-toast--success .av-toast-icon::before {
+    content: "✓";
+    font-weight: 900;
+}
+
+.av-toast--danger .av-toast-icon::before {
+    content: "!";
+    font-weight: 900;
+}
+
+.av-toast--info .av-toast-icon::before {
+    content: "i";
+    font-weight: 900;
+}
+
+@keyframes avToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px) translateY(-2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+}
+
+@keyframes avToastOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(10px);
+    }
 }
 
 main,

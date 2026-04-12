@@ -88,20 +88,28 @@
                 <strong>Drop your main design file here</strong>
                 <p>PNG, JPG, or SVG. High-resolution files recommended.</p>
                 <button class="btn" type="button">Choose File</button>
+                <div class="upload-file-name" id="main-upload-name"></div>
             </div>
+
+            <input id="mainFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" hidden>
 
             <div class="upload-grid upload-grid-spaced">
                 <div class="upload-mini">
                     <strong>Logo / Emblem</strong>
                     <p>Upload team logo or badge for placement.</p>
                     <button class="btn secondary" type="button">Upload Logo</button>
+                    <div class="upload-file-name" id="logo-upload-name"></div>
                 </div>
                 <div class="upload-mini">
                     <strong>Reference Images</strong>
                     <p>Optional inspiration or sample layout.</p>
                     <button class="btn secondary" type="button">Upload Reference</button>
+                    <div class="upload-file-name" id="reference-upload-name"></div>
                 </div>
             </div>
+
+            <input id="logoFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" hidden>
+            <input id="referenceFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" multiple hidden>
             <p class="reference-note" id="reference-note">Reference-only requests are allowed. Please upload a clear sample image and describe colors, placements, and text in Design Notes. Admin will send a proof for approval.</p>
 
             <div class="section-title">Order Details</div>
@@ -288,6 +296,12 @@
         const referenceOnlyInput = document.getElementById("reference-only");
         const referenceNoteElement = document.getElementById("reference-note");
         const mainUploadElement = document.getElementById("main-upload");
+        const mainFileInput = document.getElementById("mainFileInput");
+        const logoFileInput = document.getElementById("logoFileInput");
+        const referenceFileInput = document.getElementById("referenceFileInput");
+        const mainUploadName = document.getElementById("main-upload-name");
+        const logoUploadName = document.getElementById("logo-upload-name");
+        const referenceUploadName = document.getElementById("reference-upload-name");
         const personalizationOnInput = document.getElementById("personalization-on");
         const personalizationNumberOnlyInput = document.getElementById("personalization-number-only");
         const personalizationOffInput = document.getElementById("personalization-off");
@@ -302,26 +316,66 @@
         const saveDraftBtn = document.getElementById("saveDraftBtn");
 
         const DRAFT_KEY = "alix_custom_design_draft";
+        const DRAFT_ID_KEY = "alix_custom_design_draft_id";
+
+        const MAX_FILE_BYTES = 25 * 1024 * 1024;
+        const ALLOWED_EXT = ["png", "jpg", "jpeg", "svg"];
+
+        let selectedMainFile = null;
+        let selectedLogoFile = null;
+        let selectedReferenceFiles = [];
 
         const isLoggedIn = () => Boolean(localStorage.getItem('alix_auth_token'));
 
-        const showToast = (message) => {
+        const showToast = (message) => window.AVToast?.success(message) || (() => {
             const notif = document.createElement("div");
-            notif.style.cssText = `
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: #388e3c;
-                color: white;
-                padding: 16px 20px;
-                border-radius: 10px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-                z-index: 1000;
-                font-weight: 600;
-            `;
             notif.textContent = message;
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 3500);
+        })();
+
+        const getApiBaseUrl = () => (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function" ? window.AlixAuth.apiBaseUrl() : "");
+
+        const authHeaders = () => {
+            const token = localStorage.getItem('alix_auth_token');
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        };
+
+        const extOf = (name) => {
+            const idx = String(name || "").lastIndexOf(".");
+            return idx >= 0 ? String(name).slice(idx + 1).toLowerCase() : "";
+        };
+
+        const validateFile = (file) => {
+            if (!file) return { ok: true };
+            if (file.size > MAX_FILE_BYTES) return { ok: false, error: "File too large (max 25MB)." };
+            const ext = extOf(file.name);
+            if (!ALLOWED_EXT.includes(ext)) return { ok: false, error: "Unsupported file type. Use PNG, JPG, or SVG." };
+            return { ok: true };
+        };
+
+        const setFileLabel = (el, text) => {
+            if (!el) return;
+            el.textContent = text || "";
+        };
+
+        const summarizeFiles = (files) => {
+            const list = Array.isArray(files) ? files : [];
+            if (list.length === 0) return "";
+            if (list.length === 1) return list[0]?.name || "";
+            return `${list.length} files selected`;
+        };
+
+        const clearSelectedFiles = () => {
+            selectedMainFile = null;
+            selectedLogoFile = null;
+            selectedReferenceFiles = [];
+            if (mainFileInput) mainFileInput.value = "";
+            if (logoFileInput) logoFileInput.value = "";
+            if (referenceFileInput) referenceFileInput.value = "";
+            setFileLabel(mainUploadName, "");
+            setFileLabel(logoUploadName, "");
+            setFileLabel(referenceUploadName, "");
         };
 
         const safeJsonParse = (value, fallback) => {
@@ -518,6 +572,79 @@
             }
         };
 
+        const wireFilePickers = () => {
+            const mainBtn = mainUploadElement?.querySelector("button");
+            const miniBlocks = document.querySelectorAll('.upload-mini');
+            const logoBtn = miniBlocks[0]?.querySelector("button");
+            const refBtn = miniBlocks[1]?.querySelector("button");
+
+            mainBtn?.addEventListener("click", () => mainFileInput?.click());
+            logoBtn?.addEventListener("click", () => logoFileInput?.click());
+            refBtn?.addEventListener("click", () => referenceFileInput?.click());
+
+            mainFileInput?.addEventListener("change", () => {
+                const file = mainFileInput.files && mainFileInput.files[0] ? mainFileInput.files[0] : null;
+                const v = validateFile(file);
+                if (!v.ok) {
+                    selectedMainFile = null;
+                    mainFileInput.value = "";
+                    setFileLabel(mainUploadName, "");
+                    window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                    return;
+                }
+                selectedMainFile = file;
+                setFileLabel(mainUploadName, file ? file.name : "");
+            });
+
+            logoFileInput?.addEventListener("change", () => {
+                const file = logoFileInput.files && logoFileInput.files[0] ? logoFileInput.files[0] : null;
+                const v = validateFile(file);
+                if (!v.ok) {
+                    selectedLogoFile = null;
+                    logoFileInput.value = "";
+                    setFileLabel(logoUploadName, "");
+                    window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                    return;
+                }
+                selectedLogoFile = file;
+                setFileLabel(logoUploadName, file ? file.name : "");
+            });
+
+            referenceFileInput?.addEventListener("change", () => {
+                const files = referenceFileInput.files ? Array.from(referenceFileInput.files) : [];
+                for (const f of files) {
+                    const v = validateFile(f);
+                    if (!v.ok) {
+                        selectedReferenceFiles = [];
+                        referenceFileInput.value = "";
+                        setFileLabel(referenceUploadName, "");
+                        window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                        return;
+                    }
+                }
+                selectedReferenceFiles = files;
+                setFileLabel(referenceUploadName, summarizeFiles(files));
+            });
+
+            // Drag/drop for main file
+            if (mainUploadElement) {
+                mainUploadElement.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                mainUploadElement.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer?.files && e.dataTransfer.files[0] ? e.dataTransfer.files[0] : null;
+                    const v = validateFile(file);
+                    if (!v.ok) {
+                        window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                        return;
+                    }
+                    selectedMainFile = file;
+                    setFileLabel(mainUploadName, file ? file.name : "");
+                });
+            }
+        };
+
         const handleAddPlayerClick = () => {
             const body = rosterTableElement.querySelector("tbody");
             const rowCount = body.querySelectorAll("tr").length;
@@ -567,70 +694,131 @@
 
             const draft = buildDraftPayload();
 
-            const qty = Number(draft.quantity || 0);
-            const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
-
-            let profileName = '';
-            let profilePhone = '';
-            let profileEmail = '';
             try {
-                const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
-                if (u && typeof u === 'object') {
-                    const fn = String(u.firstname || '').trim();
-                    const ln = String(u.lastname || '').trim();
-                    const full = `${fn} ${ln}`.trim();
-                    profileName = full || String(u.email || '').trim();
-                    profilePhone = String(u.phone_number || '').trim();
-                    profileEmail = String(u.email || '').trim();
+                const qty = Number(draft.quantity || 0);
+                const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
+
+                // Client validation for required uploads
+                if (draft.designType === 'final' && !selectedMainFile) {
+                    const message = "Please upload your main design file, or choose Reference image only.";
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
+                    return;
                 }
-            } catch {}
+                if (draft.designType === 'reference' && selectedReferenceFiles.length === 0 && !selectedMainFile) {
+                    const message = "Please upload at least one reference image.";
+                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
+                    return;
+                }
 
-            const itemName = `Custom ${draft.productType || "Product"} — ${draft.designName || "Design"}`;
-            try {
-                await window.AlixCart.addItem({
-                    product_name: itemName,
-                    apparel_type: String(draft.productType || 'Custom'),
-                    base_price: 0,
-                    quantity: effectiveQty,
-                    meta: {
-                        customerName: profileName,
-                        customerMobile: profilePhone,
-                        customerEmail: profileEmail,
-                        customRequest: {
-                            designName: draft.designName,
-                            productType: draft.productType,
-                            quantity: effectiveQty,
-                            notes: draft.notes,
-                            designType: draft.designType,
-                            personalization: draft.personalization,
-                            roster: draft.roster,
-                            paymentPreference: draft.paymentPreference,
-                            submittedAt: new Date().toISOString(),
-                        },
+                const fd = new FormData();
+                const draftId = localStorage.getItem(DRAFT_ID_KEY);
+                if (draftId && String(draftId).trim()) {
+                    fd.append('draft_id', String(draftId));
+                }
+                fd.append('terms_ack', '1');
+                fd.append('design_name', String(draft.designName || ''));
+                fd.append('product_type', String(draft.productType || 'Custom'));
+                fd.append('quantity', String(effectiveQty));
+                fd.append('notes', String(draft.notes || ''));
+                fd.append('design_type', String(draft.designType || 'final'));
+                fd.append('personalization', String(draft.personalization || 'names_numbers'));
+                fd.append('payment_preference', String(draft.paymentPreference || 'GCash'));
+                fd.append('roster', JSON.stringify(draft.roster || []));
+
+                if (selectedMainFile) fd.append('main_file', selectedMainFile);
+                if (selectedLogoFile) fd.append('logo_file', selectedLogoFile);
+                selectedReferenceFiles.forEach((f) => fd.append('reference_files[]', f));
+
+                const res = await fetch(getApiBaseUrl() + '/api/custom-design/requests', {
+                    method: 'POST',
+                    headers: {
+                        ...authHeaders(),
                     },
+                    body: fd,
                 });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const message = typeof data.error === 'string' ? data.error : 'Failed to submit request.';
+                    throw new Error(message);
+                }
+
+                localStorage.removeItem(DRAFT_KEY);
+                localStorage.removeItem(DRAFT_ID_KEY);
+                clearSelectedFiles();
+
+                showToast("✓ Custom design request submitted!");
+                const orderId = data && data.order_id ? Number(data.order_id) : 0;
+
+                if (orderId > 0) {
+                    await (window.AVDialog?.alert
+                        ? window.AVDialog.alert(
+                              `Request submitted (ID: ${data.request_id}).\n\nWe created an order for tracking (Order ID: ${orderId}).`,
+                              { title: "Submitted", tone: "success" }
+                          )
+                        : alert(`Request submitted (ID: ${data.request_id}).\n\nOrder ID: ${orderId}`));
+                    window.location.href = `order-tracking.html?id=${encodeURIComponent(String(orderId))}`;
+                    return;
+                }
+
+                await (window.AVDialog?.alert
+                    ? window.AVDialog.alert(`Request submitted (ID: ${data.request_id}).\n\nAdmin will review and message you for the quote/proof.`, {
+                          title: "Submitted",
+                          tone: "success",
+                      })
+                    : alert(`Request submitted (ID: ${data.request_id}).`));
             } catch (error) {
                 const message = error?.message || 'Failed to submit request.';
                 window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 return;
             }
-
-            localStorage.removeItem(DRAFT_KEY);
-            showToast("✓ Custom request added to cart! Admin will review it.");
-            setTimeout(() => {
-                window.location.href = "order-history.html";
-            }, 600);
         };
 
-        const saveDraft = () => {
+        const saveDraft = async () => {
             const payload = buildDraftPayload();
             localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+
+            // If logged in, also persist draft to DB (so it isn't lost across devices).
+            const token = localStorage.getItem('alix_auth_token');
+            if (token) {
+                try {
+                    const body = {
+                        draft_id: localStorage.getItem(DRAFT_ID_KEY) || undefined,
+                        design_name: payload.designName || 'Draft',
+                        product_type: payload.productType || 'Custom',
+                        quantity: payload.quantity || Math.max(1, payload.roster?.length || 1),
+                        notes: payload.notes || '',
+                        design_type: payload.designType || 'final',
+                        personalization: payload.personalization || 'names_numbers',
+                        payment_preference: payload.paymentPreference || 'GCash',
+                        roster: payload.roster || [],
+                    };
+
+                    const res = await fetch(getApiBaseUrl() + '/api/custom-design/drafts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...authHeaders(),
+                        },
+                        body: JSON.stringify(body),
+                    });
+
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data && data.request_id) {
+                        localStorage.setItem(DRAFT_ID_KEY, String(data.request_id));
+                    }
+                } catch {
+                    // keep local draft even if server fails
+                }
+            }
+
             showToast("Draft saved.");
         };
 
         submitRequestBtn?.addEventListener("click", submitCustomRequest);
         saveDraftBtn?.addEventListener("click", saveDraft);
 
+        wireFilePickers();
         restoreDraft();
     </script>
     <script src="../js/nav-auth.js"></script>

@@ -318,13 +318,8 @@
             tbody.querySelectorAll('[data-view-order]').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     const id = btn.getAttribute('data-view-order');
-                    const order = orders.find((o) => String(o.rawId) === String(id)) || null;
-                    if (!order) return;
-                    const lines = (Array.isArray(order.items) ? order.items : [])
-                        .map((it) => `- ${it.name} x${it.quantity}`)
-                        .join('\n');
-                    const message = `${order.id}\nStatus: ${order.status}\nTotal: ${formatMoney(order.total)}\n\nItems:\n${lines || '-'}`;
-                    window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
+                    if (!id) return;
+                    window.location.href = `order-tracking.html?id=${encodeURIComponent(String(id))}`;
                 });
             });
         };

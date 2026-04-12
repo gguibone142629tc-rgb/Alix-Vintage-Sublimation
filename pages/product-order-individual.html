@@ -322,24 +322,11 @@
 
             // Notify other pages
             window.dispatchEvent(new Event('cartItemAdded'));
-            showNotification('✓ Order added! View it in Order History');
+            window.AVToast?.success('✓ Order added! View it in Order History') || showNotification('✓ Order added! View it in Order History');
         }
 
         function showNotification(message) {
             const notif = document.createElement('div');
-            notif.style.cssText = `
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                background: #388e3c;
-                color: white;
-                padding: 16px 20px;
-                border-radius: 6px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                font-weight: 600;
-                animation: slideInRight 0.3s ease;
-            `;
             notif.textContent = message;
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 4000);

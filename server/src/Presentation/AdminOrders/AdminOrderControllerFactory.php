@@ -9,6 +9,7 @@ use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
+use App\Application\Orders\UpdateOrderPricing;
 use App\Application\Orders\UpdateOrderStatus;
 use App\Application\Orders\VerifyOrderPayment;
 use App\Infrastructure\Orders\PdoOrderRepository;
@@ -20,11 +21,12 @@ final class AdminOrderControllerFactory
         $repo = new PdoOrderRepository($pdo);
         $list = new ListAllOrders($repo);
         $update = new UpdateOrderStatus($repo);
+        $updatePricing = new UpdateOrderPricing($repo);
         $verifyPayment = new VerifyOrderPayment($repo);
         $setOnTransit = new SetOrderOnTransit($repo);
         $sendProof = new SendOrderProof($repo);
         $listProofs = new ListOrderDesignProofs($repo);
         $listTransactions = new ListPaymentTransactions($repo);
-        return new AdminOrderController($pdo, $list, $update, $verifyPayment, $setOnTransit, $sendProof, $listProofs, $listTransactions);
+        return new AdminOrderController($pdo, $list, $update, $updatePricing, $verifyPayment, $setOnTransit, $sendProof, $listProofs, $listTransactions);
     }
 }

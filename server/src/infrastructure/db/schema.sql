@@ -155,6 +155,43 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs (action);
 
+-- =========
+-- Custom design requests
+-- =========
+CREATE TABLE IF NOT EXISTS custom_design_requests (
+  request_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+
+  status VARCHAR(30) NOT NULL DEFAULT 'submitted' CHECK (status IN (
+    'draft',
+    'submitted',
+    'reviewing',
+    'quoted',
+    'awaiting_payment',
+    'proofing',
+    'processing',
+    'completed',
+    'cancelled'
+  )),
+
+  design_name VARCHAR(255) NOT NULL,
+  product_type VARCHAR(80) NOT NULL,
+  design_type VARCHAR(20) NOT NULL CHECK (design_type IN ('final','reference')),
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  personalization VARCHAR(30) NOT NULL CHECK (personalization IN ('names_numbers','number_only','none')),
+  payment_preference VARCHAR(20) NOT NULL CHECK (payment_preference IN ('GCash','COD')),
+
+  notes TEXT,
+  roster JSONB NOT NULL DEFAULT '[]'::jsonb,
+  files JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_design_requests_user_id ON custom_design_requests (user_id);
+CREATE INDEX IF NOT EXISTS idx_custom_design_requests_created_at ON custom_design_requests (created_at DESC);
+
 CREATE TABLE IF NOT EXISTS products (
   product_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   product_name VARCHAR(255) NOT NULL,
@@ -216,6 +253,12 @@ CREATE TABLE IF NOT EXISTS order_items (
   total_amount NUMERIC(12,2) NOT NULL,
   meta JSONB NOT NULL DEFAULT '{}'::jsonb
 );
+
+-- Link custom design requests to a created order (nullable for older rows).
+ALTER TABLE custom_design_requests
+  ADD COLUMN IF NOT EXISTS order_id BIGINT REFERENCES orders(order_id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_custom_design_requests_order_id ON custom_design_requests (order_id);
 
 -- =========
 -- Design proofs (per order item)

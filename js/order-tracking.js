@@ -93,6 +93,16 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
+    const cleanNote = (value) => {
+        const s = String(value ?? "").trim();
+        if (!s) return "";
+        const idx = s.toLowerCase().lastIndexOf("| notes:");
+        if (idx >= 0) {
+            return s.slice(idx + "| notes:".length).trim();
+        }
+        return s;
+    };
+
     const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
 
     const proofItemSelectionByOrder = new Map();
@@ -699,10 +709,25 @@
                     .map((it) => {
                         const meta = it && typeof it.meta === "object" && it.meta ? it.meta : {};
 
+                        const pickCustomDesignImage = () => {
+                            const cd = meta.custom_design && typeof meta.custom_design === "object" ? meta.custom_design : null;
+                            const files = cd && cd.files && typeof cd.files === "object" ? cd.files : null;
+                            if (!files) return null;
+
+                            const mainPath = files.main && typeof files.main === "object" ? files.main.path : null;
+                            const logoPath = files.logo && typeof files.logo === "object" ? files.logo.path : null;
+                            const refs = Array.isArray(files.references) ? files.references : [];
+                            const refPath = refs
+                                .map((r) => (r && typeof r === "object" ? r.path : null))
+                                .find((p) => typeof p === "string" && p.trim() !== "");
+
+                            return resolveImageUrl(mainPath || refPath || logoPath);
+                        };
+
                         const itemProductId = it?.product_id != null ? Number(it.product_id) : 0;
                         const metaImage = meta.image_path ?? meta.imagePath ?? meta.product_image ?? meta.productImage;
 
-                        let imageUrl = resolveImageUrl(metaImage);
+                        let imageUrl = pickCustomDesignImage() || resolveImageUrl(metaImage);
                         if (!imageUrl && itemProductId > 0 && Array.isArray(productsCache) && productsCache.length) {
                             const product = productsCache.find((p) => p.id === itemProductId);
                             const images = Array.isArray(product?.images) ? product.images : [];
@@ -722,7 +747,7 @@
                         }
 
                         const groupName = meta.groupName ?? meta.teamName ?? meta.team_name;
-                        const note = meta.note ?? meta.notes ?? meta.customRequest ?? meta.custom_request;
+                        // Note is shown in Comments & Revisions; keep Order Contents clean.
 
                         const roster = normalizeRoster(meta);
 
@@ -731,7 +756,6 @@
 
                         const metaLines = [
                             renderMetaLine("Group", groupName),
-                            renderMetaLine("Note", note),
                         ]
                             .filter(Boolean)
                             .join("");
@@ -783,10 +807,23 @@
             .filter((c) => c && typeof c === "object")
             .map((c) => ({
                 author: String(c.author || "Customer"),
-                message: String(c.message || ""),
+                message: cleanNote(String(c.message || "")),
                 at: typeof c.at === "string" ? c.at : "",
             }))
             .filter((c) => c.message.trim() !== "");
+
+        // Fallback: if no stored comments, show item note (custom design / legacy orders).
+        if (normalized.length === 0) {
+            const items = Array.isArray(order?.items) ? order.items : [];
+            const note = items
+                .map((it) => (it && typeof it.meta === "object" && it.meta ? it.meta : {}))
+                .map((m) => cleanNote(String(m.note ?? m.notes ?? "").trim()))
+                .find((v) => v);
+            if (note) {
+                const at = typeof order?.date === "string" ? order.date : "";
+                normalized.push({ author: "Customer", message: note, at });
+            }
+        }
 
         if (normalized.length === 0) {
             commentsListEl.innerHTML = `<div class="mini-note">No comments yet.</div>`;
@@ -1411,9 +1448,15 @@
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
-            start().catch(() => uiAlert("Failed to load orders.", { title: "Orders", tone: "danger" }));
+            start().catch((err) => {
+                console.error(err);
+                uiAlert(err?.message || "Failed to load orders.", { title: "Orders", tone: "danger" });
+            });
         });
     } else {
-        start().catch(() => uiAlert("Failed to load orders.", { title: "Orders", tone: "danger" }));
+        start().catch((err) => {
+            console.error(err);
+            uiAlert(err?.message || "Failed to load orders.", { title: "Orders", tone: "danger" });
+        });
     }
 })();

@@ -138,6 +138,16 @@
 
     const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
 
+    const cleanNote = (value) => {
+        const s = String(value ?? "").trim();
+        if (!s) return "";
+        const idx = s.toLowerCase().lastIndexOf("| notes:");
+        if (idx >= 0) {
+            return s.slice(idx + "| notes:".length).trim();
+        }
+        return s;
+    };
+
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
             return window.AlixAuth.apiBaseUrl();
@@ -500,6 +510,11 @@
         const parsedOrderMeta = tryParseJsonObject(o.meta);
         const metaFromOrder = parsedOrderMeta && typeof parsedOrderMeta === "object" ? parsedOrderMeta : (o.meta && typeof o.meta === "object" ? o.meta : {});
 
+        const isCustomRequest = (() => {
+            if (String(metaFromOrder?.source || "").toLowerCase() === "custom_design") return true;
+            return mappedItems.some((it) => it?.meta && typeof it.meta === "object" && it.meta.custom_design);
+        })();
+
         const proofMeta = metaFromOrder?.proof && typeof metaFromOrder.proof === "object" ? metaFromOrder.proof : {};
 
         const dpStatusRaw = designProof ? String(designProof.proof_status || "") : "";
@@ -570,11 +585,22 @@
                   .filter((c) => c && typeof c === "object")
                   .map((c) => ({
                       author: String(c.author || "Customer"),
-                      message: String(c.message || ""),
+                      message: cleanNote(String(c.message || "")),
                       at: typeof c.at === "string" ? c.at : null,
                   }))
                   .filter((c) => String(c.message || "").trim() !== "")
             : [];
+
+        // Fallback: show item note as a comment when no stored comments exist yet.
+        if (mappedComments.length === 0) {
+            const note = mappedItems
+                .map((it) => (it && typeof it.meta === "object" && it.meta ? it.meta : {}))
+                .map((m) => cleanNote(String(m.note ?? m.notes ?? "").trim()))
+                .find((v) => v);
+            if (note) {
+                mappedComments.push({ author: "Customer", message: note, at: o.created_at || null });
+            }
+        }
 
         return {
             id: idNum != null ? `ORD-${idNum}` : "ORD-?",
@@ -587,7 +613,7 @@
                 customerMobile,
             },
             admin: {
-                orderType: String(o.order_type || "fixed").toLowerCase() === "custom" ? "custom" : "fixed",
+                orderType: isCustomRequest || String(o.order_type || "").toLowerCase() === "custom" ? "custom" : "fixed",
                 workflowStatus: dbStatusToWorkflow(o.status),
                 // Keep the rest present so the renderer doesn't crash.
                 stockConfirmed: false,
@@ -689,6 +715,14 @@
         await requestJson("PATCH", "/api/admin/orders/status", { order_id: numericId, status: "paid" });
     };
 
+    const updateDbPricing = async (numericId, basePrice, shippingFee) => {
+        await requestJson("PATCH", "/api/admin/orders/pricing", {
+            order_id: numericId,
+            base_price: basePrice,
+            shipping_fee: shippingFee,
+        });
+    };
+
     const verifyDbPayment = async (numericId, verifyType) => {
         await requestJson("PATCH", "/api/admin/orders/payment/verify", {
             order_id: numericId,
@@ -732,6 +766,51 @@
         if (stageHint) stageHint.textContent = "-";
     };
 
+    const wireDbPricing = (numericId, order) => {
+        const isCustom = order?.admin?.orderType === "custom";
+        const status = String(order?.status || "").toLowerCase();
+
+        if (pricingBox) pricingBox.style.display = isCustom ? "block" : "none";
+        if (!isCustom) return;
+
+        const editable = status === "pending";
+        if (basePriceInput) basePriceInput.disabled = !editable;
+        if (shippingFeeInput) shippingFeeInput.disabled = !editable;
+
+        if (pricingHint) {
+            pricingHint.textContent = editable
+                ? "Set Base Price and Shipping Fee for this custom request before approving."
+                : "Pricing details are locked after approval.";
+        }
+
+        const syncQuoteFromInputs = () => {
+            if (!order?.admin?.quote) order.admin.quote = { basePrice: null, shippingFee: null };
+            const base = basePriceInput?.value === "" ? NaN : Number(basePriceInput?.value);
+            const ship = shippingFeeInput?.value === "" ? NaN : Number(shippingFeeInput?.value);
+            order.admin.quote.basePrice = Number.isFinite(base) ? base : 0;
+            order.admin.quote.shippingFee = Number.isFinite(ship) ? ship : 0;
+        };
+
+        const updateApproveEnabled = () => {
+            const approveBtn = qs("#approveDbBtn");
+            if (!approveBtn) return;
+            const baseOk = Number.isFinite(Number(order?.admin?.quote?.basePrice)) && Number(order.admin.quote.basePrice) > 0;
+            const shipOk = Number.isFinite(Number(order?.admin?.quote?.shippingFee)) && Number(order.admin.quote.shippingFee) >= 0;
+            approveBtn.disabled = !(baseOk && shipOk);
+        };
+
+        const onInput = () => {
+            syncQuoteFromInputs();
+            renderRemainingBalance(order);
+            updateApproveEnabled();
+        };
+
+        if (basePriceInput) basePriceInput.oninput = onInput;
+        if (shippingFeeInput) shippingFeeInput.oninput = onInput;
+
+        onInput();
+    };
+
     const renderReadOnly = (numericId, order, skipProofHistoryLoad = false) => {
         activeDbOrderId = numericId;
         if (orderIdEl) orderIdEl.textContent = order.id;
@@ -766,7 +845,26 @@
                 stageButtons.innerHTML = `<button class="table-btn" type="button" id="approveDbBtn">Approve Order</button>`;
                 if (stageHint) stageHint.textContent = "Approving moves the order to Awaiting Payment.";
                 const btn = qs("#approveDbBtn");
+
+                if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";
+                if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
+                wireDbPricing(numericId, order);
+
                 btn?.addEventListener("click", async () => {
+                    if (order?.admin?.orderType === "custom") {
+                        const base = basePriceInput?.value === "" ? NaN : Number(basePriceInput?.value);
+                        const ship = shippingFeeInput?.value === "" ? NaN : Number(shippingFeeInput?.value);
+                        const baseOk = Number.isFinite(base) && base > 0;
+                        const shipOk = Number.isFinite(ship) && ship >= 0;
+                        if (!baseOk || !shipOk) {
+                            uiAlert("Custom request needs Base Price (>0) and Shipping Fee (>=0) before approving.", {
+                                title: "Pricing",
+                                tone: "info",
+                            });
+                            return;
+                        }
+                    }
+
                     const ok = await uiConfirm("Approve this order?", {
                         title: "Approve Order",
                         tone: "danger",
@@ -775,6 +873,11 @@
                     });
                     if (!ok) return;
                     try {
+                        if (order?.admin?.orderType === "custom") {
+                            const base = Number(basePriceInput?.value);
+                            const ship = Number(shippingFeeInput?.value);
+                            await updateDbPricing(numericId, base, ship);
+                        }
                         await approveDbOrder(numericId);
                         const refreshed = await loadDbOrderById(numericId);
                         if (refreshed) renderReadOnly(numericId, refreshed);
@@ -783,6 +886,10 @@
                     }
                 });
             } else if (status === "paid") {
+                if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";
+                if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
+                wireDbPricing(numericId, order);
+
                 const hasReceipt = Boolean(order?.admin?.payment?.receiptDataUrl);
                 const meta = order?.admin?.payment?.receiptMeta || {};
                 const uploadedAt = meta.uploadedAt ? formatDate(meta.uploadedAt) : null;
@@ -1741,13 +1848,32 @@
                 const roster = buildRosterFromItem(it);
                 const itemId = it?.id ?? null;
 
-                const designReferenceGallery = getDesignReferenceGalleryForItem(it);
+                const customFiles = (() => {
+                    const cd = meta?.custom_design && typeof meta.custom_design === "object" ? meta.custom_design : null;
+                    const files = cd?.files && typeof cd.files === "object" ? cd.files : null;
+                    return files;
+                })();
+
+                const customRefs = Array.isArray(customFiles?.references) ? customFiles.references : [];
+                const customRefGallery = customRefs
+                    .map((r) => {
+                        const p = r && typeof r === "object" ? r.path : null;
+                        const url = resolveAssetUrl(p);
+                        return url ? { view: "reference", url } : null;
+                    })
+                    .filter(Boolean);
+
+                const customMainUrl = resolveAssetUrl(customFiles?.main?.path || null);
+                const customLogoUrl = resolveAssetUrl(customFiles?.logo?.path || null);
+
+                const designReferenceGallery = customRefGallery.length ? customRefGallery : getDesignReferenceGalleryForItem(it);
                 const productId = getItemProductId(it);
                 const designReferenceFallback = Number.isFinite(Number(productId)) && !productsIndexLoaded
                     ? "Loading reference..."
                     : "No reference available";
 
                 const logoDataUrl = [
+                    customLogoUrl,
                     meta.logoDataUrl,
                     meta.logo_data_url,
                     meta.logoUrl,
@@ -1760,7 +1886,11 @@
                 const uploadCards = `
                     <div class="upload-cards">
                         ${getWideUploadCardGallery("Design Reference", designReferenceGallery, designReferenceFallback)}
-                        ${getUploadCard("Uploaded Design", null, custom?.designType === "reference" ? "Reference only" : "No file uploaded")}
+                        ${getUploadCard(
+                            "Uploaded Design",
+                            customMainUrl,
+                            custom?.designType === "reference" ? "Reference only" : "No file uploaded"
+                        )}
                         ${getUploadCard("Logo", logoDataUrl, "No logo uploaded")}
                         ${showProofCard ? getDesignProofCard(order.admin.proof.mockupDataUrl, itemId) : ""}
                     </div>
@@ -1779,11 +1909,10 @@
                 const metaPairs = [];
                 if (resolvedProductName) metaPairs.push(["Product", resolvedProductName]);
                 const group = getMetaValue(["groupName", "group", "teamName", "team_name"]);
-                const note = getMetaValue(["note", "notes"]);
+                // Note is shown in Comments & Revisions; keep Order Item clean.
 
                 // Keep these details minimal/clear. Player/Jersey/Size are shown in the roster table below.
                 if (group) metaPairs.push(["Group Name", group]);
-                if (note) metaPairs.push(["Note", note]);
 
                 const metaGrid = metaPairs.length
                     ? `<div class="order-meta-grid" aria-label="Item details">
