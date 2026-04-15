@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
-    <title>Admin | Transactions</title>
+    <title>Admin | Activity Logs</title>
     <link rel="stylesheet" href="../css/admin-homepage.css">
     <link rel="stylesheet" href="../css/sublimation-theme.css">
 </head>
@@ -50,7 +50,7 @@
         <div class="admin-main">
             <div class="topbar" role="banner">
                 <div class="topbar-left">
-                    <div class="topbar-title">Transactions</div>
+                    <div class="topbar-title">Activity Logs</div>
                 </div>
 
                 <div class="topbar-right">
@@ -64,28 +64,38 @@
             </div>
 
             <div class="page-content">
-                <section class="panel panel-wide" aria-label="Transactions list">
+                <section class="panel panel-wide" aria-label="Activity logs list">
                     <div class="panel-head">
-                        <h2 class="panel-title">Payment Transactions</h2>
+                        <h2 class="panel-title">System Activity</h2>
+                        <div class="panel-actions" style="display:flex; gap:8px; align-items:center;">
+                            <button type="button" class="btn" id="refreshLogsBtn">Refresh</button>
+                        </div>
                     </div>
+
                     <div class="table-wrap">
-                        <table class="data-table" aria-label="Transactions">
+                        <table class="data-table" aria-label="Activity logs">
                             <thead>
                                 <tr>
-                                    <th>Payment ID</th>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Method</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Receipt</th>
+                                    <th>Date</th>
+                                    <th>Role</th>
+                                    <th>Actor</th>
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                    <th>IP</th>
                                 </tr>
                             </thead>
-                            <tbody id="transactionsBody">
-                                <tr><td colspan="8">Loading transactions...</td></tr>
+                            <tbody id="activityLogsBody">
+                                <tr><td colspan="6">Loading activity logs...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="panel-foot" style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:12px;">
+                        <div id="activityLogsMeta" style="opacity:0.8; font-weight:700;">&nbsp;</div>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn" id="prevLogsBtn">Previous</button>
+                            <button type="button" class="btn" id="nextLogsBtn">Next</button>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -94,6 +104,6 @@
 
     <script src="../js/admin-auth.js"></script>
     <script src="../js/admin-realtime-messages.js"></script>
-    <script src="../js/admin-transactions.js"></script>
+    <script src="../js/admin-activity-logs.js"></script>
 </body>
 </html>
