@@ -7,7 +7,9 @@ namespace App\Presentation\Auth;
 use App\Application\ActivityLogs\LogActivity;
 use App\Application\Auth\LoginUser;
 use App\Application\Auth\RequestOtp;
+use App\Application\Auth\RequestPasswordReset;
 use App\Application\Auth\RegisterUser;
+use App\Application\Auth\ResetPassword;
 use App\Application\Auth\VerifyOtp;
 use App\Infrastructure\Auth\JwtTokenIssuer;
 use App\Infrastructure\Auth\NativePasswordHasher;
@@ -34,6 +36,9 @@ final class AuthControllerFactory
         $requestOtp = new RequestOtp($userRepo, $emailSender);
         $verifyOtp = new VerifyOtp($userRepo, $tokenIssuer);
 
-        return new AuthController($register, $login, $requestOtp, $verifyOtp, $logActivity);
+        $requestPasswordReset = new RequestPasswordReset($userRepo, $emailSender);
+        $resetPassword = new ResetPassword($userRepo, $passwordHasher);
+
+        return new AuthController($register, $login, $requestOtp, $verifyOtp, $requestPasswordReset, $resetPassword, $logActivity);
     }
 }

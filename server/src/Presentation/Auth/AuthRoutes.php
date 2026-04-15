@@ -20,5 +20,8 @@ final class AuthRoutes
 
         $router->post('/api/auth/otp/request', [$controller, 'requestOtp']);
         $router->post('/api/auth/otp/verify', [$controller, 'verifyOtp']);
+
+        $router->post('/api/auth/password-reset/request', [$controller, 'requestPasswordReset']);
+        $router->post('/api/auth/password-reset/confirm', [$controller, 'confirmPasswordReset']);
     }
 }

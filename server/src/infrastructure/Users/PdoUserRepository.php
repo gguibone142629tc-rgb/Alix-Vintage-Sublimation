@@ -87,4 +87,23 @@ final class PdoUserRepository implements UserRepository
         );
         $stmt->execute(['user_id' => $userId]);
     }
+
+    public function updatePasswordHash(int $userId, string $passwordHash): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET password_hash = :password_hash WHERE user_id = :user_id'
+        );
+        $stmt->execute([
+            'password_hash' => $passwordHash,
+            'user_id' => $userId,
+        ]);
+    }
+
+    public function clearOtp(int $userId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET otp_code = NULL, otp_expiry = NULL WHERE user_id = :user_id'
+        );
+        $stmt->execute(['user_id' => $userId]);
+    }
 }

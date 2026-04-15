@@ -15,4 +15,8 @@ interface UserRepository
     public function verifyOtp(string $email, string $otpCode, \DateTimeImmutable $now): ?User;
 
     public function markVerified(int $userId): void;
+
+    public function updatePasswordHash(int $userId, string $passwordHash): void;
+
+    public function clearOtp(int $userId): void;
 }

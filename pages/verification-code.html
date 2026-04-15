@@ -118,7 +118,7 @@
         </div>
         <div class="footer-bottom">
             <span>(c) 2026 ALIX VINTAGE. All rights reserved.</span>
-            <span>Dummy legal links: Privacy Policy | Terms of Service</span>
+            <span><a href="privacy-policy.html">Privacy Policy</a> | <a href="terms-of-service.html">Terms of Service</a></span>
         </div>
     </footer>
 
@@ -223,7 +223,7 @@
                 }
 
                 try {
-                    await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingResetEmail });
+                    await window.AlixAuth.postJson('/api/auth/password-reset/request', { email: pendingResetEmail });
                     const message = 'A new verification code has been sent.';
                     window.AVDialog?.alert(message, { title: 'Success', tone: 'success' }) || alert(message);
                     startCountdown();

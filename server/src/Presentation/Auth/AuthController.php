@@ -7,7 +7,9 @@ namespace App\Presentation\Auth;
 use App\Application\ActivityLogs\LogActivity;
 use App\Application\Auth\LoginUser;
 use App\Application\Auth\RequestOtp;
+use App\Application\Auth\RequestPasswordReset;
 use App\Application\Auth\RegisterUser;
+use App\Application\Auth\ResetPassword;
 use App\Application\Auth\VerifyOtp;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
@@ -20,6 +22,8 @@ final class AuthController
         private readonly LoginUser $loginUser,
         private readonly RequestOtp $requestOtp,
         private readonly VerifyOtp $verifyOtp,
+        private readonly RequestPasswordReset $requestPasswordReset,
+        private readonly ResetPassword $resetPassword,
         private readonly LogActivity $logActivity,
     ) {
     }
@@ -226,5 +230,55 @@ final class AuthController
             'token' => $result['token'],
             'user' => $result['user'],
         ], 200);
+    }
+
+    public function requestPasswordReset(Request $request): void
+    {
+        $data = $request->json();
+        $result = $this->requestPasswordReset->handle([
+            'email' => (string) ($data['email'] ?? ''),
+        ]);
+
+        if (!$result['ok']) {
+            Response::json(['error' => $result['error']], $result['status']);
+        }
+
+        $this->logActivity->handle([
+            'action' => 'auth.password_reset.request',
+            'actor_user_id' => null,
+            'actor_role' => 'customer',
+            'description' => 'Requested password reset code',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => (string) ($data['email'] ?? '')],
+        ]);
+
+        Response::json(['ok' => true], 200);
+    }
+
+    public function confirmPasswordReset(Request $request): void
+    {
+        $data = $request->json();
+        $result = $this->resetPassword->handle([
+            'email' => (string) ($data['email'] ?? ''),
+            'otp_code' => (string) ($data['otp_code'] ?? ''),
+            'new_password' => (string) ($data['new_password'] ?? ''),
+        ]);
+
+        if (!$result['ok']) {
+            Response::json(['error' => $result['error']], $result['status']);
+        }
+
+        $this->logActivity->handle([
+            'action' => 'auth.password_reset.confirm',
+            'actor_user_id' => null,
+            'actor_role' => 'customer',
+            'description' => 'Password reset successful',
+            'ip_address' => $request->ipAddress(),
+            'user_agent' => $request->userAgent(),
+            'meta' => ['email' => (string) ($data['email'] ?? '')],
+        ]);
+
+        Response::json(['ok' => true], 200);
     }
 }
