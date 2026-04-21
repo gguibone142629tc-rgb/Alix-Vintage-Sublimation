@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -11,7 +11,7 @@
         if (window.ALIX_API_BASE_URL) return window.ALIX_API_BASE_URL;
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
-        return "http://localhost:8000";
+        return "";
     };
 
     const getAdminApiKey = () => {
@@ -260,3 +260,4 @@
 
     start();
 })();
+

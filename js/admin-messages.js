@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -17,7 +17,7 @@
         if (window.ALIX_API_BASE_URL) return window.ALIX_API_BASE_URL;
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
-        return "http://localhost:8000";
+        return "";
     };
 
     const getAdminApiKey = () => {
@@ -171,7 +171,7 @@
         const fullMessage = String(inquiry?.message || "").trim() || "-";
         const email = String(inquiry?.email || "").trim();
         const topic = String(inquiry?.topic || "").trim();
-        const topicHtml = topic ? ` • Topic: <span class="message-reply-topic">${escapeHtml(topic)}</span>` : "";
+        const topicHtml = topic ? ` â€¢ Topic: <span class="message-reply-topic">${escapeHtml(topic)}</span>` : "";
 
         const detailsRow = document.createElement("tr");
         detailsRow.className = "message-details-row";
@@ -292,3 +292,4 @@
         },
     };
 })();
+

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -34,7 +34,7 @@
         return dt.toLocaleString("en-PH", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
     };
 
-    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
 
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
@@ -43,7 +43,7 @@
 
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
-        return "http://localhost:8000";
+        return "";
     };
 
     const getAdminApiKey = () => {
@@ -364,3 +364,4 @@
 
     init();
 })();
+

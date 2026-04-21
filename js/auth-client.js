@@ -14,7 +14,8 @@
             return origin;
         }
 
-        return "http://localhost:8000";
+        // Deployment-safe fallback: rely on relative /api paths.
+        return "";
     }
 
     function safeJsonParse(value) {

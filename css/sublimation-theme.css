@@ -13,6 +13,35 @@
     --theme-shadow: 0 14px 36px rgba(32, 16, 0, 0.14);
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+img,
+video {
+    max-width: 100%;
+    height: auto;
+}
+
+.table-wrap,
+.table-container,
+.cart-table-wrap,
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table,
+.roster-table,
+.orders-table,
+.data-table {
+    max-width: 100%;
+}
+
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(32, 16, 0, 0.32) transparent;

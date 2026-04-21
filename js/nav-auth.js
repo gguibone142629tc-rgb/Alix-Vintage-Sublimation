@@ -301,6 +301,101 @@
         .legal-summary-modal.is-hidden {
             display: none;
         }
+
+        /* Unified mobile customer header */
+        header .nav {
+            position: relative;
+        }
+        @media (max-width: 760px) {
+            header {
+                padding: 10px 14px !important;
+            }
+            header .nav {
+                min-height: 62px;
+                gap: 10px;
+            }
+            header nav,
+            header .nav-icons {
+                display: none !important;
+            }
+            header .logo-wrap {
+                min-height: 48px;
+                gap: 10px;
+            }
+            header .logo-wrap img {
+                width: 44px !important;
+                height: 44px !important;
+            }
+            header .logo-wrap span {
+                font-size: 14px !important;
+                letter-spacing: 1px !important;
+                font-weight: 800;
+            }
+            .nav-menu-toggle {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                border-radius: 999px;
+                padding: 0;
+                gap: 4px;
+                flex-direction: column;
+                border: 1px solid rgba(255, 255, 255, 0.24);
+                background: rgba(255, 255, 255, 0.1);
+                color: #ffffff;
+                flex-shrink: 0;
+                cursor: pointer;
+            }
+            .nav-menu-toggle span {
+                display: block;
+                width: 18px;
+                height: 2px;
+                border-radius: 999px;
+                background: currentColor;
+            }
+            .nav-menu-panel {
+                position: absolute;
+                right: 0;
+                top: calc(100% + 10px);
+                width: min(320px, calc(100vw - 28px));
+                display: grid;
+                gap: 6px;
+                padding: 10px;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: rgba(39, 24, 17, 0.98);
+                box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+                z-index: 220;
+            }
+            .nav-menu-panel a {
+                display: block;
+                text-decoration: none;
+                color: #f2e7d8;
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                border-radius: 10px;
+                padding: 10px 12px;
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                background: rgba(255, 255, 255, 0.04);
+            }
+            .nav-menu-panel a:hover {
+                background: rgba(224, 192, 144, 0.2);
+                border-color: rgba(224, 192, 144, 0.4);
+                color: #fff7eb;
+            }
+            .nav-menu-panel.is-hidden {
+                display: none !important;
+            }
+        }
+        @media (min-width: 761px) {
+            .nav-menu-toggle,
+            .nav-menu-panel {
+                display: none !important;
+            }
+        }
     `;
     document.head.appendChild(style);
 
@@ -615,8 +710,77 @@
         });
     });
 
-    const mobileMenuToggle = document.querySelector(".nav-menu-toggle");
-    const mobileMenuPanel = document.getElementById("mobile-nav-menu");
+    const ensureMobileMenuShell = () => {
+        const navRoot = document.querySelector("header .nav");
+        if (!navRoot) {
+            return { mobileMenuToggle: null, mobileMenuPanel: null };
+        }
+
+        let mobileMenuToggle = navRoot.querySelector(".nav-menu-toggle");
+        if (!mobileMenuToggle) {
+            mobileMenuToggle = document.createElement("button");
+            mobileMenuToggle.className = "nav-menu-toggle";
+            mobileMenuToggle.type = "button";
+            mobileMenuToggle.setAttribute("aria-label", "Open menu");
+            mobileMenuToggle.setAttribute("aria-expanded", "false");
+            mobileMenuToggle.setAttribute("aria-controls", "mobile-nav-menu");
+            mobileMenuToggle.innerHTML = "<span></span><span></span><span></span>";
+            navRoot.appendChild(mobileMenuToggle);
+        }
+        if (mobileMenuToggle.querySelectorAll("span").length < 3) {
+            mobileMenuToggle.innerHTML = "<span></span><span></span><span></span>";
+        }
+
+        let mobileMenuPanel = navRoot.querySelector("#mobile-nav-menu");
+        if (!mobileMenuPanel) {
+            mobileMenuPanel = document.createElement("div");
+            mobileMenuPanel.className = "nav-menu-panel is-hidden";
+            mobileMenuPanel.id = "mobile-nav-menu";
+            mobileMenuPanel.setAttribute("role", "menu");
+            mobileMenuPanel.setAttribute("aria-label", "Mobile navigation");
+            navRoot.appendChild(mobileMenuPanel);
+        }
+
+        return { mobileMenuToggle, mobileMenuPanel };
+    };
+
+    const { mobileMenuToggle, mobileMenuPanel } = ensureMobileMenuShell();
+
+    const renderMobileMenu = () => {
+        if (!mobileMenuPanel) {
+            return;
+        }
+
+        mobileMenuPanel.innerHTML = "";
+
+        const entries = [
+            { label: "Shop Now", href: "categories.html", className: "nav-mobile-shop-link" },
+            { label: "Contact", href: "contact-us.html", className: "nav-mobile-contact-link" },
+            { label: "Track Order", href: isLoggedIn ? "order-history.html" : "login.html", className: "nav-mobile-orders-link" },
+        ];
+
+        if (isLoggedIn) {
+            entries.push({ label: "Log Out", href: "#", className: "nav-mobile-logout-link" });
+        } else {
+            entries.push({ label: "Log In", href: "login.html", className: "nav-mobile-login-link" });
+        }
+
+        entries.forEach((entry) => {
+            const link = document.createElement("a");
+            link.textContent = entry.label;
+            link.href = entry.href;
+            link.className = entry.className;
+            link.setAttribute("role", "menuitem");
+            mobileMenuPanel.appendChild(link);
+        });
+
+        const mobileLogout = mobileMenuPanel.querySelector(".nav-mobile-logout-link");
+        if (mobileLogout) {
+            mobileLogout.addEventListener("click", performLogout);
+        }
+    };
+
+    renderMobileMenu();
 
     const closeMobileMenu = () => {
         if (!mobileMenuToggle || !mobileMenuPanel) {

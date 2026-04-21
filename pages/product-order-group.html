@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -63,7 +63,7 @@
 
         <section class="order-panel">
             <h1 id="detailProductName">Jersey Name Lorem</h1>
-            <div class="price" id="detailProductPrice">₱1200</div>
+            <div class="price" id="detailProductPrice">â‚±1200</div>
             <div class="toggle-row">
                 <a class="toggle-btn" href="product-order-individual.html" id="individualOrderLink">Individual</a>
                 <a class="toggle-btn active" href="product-order-group.html">Group</a>
@@ -188,9 +188,9 @@
             </div>
             <div class="footer-col">
                 <h4>Contact Info</h4>
-                <p><strong>Phone:</strong> +63 9XX XXX XXXX</p>
-                <p><strong>Email:</strong> hello@alixvintage.com</p>
-                <p><strong>Address:</strong> Purok 0, Example Street, Tagum City, Philippines</p>
+                <p><strong>Phone:</strong> +63 994 088 7463</p>
+                <p><strong>Email:</strong> alixvintagesublimation@gmail.com</p>
+                <p><strong>Address:</strong> STALL #04-A Tagum Cultural and Trade Center, Magugpo Poblacion, Tagum City</p>
             </div>
             <div class="footer-col">
                 <h4>Business Hours</h4>
@@ -346,7 +346,7 @@
             const name = nameEl ? nameEl.textContent.trim() : 'Jersey Item';
             let price = 0;
             if (priceEl) {
-                price = parseFloat(priceEl.textContent.replace(/[₱,]/g, '')) || 0;
+                price = parseFloat(priceEl.textContent.replace(/[â‚±,]/g, '')) || 0;
             }
 
             let profileName = '';
@@ -411,7 +411,7 @@
             }
 
             window.dispatchEvent(new Event('cartItemAdded'));
-            window.AVToast?.success('✓ Order added! View it in Order History') || showNotification('✓ Order added! View it in Order History');
+            window.AVToast?.success('âœ“ Order added! View it in Order History') || showNotification('âœ“ Order added! View it in Order History');
         }
 
         function showNotification(message) {
@@ -432,4 +432,5 @@
     <script src="../js/nav-auth.js"></script>
 </body>
 </html>
+
 

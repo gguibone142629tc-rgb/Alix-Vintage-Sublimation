@@ -11,7 +11,7 @@
             return origin;
         }
 
-        return "http://localhost:8000";
+        return "";
     }
 
     function getToken() {

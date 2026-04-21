@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -136,7 +136,7 @@
         return d.toLocaleString("en-PH", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
     };
 
-    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
 
     const cleanNote = (value) => {
         const s = String(value ?? "").trim();
@@ -155,7 +155,7 @@
 
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
-        return "http://localhost:8000";
+        return "";
     };
 
     const resolveAssetUrl = (path) => {
@@ -1833,7 +1833,7 @@
         };
 
         const custom = order.customRequest || null;
-        const orderLabel = custom ? `Custom Request — ${custom.productType || "Custom"}` : "Order";
+        const orderLabel = custom ? `Custom Request â€” ${custom.productType || "Custom"}` : "Order";
 
         const showProofCard = getWorkflowStepIndex(order.admin.workflowStatus) >= 2; // Proofing and beyond
 
@@ -2050,7 +2050,7 @@
             }
         }
 
-        designDetails.textContent = parts.length ? parts.join(" • ") : "-";
+        designDetails.textContent = parts.length ? parts.join(" â€¢ ") : "-";
     };
 
     const syncPricingAndStockToOrder = (orderId) => {
@@ -2145,7 +2145,7 @@
                 const meta = order.admin.payment.receiptMeta || {};
                 const uploadedAt = meta.uploadedAt ? formatDate(meta.uploadedAt) : null;
                 const fileName = meta.fileName || null;
-                const receiptLine = fileName && uploadedAt ? `${fileName} · ${uploadedAt}` : fileName || uploadedAt || "";
+                const receiptLine = fileName && uploadedAt ? `${fileName} Â· ${uploadedAt}` : fileName || uploadedAt || "";
                 const hasReceipt = Boolean(order.admin.payment.receiptDataUrl);
 
                 stageUploads.insertAdjacentHTML(
@@ -2563,3 +2563,4 @@
 
     main();
 })();
+

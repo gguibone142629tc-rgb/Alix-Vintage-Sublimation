@@ -30,6 +30,22 @@ body {
     min-height: 100vh;
 }
 
+.admin-nav-toggle {
+    display: none !important;
+}
+
+.admin-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 998;
+    display: none;
+}
+
+body.admin-nav-open {
+    overflow: hidden;
+}
+
 .admin-shell--no-sidebar .admin-sidebar {
     display: none;
 }
@@ -1366,18 +1382,71 @@ body {
         flex-direction: column;
     }
 
+    .admin-nav-toggle {
+        display: grid !important;
+    }
+
+    body.admin-nav-open .admin-sidebar-overlay {
+        display: block;
+    }
+
     .admin-sidebar {
-        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: min(84vw, 320px);
+        z-index: 999;
+        transform: translateX(-105%);
+        transition: transform 0.2s ease;
+        box-shadow: 14px 0 36px rgba(0, 0, 0, 0.25);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-sidebar.is-open {
+        transform: translateX(0);
     }
 
     .topbar {
-        position: static;
-        padding: 16px;
+        padding: 14px 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .topbar-title {
+        font-size: 22px;
+        line-height: 1.1;
+        word-break: break-word;
+    }
+
+    .topbar-left {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: nowrap;
+    }
+
+    .topbar-right {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 10px;
     }
 
     .topbar-search {
         width: 100%;
         max-width: none;
+        flex: 1 1 100%;
+    }
+
+    .admin-menu {
+        max-width: 100%;
+    }
+
+    .admin-name {
+        display: none;
     }
 
     .page-content {
@@ -1397,11 +1466,117 @@ body {
         align-items: stretch;
     }
 
+    .order-header-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .order-header-v {
+        white-space: normal;
+        text-overflow: clip;
+        overflow: visible;
+        line-height: 1.35;
+    }
+
+    .order-stepper {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .order-stepper .step {
+        min-width: 104px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--bg);
+        scroll-snap-align: start;
+    }
+
+    .order-stepper .label {
+        font-size: 10px;
+        letter-spacing: 0.2px;
+    }
+
+    .admin-shell--no-sidebar .topbar-left {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .admin-shell--no-sidebar .topbar-left .admin-nav-toggle {
+        order: 1;
+    }
+
+    .admin-shell--no-sidebar .topbar-left .topbar-title {
+        order: 2;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .admin-shell--no-sidebar .topbar-left .table-btn {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+
     .upload-cards {
         grid-template-columns: 1fr;
     }
 
     .pricing-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .topbar {
+        padding: 12px 14px;
+    }
+
+    .topbar-title {
+        font-size: 20px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .stat-card {
+        padding: 14px;
+    }
+
+    .panel {
+        padding: 14px;
+    }
+
+    .panel-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-shell--no-sidebar .topbar-left .table-btn {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    .order-header-item {
+        padding: 10px;
+    }
+
+    .order-stepper .step {
+        min-width: 96px;
+        padding: 7px;
+    }
+
+    .data-table {
+        font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 10px;
     }
 }

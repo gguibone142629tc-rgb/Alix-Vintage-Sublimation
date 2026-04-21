@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -13,7 +13,7 @@
 
         const origin = window.location && window.location.origin ? window.location.origin : "";
         if (origin && origin !== "null") return origin;
-        return "http://localhost:8000";
+        return "";
     };
 
     const resolveImageUrl = (path) => {
@@ -32,7 +32,7 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
-    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
 
     const pickCardImageUrl = (product) => {
         const images = Array.isArray(product?.images) ? product.images : [];
@@ -107,3 +107,4 @@
 
     load();
 })();
+

@@ -17,6 +17,10 @@
     font-size: 13px;
     color: var(--ink);
     list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .faq-item summary::-webkit-details-marker {
@@ -25,7 +29,7 @@
 
 .faq-item summary::after {
     content: "+";
-    float: right;
+    float: none;
     font-weight: 900;
     color: var(--accent);
 }
@@ -36,4 +40,15 @@
 
 .faq-answer {
     padding-top: 10px;
+}
+
+@media (max-width: 480px) {
+    .faq-item {
+        padding: 12px;
+    }
+
+    .faq-item summary {
+        font-size: 12px;
+        letter-spacing: 0.4px;
+    }
 }

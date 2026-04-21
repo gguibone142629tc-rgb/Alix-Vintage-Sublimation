@@ -75,6 +75,114 @@
         return;
     }
 
+    const setupMobileSidebarDrawer = () => {
+        const sidebar = document.querySelector(".admin-sidebar");
+        const topbar = document.querySelector(".topbar");
+
+        if (!sidebar || !topbar) return;
+
+        let topbarLeft = topbar.querySelector(".topbar-left");
+        if (!topbarLeft) {
+            topbarLeft = document.createElement("div");
+            topbarLeft.className = "topbar-left";
+
+            const topbarTitle = topbar.querySelector(".topbar-title");
+            if (topbarTitle) {
+                topbarLeft.appendChild(topbarTitle);
+            }
+
+            topbar.prepend(topbarLeft);
+        }
+
+        // Overlay
+        let overlay = document.querySelector(".admin-sidebar-overlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "admin-sidebar-overlay";
+            document.body.appendChild(overlay);
+        }
+
+        // Toggle button
+        let toggleBtn = document.querySelector(".admin-nav-toggle");
+        if (!toggleBtn) {
+            toggleBtn = document.createElement("button");
+            toggleBtn.type = "button";
+            toggleBtn.className = "icon-btn admin-nav-toggle";
+            toggleBtn.setAttribute("aria-label", "Open menu");
+            toggleBtn.setAttribute("aria-expanded", "false");
+
+            const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            icon.setAttribute("class", "icon-svg");
+            icon.setAttribute("viewBox", "0 0 24 24");
+            icon.setAttribute("aria-hidden", "true");
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", "M4 6h16M4 12h16M4 18h16");
+            icon.appendChild(path);
+            toggleBtn.appendChild(icon);
+
+        }
+
+        if (toggleBtn.parentElement !== topbarLeft) {
+            topbarLeft.prepend(toggleBtn);
+        }
+
+        const isMobile = () => window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+
+        const openSidebar = () => {
+            if (!isMobile()) return;
+            sidebar.classList.add("is-open");
+            document.body.classList.add("admin-nav-open");
+            toggleBtn.setAttribute("aria-expanded", "true");
+        };
+
+        const closeSidebar = () => {
+            sidebar.classList.remove("is-open");
+            document.body.classList.remove("admin-nav-open");
+            toggleBtn.setAttribute("aria-expanded", "false");
+        };
+
+        const toggleSidebar = () => {
+            const open = sidebar.classList.contains("is-open");
+            if (open) closeSidebar();
+            else openSidebar();
+        };
+
+        toggleBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleSidebar();
+        });
+
+        overlay.addEventListener("click", () => {
+            closeSidebar();
+        });
+
+        sidebar.addEventListener(
+            "click",
+            (event) => {
+                const link = event.target && event.target.closest ? event.target.closest("a") : null;
+                if (link) {
+                    closeSidebar();
+                }
+            },
+            true
+        );
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeSidebar();
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            if (!isMobile()) {
+                closeSidebar();
+            }
+        });
+    };
+
+    setupMobileSidebarDrawer();
+
     const adminMenuButton = document.querySelector(".admin-menu");
     if (!adminMenuButton) {
         return;
