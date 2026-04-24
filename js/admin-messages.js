@@ -171,7 +171,7 @@
         const fullMessage = String(inquiry?.message || "").trim() || "-";
         const email = String(inquiry?.email || "").trim();
         const topic = String(inquiry?.topic || "").trim();
-        const topicHtml = topic ? ` â€¢ Topic: <span class="message-reply-topic">${escapeHtml(topic)}</span>` : "";
+        const topicHtml = topic ? ` &#8226; Topic: <span class="message-reply-topic">${escapeHtml(topic)}</span>` : "";
 
         const detailsRow = document.createElement("tr");
         detailsRow.className = "message-details-row";

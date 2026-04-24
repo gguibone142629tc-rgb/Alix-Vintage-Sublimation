@@ -14,6 +14,7 @@ use App\Presentation\AdminOrders\AdminOrderRoutes;
 use App\Presentation\Contact\ContactRoutes;
 use App\Presentation\Contact\ContactAdminRoutes;
 use App\Presentation\CustomDesign\CustomDesignRoutes;
+use App\Presentation\Account\AccountRoutes;
 use App\Infrastructure\Db\PdoConnectionFactory;
 use App\Infrastructure\Db\RoleSeeder;
 
@@ -49,5 +50,6 @@ AdminOrderRoutes::register($router, $pdo);
 ContactRoutes::register($router, $pdo);
 ContactAdminRoutes::register($router, $pdo);
 CustomDesignRoutes::register($router, $pdo);
+AccountRoutes::register($router, $pdo);
 
 $router->dispatch();

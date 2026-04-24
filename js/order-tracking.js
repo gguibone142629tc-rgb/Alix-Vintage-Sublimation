@@ -103,7 +103,7 @@
         return s;
     };
 
-    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `\u20B1${Number(value || 0).toLocaleString("en-PH")}`;
 
     const proofItemSelectionByOrder = new Map();
 
@@ -771,7 +771,7 @@
                                     <div class="order-content-main">
                                         <div class="order-content-head">
                                             <div class="order-content-name">${escapeHtml(it.name || "-")}</div>
-                                            <div class="order-content-sub">x${escapeHtml(qty)} â€¢ ${escapeHtml(formatMoney(lineTotal))}</div>
+                                            <div class="order-content-sub">x${escapeHtml(qty)} &#8226; ${escapeHtml(formatMoney(lineTotal))}</div>
                                         </div>
                                         ${metaLines ? `<div class="order-content-meta">${metaLines}</div>` : ""}
                                     </div>
@@ -1046,7 +1046,7 @@
             ordersTableBodyEl.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-state">
-                        <div class="empty-state-icon">ðŸ“­</div>
+                        <div class="empty-state-icon">&#128237;</div>
                         <h3>No Orders</h3>
                         <p>No in-process orders found.</p>
                     </td>

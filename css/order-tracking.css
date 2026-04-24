@@ -594,9 +594,10 @@ main {
 }
 
 .payment-upload {
-    margin-top: 14px;
+    margin-top: 10px;
     border-top: 1px solid var(--line);
-    padding-top: 14px;
+    padding-top: 10px;
+    max-width: 560px;
 }
 
 .upload-label {
@@ -611,26 +612,29 @@ main {
 
 .upload-input {
     width: 100%;
-    padding: 12px 14px;
+    padding: 8px 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: #f8f8f8;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .upload-preview {
-    margin-top: 12px;
+    margin-top: 8px;
     border: 1px solid var(--line);
     border-radius: 10px;
     overflow: hidden;
     background: #ffffff;
-    min-height: 80px;
+    min-height: 48px;
+    max-height: 260px;
     display: grid;
     place-items: center;
 }
 
 .upload-preview img {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    max-height: 240px;
     height: auto;
     display: block;
 }
@@ -881,6 +885,10 @@ main {
 
     .payment-grid {
         grid-template-columns: 1fr;
+    }
+
+    .payment-upload {
+        max-width: none;
     }
 
     .footer-wrap {

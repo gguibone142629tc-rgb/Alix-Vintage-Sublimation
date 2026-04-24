@@ -27,7 +27,7 @@
         return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw}`;
     };
 
-    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `\u20B1${Number(value || 0).toLocaleString("en-PH")}`;
 
     const escapeHtml = (value) =>
         String(value ?? "")

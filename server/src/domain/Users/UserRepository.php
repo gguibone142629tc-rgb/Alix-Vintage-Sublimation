@@ -6,6 +6,8 @@ namespace App\Domain\Users;
 
 interface UserRepository
 {
+    public function findById(int $userId): ?User;
+
     public function findByEmail(string $email): ?User;
 
     public function create(User $user): User;
@@ -17,6 +19,8 @@ interface UserRepository
     public function markVerified(int $userId): void;
 
     public function updatePasswordHash(int $userId, string $passwordHash): void;
+
+    public function updateProfile(int $userId, string $firstname, string $lastname, string $email, ?string $phoneNumber, ?string $address): void;
 
     public function clearOtp(int $userId): void;
 }

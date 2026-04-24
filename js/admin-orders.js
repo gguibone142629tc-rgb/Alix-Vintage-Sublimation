@@ -21,7 +21,7 @@
         return d.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "2-digit" });
     };
 
-    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `\u20B1${Number(value || 0).toLocaleString("en-PH")}`;
 
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {

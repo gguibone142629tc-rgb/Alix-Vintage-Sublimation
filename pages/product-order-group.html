@@ -63,7 +63,7 @@
 
         <section class="order-panel">
             <h1 id="detailProductName">Jersey Name Lorem</h1>
-            <div class="price" id="detailProductPrice">â‚±1200</div>
+            <div class="price" id="detailProductPrice">&#8369;1200</div>
             <div class="toggle-row">
                 <a class="toggle-btn" href="product-order-individual.html" id="individualOrderLink">Individual</a>
                 <a class="toggle-btn active" href="product-order-group.html">Group</a>
@@ -346,7 +346,7 @@
             const name = nameEl ? nameEl.textContent.trim() : 'Jersey Item';
             let price = 0;
             if (priceEl) {
-                price = parseFloat(priceEl.textContent.replace(/[â‚±,]/g, '')) || 0;
+                price = parseFloat(priceEl.textContent.replace(/[\u20B1,]/g, '')) || 0;
             }
 
             let profileName = '';

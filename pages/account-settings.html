@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
+    <title>Account Settings | Alix Vintage</title>
+    <link rel="stylesheet" href="../css/order-history.css">
+    <link rel="stylesheet" href="../css/account-settings.css">
+    <link rel="stylesheet" href="../css/sublimation-theme.css">
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <a class="logo-wrap" href="homepage.html" aria-label="Go to homepage">
+                <img src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="categories.html" class="nav-shop-link">SHOP NOW</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <a class="nav-contact-link" href="contact-us.html">Contact</a>
+                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                    <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                            <path d="M4 20a8 8 0 0 1 16 0" />
+                        </svg>
+                    </a>
+                    <div class="nav-account-dropdown is-hidden" role="menu">
+                        <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                    </div>
+                </div>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <aside class="sidebar">
+            <a href="order-tracking.html" class="sidebar-item">
+                <span>&#128230;</span>
+                Orders
+            </a>
+            <a href="order-history.html" class="sidebar-item">
+                <span>&#128203;</span>
+                Order History
+            </a>
+            <a href="account-settings.html" class="sidebar-item active">
+                <span>&#9881;&#65039;</span>
+                Account Settings
+            </a>
+        </aside>
+
+        <section class="content">
+            <h1 class="page-title">ACCOUNT SETTINGS</h1>
+
+            <section class="settings-card" aria-label="Profile information">
+                <div class="settings-head">
+                    <h2>Profile Information</h2>
+                    <p>Update your account details for faster checkout and order updates.</p>
+                </div>
+
+                <form id="profileForm" class="settings-form" novalidate>
+                    <div class="settings-grid">
+                        <div class="field-group">
+                            <label for="profileFirstName">First Name</label>
+                            <input id="profileFirstName" type="text" placeholder="Juan" required>
+                        </div>
+                        <div class="field-group">
+                            <label for="profileLastName">Last Name</label>
+                            <input id="profileLastName" type="text" placeholder="Dela Cruz" required>
+                        </div>
+                        <div class="field-group">
+                            <label for="profileEmail">Email Address</label>
+                            <input id="profileEmail" type="email" placeholder="juan@email.com" required>
+                        </div>
+                        <div class="field-group">
+                            <label for="profilePhone">Mobile Number</label>
+                            <input id="profilePhone" type="tel" placeholder="09123456789">
+                        </div>
+                        <div class="field-group field-group-wide">
+                            <label for="profileAddress">Address</label>
+                            <textarea id="profileAddress" rows="3" placeholder="Street, Barangay, City, Province"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button type="button" class="btn" id="resetProfileBtn">Reset</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                    <p id="profileSaveStatus" class="settings-status" aria-live="polite"></p>
+                </form>
+            </section>
+
+            <section class="settings-card" aria-label="Security settings">
+                <div class="settings-head">
+                    <h2>Security</h2>
+                    <p>Need to update your password? Use the secure reset flow.</p>
+                </div>
+                <div class="security-actions">
+                    <a class="btn" href="forgot-password.html">Change Password</a>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <footer class="site-footer"></footer>
+
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
+    <script src="../js/nav-auth.js"></script>
+    <script src="../js/account-settings.js"></script>
+</body>
+</html>

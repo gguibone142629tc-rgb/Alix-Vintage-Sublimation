@@ -13,6 +13,18 @@ final class PdoUserRepository implements UserRepository
     {
     }
 
+    public function findById(int $userId): ?User
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE user_id = :user_id LIMIT 1');
+        $stmt->execute(['user_id' => $userId]);
+        $row = $stmt->fetch();
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return User::fromRow($row);
+    }
+
     public function findByEmail(string $email): ?User
     {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
@@ -95,6 +107,22 @@ final class PdoUserRepository implements UserRepository
         );
         $stmt->execute([
             'password_hash' => $passwordHash,
+            'user_id' => $userId,
+        ]);
+    }
+
+    public function updateProfile(int $userId, string $firstname, string $lastname, string $email, ?string $phoneNumber, ?string $address): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET firstname = :firstname, lastname = :lastname, email = :email, phone_number = :phone_number, address = :address WHERE user_id = :user_id'
+        );
+
+        $stmt->execute([
+            'firstname' => $firstname,
+            'lastname' => $lastname,
+            'email' => $email,
+            'phone_number' => $phoneNumber,
+            'address' => $address,
             'user_id' => $userId,
         ]);
     }

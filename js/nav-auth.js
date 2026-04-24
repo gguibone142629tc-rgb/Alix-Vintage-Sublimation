@@ -494,7 +494,7 @@
         localStorage.removeItem(TOKEN_KEY);
     }
 
-    const isProtectedPage = /(cart|order-history|order-tracking|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
+    const isProtectedPage = /(cart|order-history|order-tracking|account-settings|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
         window.location.pathname
     );
     const loginButtons = document.querySelectorAll(".nav-login-btn-link");
@@ -654,6 +654,19 @@
             dropdown.appendChild(ordersLink);
         }
 
+        let profileLink = dropdown.querySelector('.nav-account-item--profile');
+        if (!profileLink) {
+            profileLink = document.createElement('a');
+            profileLink.className = 'nav-account-item nav-account-item--profile';
+            profileLink.href = 'account-settings.html';
+            profileLink.setAttribute('role', 'menuitem');
+            profileLink.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"></path><path d="M4 20a8 8 0 0 1 16 0"></path></svg>
+                <span>Account Settings</span>
+            `;
+            dropdown.appendChild(profileLink);
+        }
+
         let logoutLink = dropdown.querySelector('.nav-logout-btn-link');
         if (logoutLink) {
             logoutLink.classList.add('nav-account-item', 'nav-account-item--logout');
@@ -676,12 +689,15 @@
             dropdown.appendChild(logoutLink);
         }
 
-        // Keep a stable order: header -> order history -> logout.
+        // Keep a stable order: header -> orders -> account settings -> logout.
         if (header.nextElementSibling !== ordersLink) {
             dropdown.insertBefore(ordersLink, header.nextElementSibling);
         }
-        if (ordersLink.nextElementSibling !== logoutLink) {
-            dropdown.insertBefore(logoutLink, ordersLink.nextElementSibling);
+        if (ordersLink.nextElementSibling !== profileLink) {
+            dropdown.insertBefore(profileLink, ordersLink.nextElementSibling);
+        }
+        if (profileLink.nextElementSibling !== logoutLink) {
+            dropdown.insertBefore(logoutLink, profileLink.nextElementSibling);
         }
 
         return dropdown;
@@ -760,6 +776,7 @@
         ];
 
         if (isLoggedIn) {
+            entries.push({ label: "Account Settings", href: "account-settings.html", className: "nav-mobile-account-link" });
             entries.push({ label: "Log Out", href: "#", className: "nav-mobile-logout-link" });
         } else {
             entries.push({ label: "Log In", href: "login.html", className: "nav-mobile-login-link" });

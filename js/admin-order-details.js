@@ -136,7 +136,7 @@
         return d.toLocaleString("en-PH", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
     };
 
-    const formatMoney = (value) => `â‚±${Number(value || 0).toLocaleString("en-PH")}`;
+    const formatMoney = (value) => `\u20B1${Number(value || 0).toLocaleString("en-PH")}`;
 
     const cleanNote = (value) => {
         const s = String(value ?? "").trim();
@@ -1833,7 +1833,7 @@
         };
 
         const custom = order.customRequest || null;
-        const orderLabel = custom ? `Custom Request â€” ${custom.productType || "Custom"}` : "Order";
+        const orderLabel = custom ? `Custom Request - ${custom.productType || "Custom"}` : "Order";
 
         const showProofCard = getWorkflowStepIndex(order.admin.workflowStatus) >= 2; // Proofing and beyond
 
@@ -2050,7 +2050,7 @@
             }
         }
 
-        designDetails.textContent = parts.length ? parts.join(" â€¢ ") : "-";
+        designDetails.textContent = parts.length ? parts.join(" \u2022 ") : "-";
     };
 
     const syncPricingAndStockToOrder = (orderId) => {

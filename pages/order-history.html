@@ -54,15 +54,15 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <a href="order-tracking.html" class="sidebar-item">
-                <span>ðŸ“¦</span>
+                <span>&#128230;</span>
                 Orders
             </a>
             <a href="order-history.html" class="sidebar-item active">
-                <span>ðŸ“‹</span>
+                <span>&#128203;</span>
                 Order History
             </a>
-            <a href="#" class="sidebar-item">
-                <span>âš™ï¸</span>
+            <a href="account-settings.html" class="sidebar-item">
+                <span>&#9881;&#65039;</span>
                 Account Settings
             </a>
         </aside>
@@ -87,7 +87,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">TOTAL SPENT</div>
-                    <div class="stat-value" id="totalSpentAmount">â‚±0</div>
+                    <div class="stat-value" id="totalSpentAmount">&#8369;0</div>
                 </div>
             </div>
 
@@ -128,7 +128,7 @@
                     <tbody id="ordersTableBody">
                         <tr>
                             <td colspan="6" class="empty-state">
-                                <div class="empty-state-icon">ðŸ“­</div>
+                                <div class="empty-state-icon">&#128237;</div>
                                 <h3>No Orders Yet</h3>
                                 <p>Start shopping to see your orders here</p>
                             </td>
@@ -182,7 +182,7 @@
 
         const formatMoney = (amount) => {
             const n = Number(amount || 0);
-            return `â‚±${(Number.isFinite(n) ? n : 0).toLocaleString('en-PH')}`;
+            return `\u20B1${(Number.isFinite(n) ? n : 0).toLocaleString('en-PH')}`;
         };
 
         const formatDate = (dateString) => {
@@ -272,7 +272,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="empty-state">
-                            <div class="empty-state-icon">ðŸ“­</div>
+                            <div class="empty-state-icon">&#128237;</div>
                             <h3>No Orders Yet</h3>
                             <p>Start shopping to see your orders here</p>
                         </td>
