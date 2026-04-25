@@ -413,22 +413,28 @@ final class CustomDesignController
         $this->ensureDir($uploadRoot);
 
         $filesMeta = [
-            'main' => null,
-            'logo' => null,
+            'main' => [],
+            'logo' => [],
             'references' => [],
         ];
 
-        if (isset($_FILES['main_file'])) {
+        if (isset($_FILES['main_files'])) {
+            $filesMeta['main'] = $this->moveManyFiles($_FILES['main_files'], $uploadRoot, 'main');
+        } elseif (isset($_FILES['main_file'])) {
+            // Backward compat with older clients.
             $m = $this->moveOneFile($_FILES['main_file'], $uploadRoot, 'main');
             if ($m) {
-                $filesMeta['main'] = $m;
+                $filesMeta['main'] = [$m];
             }
         }
 
-        if (isset($_FILES['logo_file'])) {
+        if (isset($_FILES['logo_files'])) {
+            $filesMeta['logo'] = $this->moveManyFiles($_FILES['logo_files'], $uploadRoot, 'logo');
+        } elseif (isset($_FILES['logo_file'])) {
+            // Backward compat with older clients.
             $m = $this->moveOneFile($_FILES['logo_file'], $uploadRoot, 'logo');
             if ($m) {
-                $filesMeta['logo'] = $m;
+                $filesMeta['logo'] = [$m];
             }
         }
 
@@ -437,10 +443,12 @@ final class CustomDesignController
             $filesMeta['references'] = $refs;
         }
 
-        if ($designType === 'final' && ($filesMeta['main'] === null)) {
+        $mainCount = is_array($filesMeta['main']) ? count($filesMeta['main']) : 0;
+
+        if ($designType === 'final' && $mainCount < 1) {
             Response::json(['error' => 'Main design file is required (or select Reference image only)'], 400);
         }
-        if ($designType === 'reference' && count($filesMeta['references']) < 1 && $filesMeta['main'] === null) {
+        if ($designType === 'reference' && count($filesMeta['references']) < 1 && $mainCount < 1) {
             Response::json(['error' => 'Please upload at least one reference image'], 400);
         }
 

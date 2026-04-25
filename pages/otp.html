@@ -69,7 +69,7 @@
             <div class="title-line"></div>
 
             <form class="form-card" action="login.html" novalidate>
-                <div class="otp-icon">âœ‰</div>
+                <div class="otp-icon">&#9993;</div>
                 <p class="otp-note">A 6-digit code has been sent to</p>
                 <p class="otp-number">your email</p>
 
@@ -83,6 +83,8 @@
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                 </div>
+
+                <p id="otp-error" class="field-error" role="alert"></p>
 
                 <a class="resend" href="#">Resend Code</a>
 
@@ -129,6 +131,7 @@
         const otpFormElement = document.querySelector('.form-card');
         const resendLinkElement = document.querySelector('.resend');
         const otpNumberElement = document.querySelector('.otp-number');
+        const otpErrorElement = document.getElementById('otp-error');
 
         const pendingEmail = localStorage.getItem('alix_pending_email') || '';
         const maskEmail = (raw) => {
@@ -192,6 +195,21 @@
 
         const collectOtp = () => otpInputElements.map((el) => el.value).join('');
 
+        const setOtpError = (message) => {
+            if (!otpErrorElement) {
+                return;
+            }
+            const text = String(message || '').trim();
+            const hasMessage = Boolean(text);
+            otpErrorElement.textContent = text;
+            otpErrorElement.classList.toggle('is-visible', hasMessage);
+
+            otpInputElements.forEach((inputElement) => {
+                inputElement.classList.toggle('is-invalid', hasMessage);
+                inputElement.setAttribute('aria-invalid', hasMessage ? 'true' : 'false');
+            });
+        };
+
         const handleOtpInput = (event, index) => {
             const inputElement = event.target;
             const digitsOnlyValue = inputElement.value.replace(/\D/g, '').slice(0, 1);
@@ -236,6 +254,7 @@
         otpInputElements.forEach((inputElement, index) => {
             inputElement.addEventListener('input', (event) => {
                 handleOtpInput(event, index);
+                setOtpError('');
             });
 
             inputElement.addEventListener('keydown', (event) => {
@@ -251,10 +270,16 @@
             otpFormElement.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
+                setOtpError('');
+
                 const otp_code = collectOtp();
+                if (otp_code.length !== otpInputElements.length) {
+                    setOtpError('Please enter the complete 6-digit verification code.');
+                    const firstEmpty = otpInputElements.find((el) => !el.value);
+                    (firstEmpty || otpInputElements[0])?.focus();
+                    return;
+                }
                 if (!pendingEmail) {
-                    const message = 'Missing email for verification. Please register again.';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
@@ -267,7 +292,8 @@
                     window.location.href = 'homepage.html';
                 } catch (error) {
                     const message = error?.message || 'OTP verification failed';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                    setOtpError(message);
+                    otpInputElements[0]?.focus();
                 }
             });
         }
@@ -280,8 +306,6 @@
                 }
 
                 if (!pendingEmail) {
-                    const message = 'Missing email for resend. Please register again.';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'register.html';
                     return;
                 }
@@ -293,7 +317,7 @@
                     startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend OTP';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                    setOtpError(message);
                 }
             });
         }

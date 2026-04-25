@@ -233,6 +233,10 @@ main {
     background: #fafafa;
 }
 
+.upload-area .selected-files {
+    text-align: left;
+}
+
 .upload-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -281,6 +285,66 @@ main {
     font-size: 11px;
     color: var(--muted);
     word-break: break-word;
+}
+
+.selected-files {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+}
+
+.selected-file {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.selected-file-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    overflow: hidden;
+}
+
+.selected-file-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.selected-file-name {
+    font-size: 11px;
+    color: var(--ink);
+    word-break: break-word;
+    text-align: left;
+}
+
+.selected-file-remove {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    padding: 4px 6px;
+}
+
+.selected-file-remove:hover {
+    color: var(--ink-strong);
 }
 
 .btn {

@@ -89,9 +89,10 @@
                 <p>PNG, JPG, or SVG. High-resolution files recommended.</p>
                 <button class="btn" type="button">Choose File</button>
                 <div class="upload-file-name" id="main-upload-name"></div>
+                <div class="selected-files" id="main-files-list" aria-label="Selected main design files"></div>
             </div>
 
-            <input id="mainFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" hidden>
+            <input id="mainFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" multiple hidden>
 
             <div class="upload-grid upload-grid-spaced">
                 <div class="upload-mini">
@@ -99,16 +100,18 @@
                     <p>Upload team logo or badge for placement.</p>
                     <button class="btn secondary" type="button">Upload Logo</button>
                     <div class="upload-file-name" id="logo-upload-name"></div>
+                    <div class="selected-files" id="logo-files-list" aria-label="Selected logo files"></div>
                 </div>
                 <div class="upload-mini">
                     <strong>Reference Images</strong>
                     <p>Optional inspiration or sample layout.</p>
                     <button class="btn secondary" type="button">Upload Reference</button>
                     <div class="upload-file-name" id="reference-upload-name"></div>
+                    <div class="selected-files" id="reference-files-list" aria-label="Selected reference images"></div>
                 </div>
             </div>
 
-            <input id="logoFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" hidden>
+            <input id="logoFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" multiple hidden>
             <input id="referenceFileInput" type="file" accept=".png,.jpg,.jpeg,.svg" multiple hidden>
             <p class="reference-note" id="reference-note">Reference-only requests are allowed. Please upload a clear sample image and describe colors, placements, and text in Design Notes. Admin will send a proof for approval.</p>
 
@@ -135,6 +138,12 @@
                 <div class="form-group full-width">
                     <label for="notes">Design Notes</label>
                     <textarea id="notes" placeholder="Add your preferred colors, placements, and sizing notes."></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="delivery-address">Delivery Address</label>
+                    <textarea id="delivery-address" placeholder="Street / Barangay, City, Province"></textarea>
+                    <div class="field-error" id="delivery-address-error" aria-live="polite"></div>
                 </div>
             </div>
 
@@ -242,7 +251,7 @@
             <div class="cta-box">
                 <div>
                     <strong class="mini-heading">Process Flow</strong>
-                    <p class="mini-note">Request â†’ Admin Review â†’ Quote â†’ Payment â†’ Proof Approval â†’ Production</p>
+                    <p class="mini-note">Request &rarr; Admin Review &rarr; Quote &rarr; Payment &rarr; Proof Approval &rarr; Production</p>
                 </div>
                 <div>
                     <strong class="mini-heading">Need help?</strong>
@@ -311,6 +320,8 @@
         const designNameInput = document.getElementById("design-name");
         const productTypeSelect = document.getElementById("product-type");
         const notesInput = document.getElementById("notes");
+        const deliveryAddressInput = document.getElementById("delivery-address");
+        const deliveryAddressError = document.getElementById("delivery-address-error");
         const termsAckInput = document.getElementById("termsAck");
         const submitRequestBtn = document.getElementById("submitRequestBtn");
         const saveDraftBtn = document.getElementById("saveDraftBtn");
@@ -321,9 +332,16 @@
         const MAX_FILE_BYTES = 25 * 1024 * 1024;
         const ALLOWED_EXT = ["png", "jpg", "jpeg", "svg"];
 
-        let selectedMainFile = null;
-        let selectedLogoFile = null;
+        let selectedMainFiles = [];
+        let selectedLogoFiles = [];
         let selectedReferenceFiles = [];
+
+        const mainFilesList = document.getElementById("main-files-list");
+        const logoFilesList = document.getElementById("logo-files-list");
+        const referenceFilesList = document.getElementById("reference-files-list");
+        const mainPreviewUrls = new Map();
+        const logoPreviewUrls = new Map();
+        const referencePreviewUrls = new Map();
 
         const isLoggedIn = () => Boolean(localStorage.getItem('alix_auth_token'));
 
@@ -359,6 +377,98 @@
             el.textContent = text || "";
         };
 
+        const fileKey = (file) => {
+            if (!file) return "";
+            return `${file.name}|${file.size}|${file.lastModified}`;
+        };
+
+        const isImagePreviewable = (file) => {
+            const t = String(file?.type || "").toLowerCase();
+            if (t.startsWith("image/") && !t.includes("svg")) return true;
+            const ext = extOf(file?.name || "");
+            return ["png", "jpg", "jpeg"].includes(ext);
+        };
+
+        const ensurePreviewUrl = (previewMap, file) => {
+            const key = fileKey(file);
+            if (!key) return null;
+            const existing = previewMap.get(key);
+            if (existing) return existing;
+            if (!isImagePreviewable(file)) return null;
+            const url = URL.createObjectURL(file);
+            previewMap.set(key, url);
+            return url;
+        };
+
+        const revokePreviewUrl = (previewMap, key) => {
+            const url = previewMap.get(key);
+            if (url) {
+                URL.revokeObjectURL(url);
+                previewMap.delete(key);
+            }
+        };
+
+        const renderSelectedFiles = (container, files, labelEl, previewMap, onChange) => {
+            if (!container) return;
+            container.innerHTML = "";
+            const list = Array.isArray(files) ? files : [];
+            if (!list.length) return;
+
+            list.forEach((file) => {
+                const row = document.createElement("div");
+                row.className = "selected-file";
+
+                const thumbWrap = document.createElement("div");
+                thumbWrap.className = "selected-file-thumb";
+                const previewUrl = ensurePreviewUrl(previewMap, file);
+                if (previewUrl) {
+                    const img = document.createElement("img");
+                    img.alt = file.name;
+                    img.src = previewUrl;
+                    thumbWrap.appendChild(img);
+                } else {
+                    thumbWrap.textContent = extOf(file.name).toUpperCase() || "FILE";
+                }
+
+                const name = document.createElement("div");
+                name.className = "selected-file-name";
+                name.textContent = file.name;
+
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "selected-file-remove";
+                remove.textContent = "Remove";
+                remove.addEventListener("click", () => {
+                    const key = fileKey(file);
+                    const next = list.filter((f) => fileKey(f) !== key);
+                    revokePreviewUrl(previewMap, key);
+                    onChange(next);
+                    setFileLabel(labelEl, summarizeFiles(next));
+                    renderSelectedFiles(container, next, labelEl, previewMap, onChange);
+                });
+
+                row.appendChild(thumbWrap);
+                row.appendChild(name);
+                row.appendChild(remove);
+                container.appendChild(row);
+            });
+        };
+
+        const renderMainFiles = () =>
+            renderSelectedFiles(mainFilesList, selectedMainFiles, mainUploadName, mainPreviewUrls, (next) => {
+                selectedMainFiles = next;
+            });
+
+        const renderLogoFiles = () =>
+            renderSelectedFiles(logoFilesList, selectedLogoFiles, logoUploadName, logoPreviewUrls, (next) => {
+                selectedLogoFiles = next;
+            });
+
+        const renderReferenceFiles = () =>
+            renderSelectedFiles(referenceFilesList, selectedReferenceFiles, referenceUploadName, referencePreviewUrls, (next) => {
+                selectedReferenceFiles = next;
+            });
+
         const summarizeFiles = (files) => {
             const list = Array.isArray(files) ? files : [];
             if (list.length === 0) return "";
@@ -367,8 +477,8 @@
         };
 
         const clearSelectedFiles = () => {
-            selectedMainFile = null;
-            selectedLogoFile = null;
+            selectedMainFiles = [];
+            selectedLogoFiles = [];
             selectedReferenceFiles = [];
             if (mainFileInput) mainFileInput.value = "";
             if (logoFileInput) logoFileInput.value = "";
@@ -376,6 +486,13 @@
             setFileLabel(mainUploadName, "");
             setFileLabel(logoUploadName, "");
             setFileLabel(referenceUploadName, "");
+            if (mainFilesList) mainFilesList.innerHTML = "";
+            if (logoFilesList) logoFilesList.innerHTML = "";
+            if (referenceFilesList) referenceFilesList.innerHTML = "";
+
+            for (const key of Array.from(mainPreviewUrls.keys())) revokePreviewUrl(mainPreviewUrls, key);
+            for (const key of Array.from(logoPreviewUrls.keys())) revokePreviewUrl(logoPreviewUrls, key);
+            for (const key of Array.from(referencePreviewUrls.keys())) revokePreviewUrl(referencePreviewUrls, key);
         };
 
         const safeJsonParse = (value, fallback) => {
@@ -422,6 +539,7 @@
                 productType: String(productTypeSelect?.value || ""),
                 quantity: Number.isFinite(qty) ? qty : null,
                 notes: String(notesInput?.value || ""),
+                deliveryAddress: String(deliveryAddressInput?.value || ""),
                 designType: getDesignType(),
                 personalization: getPersonalization(),
                 roster: readRoster(),
@@ -437,6 +555,7 @@
             if (designNameInput && draft.designName != null) designNameInput.value = String(draft.designName);
             if (productTypeSelect && draft.productType != null) productTypeSelect.value = String(draft.productType);
             if (notesInput && draft.notes != null) notesInput.value = String(draft.notes);
+            if (deliveryAddressInput && draft.deliveryAddress != null) deliveryAddressInput.value = String(draft.deliveryAddress);
             if (termsAckInput && typeof draft.termsAck === "boolean") termsAckInput.checked = draft.termsAck;
 
             if (typeof draft.designType === "string" && referenceOnlyInput) {
@@ -583,47 +702,63 @@
             refBtn?.addEventListener("click", () => referenceFileInput?.click());
 
             mainFileInput?.addEventListener("change", () => {
-                const file = mainFileInput.files && mainFileInput.files[0] ? mainFileInput.files[0] : null;
-                const v = validateFile(file);
-                if (!v.ok) {
-                    selectedMainFile = null;
-                    mainFileInput.value = "";
-                    setFileLabel(mainUploadName, "");
-                    window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
-                    return;
-                }
-                selectedMainFile = file;
-                setFileLabel(mainUploadName, file ? file.name : "");
-            });
-
-            logoFileInput?.addEventListener("change", () => {
-                const file = logoFileInput.files && logoFileInput.files[0] ? logoFileInput.files[0] : null;
-                const v = validateFile(file);
-                if (!v.ok) {
-                    selectedLogoFile = null;
-                    logoFileInput.value = "";
-                    setFileLabel(logoUploadName, "");
-                    window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
-                    return;
-                }
-                selectedLogoFile = file;
-                setFileLabel(logoUploadName, file ? file.name : "");
-            });
-
-            referenceFileInput?.addEventListener("change", () => {
-                const files = referenceFileInput.files ? Array.from(referenceFileInput.files) : [];
-                for (const f of files) {
+                const incoming = mainFileInput.files ? Array.from(mainFileInput.files) : [];
+                for (const f of incoming) {
                     const v = validateFile(f);
                     if (!v.ok) {
-                        selectedReferenceFiles = [];
-                        referenceFileInput.value = "";
-                        setFileLabel(referenceUploadName, "");
+                        mainFileInput.value = "";
                         window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
                         return;
                     }
                 }
-                selectedReferenceFiles = files;
-                setFileLabel(referenceUploadName, summarizeFiles(files));
+
+                const byKey = new Map(selectedMainFiles.map((f) => [fileKey(f), f]));
+                incoming.forEach((f) => byKey.set(fileKey(f), f));
+                selectedMainFiles = Array.from(byKey.values());
+                mainFileInput.value = "";
+
+                setFileLabel(mainUploadName, summarizeFiles(selectedMainFiles));
+                renderMainFiles();
+            });
+
+            logoFileInput?.addEventListener("change", () => {
+                const incoming = logoFileInput.files ? Array.from(logoFileInput.files) : [];
+                for (const f of incoming) {
+                    const v = validateFile(f);
+                    if (!v.ok) {
+                        logoFileInput.value = "";
+                        window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                        return;
+                    }
+                }
+
+                const byKey = new Map(selectedLogoFiles.map((f) => [fileKey(f), f]));
+                incoming.forEach((f) => byKey.set(fileKey(f), f));
+                selectedLogoFiles = Array.from(byKey.values());
+                logoFileInput.value = "";
+
+                setFileLabel(logoUploadName, summarizeFiles(selectedLogoFiles));
+                renderLogoFiles();
+            });
+
+            referenceFileInput?.addEventListener("change", () => {
+                const incoming = referenceFileInput.files ? Array.from(referenceFileInput.files) : [];
+                for (const f of incoming) {
+                    const v = validateFile(f);
+                    if (!v.ok) {
+                        referenceFileInput.value = "";
+                        window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                        return;
+                    }
+                }
+
+                const byKey = new Map(selectedReferenceFiles.map((f) => [fileKey(f), f]));
+                incoming.forEach((f) => byKey.set(fileKey(f), f));
+                selectedReferenceFiles = Array.from(byKey.values());
+                referenceFileInput.value = "";
+
+                setFileLabel(referenceUploadName, summarizeFiles(selectedReferenceFiles));
+                renderReferenceFiles();
             });
 
             // Drag/drop for main file
@@ -633,14 +768,23 @@
                 });
                 mainUploadElement.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    const file = e.dataTransfer?.files && e.dataTransfer.files[0] ? e.dataTransfer.files[0] : null;
-                    const v = validateFile(file);
-                    if (!v.ok) {
-                        window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
-                        return;
+                    const incoming = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+                    if (!incoming.length) return;
+
+                    for (const f of incoming) {
+                        const v = validateFile(f);
+                        if (!v.ok) {
+                            window.AVDialog?.alert(v.error, { title: 'Error', tone: 'danger' });
+                            return;
+                        }
                     }
-                    selectedMainFile = file;
-                    setFileLabel(mainUploadName, file ? file.name : "");
+
+                    const byKey = new Map(selectedMainFiles.map((f) => [fileKey(f), f]));
+                    incoming.forEach((f) => byKey.set(fileKey(f), f));
+                    selectedMainFiles = Array.from(byKey.values());
+
+                    setFileLabel(mainUploadName, summarizeFiles(selectedMainFiles));
+                    renderMainFiles();
                 });
             }
         };
@@ -692,6 +836,22 @@
                 return;
             }
 
+            const setAddressError = (message) => {
+                if (deliveryAddressInput) deliveryAddressInput.classList.toggle("is-invalid", Boolean(message));
+                if (deliveryAddressError) {
+                    deliveryAddressError.textContent = message || "";
+                    deliveryAddressError.classList.toggle("is-visible", Boolean(message));
+                }
+            };
+
+            const addressText = String(deliveryAddressInput?.value || "").trim();
+            if (!addressText) {
+                setAddressError("Please enter your delivery address.");
+                deliveryAddressInput?.focus();
+                return;
+            }
+            setAddressError("");
+
             const draft = buildDraftPayload();
 
             try {
@@ -699,12 +859,12 @@
                 const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
 
                 // Client validation for required uploads
-                if (draft.designType === 'final' && !selectedMainFile) {
+                if (draft.designType === 'final' && selectedMainFiles.length === 0) {
                     const message = "Please upload your main design file, or choose Reference image only.";
                     window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
                     return;
                 }
-                if (draft.designType === 'reference' && selectedReferenceFiles.length === 0 && !selectedMainFile) {
+                if (draft.designType === 'reference' && selectedReferenceFiles.length === 0 && selectedMainFiles.length === 0) {
                     const message = "Please upload at least one reference image.";
                     window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
                     return;
@@ -720,13 +880,14 @@
                 fd.append('product_type', String(draft.productType || 'Custom'));
                 fd.append('quantity', String(effectiveQty));
                 fd.append('notes', String(draft.notes || ''));
+                fd.append('delivery_address_street', addressText);
                 fd.append('design_type', String(draft.designType || 'final'));
                 fd.append('personalization', String(draft.personalization || 'names_numbers'));
                 fd.append('payment_preference', String(draft.paymentPreference || 'GCash'));
                 fd.append('roster', JSON.stringify(draft.roster || []));
 
-                if (selectedMainFile) fd.append('main_file', selectedMainFile);
-                if (selectedLogoFile) fd.append('logo_file', selectedLogoFile);
+                selectedMainFiles.forEach((f) => fd.append('main_files[]', f));
+                selectedLogoFiles.forEach((f) => fd.append('logo_files[]', f));
                 selectedReferenceFiles.forEach((f) => fd.append('reference_files[]', f));
 
                 const res = await fetch(getApiBaseUrl() + '/api/custom-design/requests', {
@@ -747,7 +908,7 @@
                 localStorage.removeItem(DRAFT_ID_KEY);
                 clearSelectedFiles();
 
-                showToast("âœ“ Custom design request submitted!");
+                showToast("\u2713 Custom design request submitted!");
                 const orderId = data && data.order_id ? Number(data.order_id) : 0;
 
                 if (orderId > 0) {
@@ -817,6 +978,17 @@
 
         submitRequestBtn?.addEventListener("click", submitCustomRequest);
         saveDraftBtn?.addEventListener("click", saveDraft);
+
+        deliveryAddressInput?.addEventListener("input", () => {
+            const v = String(deliveryAddressInput.value || "").trim();
+            if (v) {
+                deliveryAddressInput.classList.remove("is-invalid");
+                if (deliveryAddressError) {
+                    deliveryAddressError.textContent = "";
+                    deliveryAddressError.classList.remove("is-visible");
+                }
+            }
+        });
 
         wireFilePickers();
         restoreDraft();

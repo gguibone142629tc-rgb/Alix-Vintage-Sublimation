@@ -22,9 +22,9 @@ if ($uriPath !== '/' && is_file($fullPath)) {
     return false;
 }
 
-// 3) Convenience: redirect root to landing page.
+// 3) Convenience: redirect root to homepage.
 if ($uriPath === '/' || $uriPath === '') {
-    header('Location: /pages/landing-page.html', true, 302);
+    header('Location: /pages/homepage.html', true, 302);
     exit;
 }
 

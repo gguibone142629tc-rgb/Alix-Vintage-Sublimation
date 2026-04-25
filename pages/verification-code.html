@@ -69,7 +69,7 @@
             <div class="title-line"></div>
 
             <form class="form-card" action="reset-password.html" id="verification-form" novalidate>
-                <div class="otp-icon">âœ‰</div>
+                <div class="otp-icon">&#9993;</div>
                 <p class="otp-note">A 6-digit code has been sent to</p>
                 <p class="otp-number">your email</p>
 
@@ -83,6 +83,8 @@
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                     <input class="otp-input" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" required>
                 </div>
+
+                <p id="verification-otp-error" class="field-error" role="alert"></p>
 
                 <a class="resend" href="#" id="resend-code-link" aria-disabled="true">Resend Code in 01:00</a>
 
@@ -129,6 +131,7 @@
         const verificationFormElement = document.getElementById('verification-form');
         const resendCodeLinkElement = document.getElementById('resend-code-link');
         const otpNumberElement = document.querySelector('.otp-number');
+        const otpErrorElement = document.getElementById('verification-otp-error');
 
         const pendingResetEmail = localStorage.getItem('alix_reset_email') || '';
 
@@ -194,13 +197,35 @@
 
         const collectOtp = () => otpInputElements.map((el) => el.value).join('');
 
+        const setOtpError = (message) => {
+            if (!otpErrorElement) {
+                return;
+            }
+
+            const text = String(message || '').trim();
+            const hasMessage = Boolean(text);
+            otpErrorElement.textContent = text;
+            otpErrorElement.classList.toggle('is-visible', hasMessage);
+            otpInputElements.forEach((inputElement) => {
+                inputElement.classList.toggle('is-invalid', hasMessage);
+                inputElement.setAttribute('aria-invalid', hasMessage ? 'true' : 'false');
+            });
+        };
+
+        otpInputElements.forEach((inputElement) => {
+            inputElement.addEventListener('input', () => {
+                setOtpError('');
+            });
+        });
+
         if (verificationFormElement) {
             verificationFormElement.addEventListener('submit', (event) => {
                 const otpCode = collectOtp();
                 if (otpCode.length !== otpInputElements.length) {
                     event.preventDefault();
-                    const message = 'Please enter the complete 6-digit verification code.';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                    setOtpError('Please enter the complete 6-digit verification code.');
+                    const firstEmpty = otpInputElements.find((el) => !el.value);
+                    (firstEmpty || otpInputElements[0])?.focus();
                     return;
                 }
 
@@ -211,13 +236,12 @@
         if (resendCodeLinkElement) {
             resendCodeLinkElement.addEventListener('click', async (event) => {
                 event.preventDefault();
+                setOtpError('');
                 if (countdownSeconds > 0) {
                     return;
                 }
 
                 if (!pendingResetEmail) {
-                    const message = 'Missing email for resend. Please start again.';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                     window.location.href = 'forgot-password.html';
                     return;
                 }
@@ -229,7 +253,7 @@
                     startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend verification code';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                    setOtpError(message);
                 }
             });
         }

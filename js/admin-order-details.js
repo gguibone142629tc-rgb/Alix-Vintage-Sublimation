@@ -1854,6 +1854,12 @@
                     return files;
                 })();
 
+                const normalizeUploadMetaArray = (value) => {
+                    if (Array.isArray(value)) return value;
+                    if (value && typeof value === "object") return [value];
+                    return [];
+                };
+
                 const customRefs = Array.isArray(customFiles?.references) ? customFiles.references : [];
                 const customRefGallery = customRefs
                     .map((r) => {
@@ -1863,8 +1869,24 @@
                     })
                     .filter(Boolean);
 
-                const customMainUrl = resolveAssetUrl(customFiles?.main?.path || null);
-                const customLogoUrl = resolveAssetUrl(customFiles?.logo?.path || null);
+                const customMainFiles = normalizeUploadMetaArray(customFiles?.main);
+                const customLogoFiles = normalizeUploadMetaArray(customFiles?.logo);
+
+                const customMainGallery = customMainFiles
+                    .map((m, idx) => {
+                        const p = m && typeof m === "object" ? m.path : null;
+                        const url = resolveAssetUrl(p);
+                        return url ? { view: customMainFiles.length > 1 ? `FILE ${idx + 1}` : "FILE", url } : null;
+                    })
+                    .filter(Boolean);
+
+                const customLogoGallery = customLogoFiles
+                    .map((m, idx) => {
+                        const p = m && typeof m === "object" ? m.path : null;
+                        const url = resolveAssetUrl(p);
+                        return url ? { view: customLogoFiles.length > 1 ? `LOGO ${idx + 1}` : "LOGO", url } : null;
+                    })
+                    .filter(Boolean);
 
                 const designReferenceGallery = customRefGallery.length ? customRefGallery : getDesignReferenceGalleryForItem(it);
                 const productId = getItemProductId(it);
@@ -1873,7 +1895,6 @@
                     : "No reference available";
 
                 const logoDataUrl = [
-                    customLogoUrl,
                     meta.logoDataUrl,
                     meta.logo_data_url,
                     meta.logoUrl,
@@ -1883,15 +1904,17 @@
                     .map((v) => String(v || "").trim())
                     .find((v) => v.length > 0) || null;
 
+                const logoGallery = customLogoGallery.length
+                    ? customLogoGallery
+                    : (logoDataUrl ? [{ view: "LOGO", url: logoDataUrl }] : []);
+
+                const uploadedDesignFallback = custom?.designType === "reference" ? "Reference only" : "No file uploaded";
+
                 const uploadCards = `
                     <div class="upload-cards">
                         ${getWideUploadCardGallery("Design Reference", designReferenceGallery, designReferenceFallback)}
-                        ${getUploadCard(
-                            "Uploaded Design",
-                            customMainUrl,
-                            custom?.designType === "reference" ? "Reference only" : "No file uploaded"
-                        )}
-                        ${getUploadCard("Logo", logoDataUrl, "No logo uploaded")}
+                        ${getWideUploadCardGallery("Uploaded Design", customMainGallery, uploadedDesignFallback)}
+                        ${getWideUploadCardGallery("Logo", logoGallery, "No logo uploaded")}
                         ${showProofCard ? getDesignProofCard(order.admin.proof.mockupDataUrl, itemId) : ""}
                     </div>
                 `;
@@ -2145,7 +2168,7 @@
                 const meta = order.admin.payment.receiptMeta || {};
                 const uploadedAt = meta.uploadedAt ? formatDate(meta.uploadedAt) : null;
                 const fileName = meta.fileName || null;
-                const receiptLine = fileName && uploadedAt ? `${fileName} Â· ${uploadedAt}` : fileName || uploadedAt || "";
+                const receiptLine = fileName && uploadedAt ? `${fileName} \u00B7 ${uploadedAt}` : fileName || uploadedAt || "";
                 const hasReceipt = Boolean(order.admin.payment.receiptDataUrl);
 
                 stageUploads.insertAdjacentHTML(

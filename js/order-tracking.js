@@ -714,8 +714,15 @@
                             const files = cd && cd.files && typeof cd.files === "object" ? cd.files : null;
                             if (!files) return null;
 
-                            const mainPath = files.main && typeof files.main === "object" ? files.main.path : null;
-                            const logoPath = files.logo && typeof files.logo === "object" ? files.logo.path : null;
+                            const pickFirstPath = (value) => {
+                                const list = Array.isArray(value) ? value : (value && typeof value === "object" ? [value] : []);
+                                return list
+                                    .map((f) => (f && typeof f === "object" ? f.path : null))
+                                    .find((p) => typeof p === "string" && p.trim() !== "") || null;
+                            };
+
+                            const mainPath = pickFirstPath(files.main);
+                            const logoPath = pickFirstPath(files.logo);
                             const refs = Array.isArray(files.references) ? files.references : [];
                             const refPath = refs
                                 .map((r) => (r && typeof r === "object" ? r.path : null))

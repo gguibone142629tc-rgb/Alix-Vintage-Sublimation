@@ -87,9 +87,10 @@
                 <div class="field-group">
                     <label for="address">Address</label>
                     <div class="autocomplete-wrap" id="address-autocomplete">
-                        <input id="address" type="text" placeholder="Start typing your address" autocomplete="off" required>
+                        <input id="address" type="text" placeholder="Start typing your address" autocomplete="off" required aria-describedby="address-error">
                         <div id="address-suggestions" class="address-suggestions is-hidden" role="listbox" aria-label="Address suggestions"></div>
                     </div>
+                    <p id="address-error" class="field-error" role="alert"></p>
                 </div>
 
                 <div class="field-group">
@@ -108,7 +109,7 @@
                 <div class="field-group">
                     <label for="confirm-password">Confirm password</label>
                     <div class="password-wrap">
-                        <input id="confirm-password" type="password" placeholder="Re-enter your password" required>
+                        <input id="confirm-password" type="password" placeholder="Re-enter your password" required aria-describedby="confirm-password-error">
                         <button class="toggle-password" type="button" aria-label="Show password" data-target="confirm-password">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
@@ -116,6 +117,7 @@
                             </svg>
                         </button>
                     </div>
+                    <p id="confirm-password-error" class="field-error" role="alert">Please make sure your passwords match.</p>
                 </div>
 
                 <div class="terms-box">
@@ -123,7 +125,10 @@
                         <input id="agree-terms" type="checkbox" required>
                         <span>I agree to the Terms and Conditions and understand my obligation to pay for confirmed orders.</span>
                     </label>
+                    <p id="terms-error" class="field-error" role="alert"></p>
                 </div>
+
+                <p id="register-form-error" class="field-error" role="alert"></p>
 
                 <button class="register-btn" type="submit">Send OTP Code</button>
 
@@ -230,6 +235,12 @@
         const passwordToggleButtons = document.querySelectorAll('.toggle-password');
         const registerFormElement = document.querySelector('.form-card');
         const termsCheckboxElement = document.getElementById('agree-terms');
+        const passwordInputElement = document.getElementById('password');
+        const confirmPasswordInputElement = document.getElementById('confirm-password');
+        const confirmPasswordErrorElement = document.getElementById('confirm-password-error');
+        const addressErrorElement = document.getElementById('address-error');
+        const termsErrorElement = document.getElementById('terms-error');
+        const registerFormErrorElement = document.getElementById('register-form-error');
         const termsModalElement = document.getElementById('terms-modal');
         const termsScrollElement = document.getElementById('terms-scroll');
         const termsAcceptButtonElement = document.getElementById('terms-accept-btn');
@@ -237,6 +248,86 @@
         const termsScrollNoteElement = document.getElementById('terms-scroll-note');
         let isTermsDialogOpen = false;
         let isUpdatingTermsState = false;
+        let hasAttemptedRegisterSubmit = false;
+
+        const setAddressError = (message) => {
+            const addressInput = document.getElementById('address');
+            if (!addressInput || !addressErrorElement) {
+                return;
+            }
+
+            const text = String(message || '').trim();
+            const hasMessage = Boolean(text);
+            addressInput.classList.toggle('is-invalid', hasMessage);
+            addressInput.setAttribute('aria-invalid', hasMessage ? 'true' : 'false');
+            addressErrorElement.textContent = text;
+            addressErrorElement.classList.toggle('is-visible', hasMessage);
+        };
+
+        const setTermsError = (message) => {
+            if (!termsErrorElement) {
+                return;
+            }
+
+            const text = String(message || '').trim();
+            const hasMessage = Boolean(text);
+            termsErrorElement.textContent = text;
+            termsErrorElement.classList.toggle('is-visible', hasMessage);
+        };
+
+        const setRegisterFormError = (message) => {
+            if (!registerFormErrorElement) {
+                return;
+            }
+
+            const text = String(message || '').trim();
+            const hasMessage = Boolean(text);
+            registerFormErrorElement.textContent = text;
+            registerFormErrorElement.classList.toggle('is-visible', hasMessage);
+        };
+
+        const setConfirmPasswordMismatchState = (isMismatch) => {
+            if (!confirmPasswordInputElement || !confirmPasswordErrorElement) {
+                return;
+            }
+
+            const mismatch = Boolean(isMismatch);
+            confirmPasswordInputElement.classList.toggle('is-invalid', mismatch);
+            confirmPasswordInputElement.setAttribute('aria-invalid', mismatch ? 'true' : 'false');
+            confirmPasswordErrorElement.classList.toggle('is-visible', mismatch);
+        };
+
+        const validatePasswordMatch = () => {
+            if (!passwordInputElement || !confirmPasswordInputElement) {
+                return true;
+            }
+
+            const password = String(passwordInputElement.value || '');
+            const confirmPassword = String(confirmPasswordInputElement.value || '');
+
+            const hasAnyValue = Boolean(password || confirmPassword);
+            const isMismatch = hasAnyValue && password !== confirmPassword;
+
+            if (!hasAttemptedRegisterSubmit) {
+                setConfirmPasswordMismatchState(false);
+                return !isMismatch;
+            }
+
+            setConfirmPasswordMismatchState(isMismatch);
+            return !isMismatch;
+        };
+
+        if (passwordInputElement) {
+            passwordInputElement.addEventListener('input', () => {
+                validatePasswordMatch();
+            });
+        }
+
+        if (confirmPasswordInputElement) {
+            confirmPasswordInputElement.addEventListener('input', () => {
+                validatePasswordMatch();
+            });
+        }
 
         const setTermsAcceptedState = (accepted) => {
             isUpdatingTermsState = true;
@@ -298,6 +389,7 @@
 
         if (termsCheckboxElement) {
             termsCheckboxElement.addEventListener('change', () => {
+                setTermsError('');
                 if (isUpdatingTermsState || !termsCheckboxElement.checked || isTermsDialogOpen) {
                     return;
                 }
@@ -357,6 +449,11 @@
             registerFormElement.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
+                hasAttemptedRegisterSubmit = true;
+                setTermsError('');
+                setAddressError('');
+                setRegisterFormError('');
+
                 const fullName = String(document.getElementById('full-name')?.value || '');
                 const email = String(document.getElementById('email')?.value || '').trim();
                 const phone_number = String(document.getElementById('mobile')?.value || '').trim();
@@ -365,17 +462,21 @@
                 const confirmPassword = String(document.getElementById('confirm-password')?.value || '');
 
                 if (!termsCheckboxElement?.checked) {
-                    window.AVDialog?.alert('Please read and accept the Terms and Conditions before registering.', { title: 'Error', tone: 'danger' }) || alert('Please read and accept the Terms and Conditions before registering.');
+                    setTermsError('Please read and accept the Terms and Conditions before registering.');
+                    termsCheckboxElement?.focus();
                     return;
                 }
 
-                if (password !== confirmPassword) {
-                    window.AVDialog?.alert('Passwords do not match', { title: 'Error', tone: 'danger' }) || alert('Passwords do not match');
+                const passwordsMatch = password === confirmPassword;
+                setConfirmPasswordMismatchState(!passwordsMatch);
+                if (!passwordsMatch) {
+                    confirmPasswordInputElement?.focus();
                     return;
                 }
 
                 if (!address) {
-                    window.AVDialog?.alert('Please enter your address', { title: 'Error', tone: 'danger' }) || alert('Please enter your address');
+                    setAddressError('Please enter your address.');
+                    document.getElementById('address')?.focus();
                     return;
                 }
 
@@ -396,7 +497,7 @@
                     window.location.href = 'otp.html';
                 } catch (error) {
                     const message = error?.message || 'Registration failed';
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                    setRegisterFormError(message);
                 }
             });
         }
@@ -524,7 +625,10 @@
                 }, 450);
             };
 
-            addressInputElement.addEventListener('input', scheduleSuggestionFetch);
+            addressInputElement.addEventListener('input', () => {
+                setAddressError('');
+                scheduleSuggestionFetch();
+            });
             addressInputElement.addEventListener('focus', scheduleSuggestionFetch);
 
             document.addEventListener('click', (event) => {

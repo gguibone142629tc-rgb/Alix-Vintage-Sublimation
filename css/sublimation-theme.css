@@ -57,6 +57,25 @@ body {
     min-height: 100vh;
 }
 
+/* Shared inline field validation (used by auth pages) */
+.field-error {
+    display: none;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--theme-danger);
+}
+
+.field-error.is-visible {
+    display: block;
+}
+
+input.is-invalid,
+textarea.is-invalid,
+select.is-invalid,
+.otp-input.is-invalid {
+    border-color: var(--theme-danger);
+}
+
 .topbar,
 .admin-sidebar {
     backdrop-filter: saturate(130%) blur(8px);
