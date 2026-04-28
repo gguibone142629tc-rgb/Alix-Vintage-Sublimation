@@ -448,6 +448,12 @@
         return total >= 0 ? total : 0;
     };
 
+    const computeTotalQuantity = (order) => {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        const total = items.reduce((sum, it) => sum + Math.max(0, Number(it?.quantity ?? 0)), 0);
+        return Number.isFinite(total) ? total : 0;
+    };
+
     const computePaymentAmounts = (order) => {
         const total = computeOrderTotal(order);
         const payment = order?.admin?.payment || {};
@@ -538,6 +544,16 @@
         const trackingNumber = String(trackingFromDb || trackingFromMeta || "").trim() || null;
 
         const paymentMeta = metaFromOrder?.payment && typeof metaFromOrder.payment === "object" ? metaFromOrder.payment : {};
+        const paymentMethodFromMeta = typeof paymentMeta.method === "string" ? String(paymentMeta.method).trim() : "";
+        const paymentMethodFromItem = (() => {
+            const first = mappedItems.find((it) => it?.meta && typeof it.meta === "object" && it.meta.custom_design);
+            const pref = first?.meta?.custom_design?.payment_preference;
+            return typeof pref === "string" ? String(pref).trim() : "";
+        })();
+        const paymentMethod = (() => {
+            const raw = (paymentMethodFromMeta || paymentMethodFromItem || "GCash").toUpperCase();
+            return raw === "COD" ? "COD" : "GCash";
+        })();
         const receiptDataUrl =
             typeof paymentMeta.receipt_data_url === "string"
                 ? paymentMeta.receipt_data_url
@@ -623,7 +639,7 @@
                     shippingFee: o.shipping_fee != null ? Number(o.shipping_fee) : null,
                 },
                 payment: {
-                    method: "GCash",
+                    method: paymentMethod,
                     verified,
                     verifiedType,
                     amountPaid,
@@ -715,18 +731,25 @@
         await requestJson("PATCH", "/api/admin/orders/status", { order_id: numericId, status: "paid" });
     };
 
-    const updateDbPricing = async (numericId, basePrice, shippingFee) => {
-        await requestJson("PATCH", "/api/admin/orders/pricing", {
+    const updateDbPricing = async (numericId, { basePrice = null, shippingFee }) => {
+        const payload = {
             order_id: numericId,
-            base_price: basePrice,
             shipping_fee: shippingFee,
-        });
+        };
+        if (basePrice != null) payload.base_price = basePrice;
+        await requestJson("PATCH", "/api/admin/orders/pricing", payload);
     };
 
     const verifyDbPayment = async (numericId, verifyType) => {
         await requestJson("PATCH", "/api/admin/orders/payment/verify", {
             order_id: numericId,
             verify_type: verifyType,
+        });
+    };
+
+    const markDbCodFinalReceived = async (numericId) => {
+        await requestJson("PATCH", "/api/admin/orders/payment/cod-final-received", {
+            order_id: numericId,
         });
     };
 
@@ -770,17 +793,25 @@
         const isCustom = order?.admin?.orderType === "custom";
         const status = String(order?.status || "").toLowerCase();
 
-        if (pricingBox) pricingBox.style.display = isCustom ? "block" : "none";
-        if (!isCustom) return;
+        if (pricingBox) pricingBox.style.display = "block";
 
         const editable = status === "pending";
-        if (basePriceInput) basePriceInput.disabled = !editable;
+        if (basePriceInput) basePriceInput.disabled = !editable || !isCustom;
         if (shippingFeeInput) shippingFeeInput.disabled = !editable;
 
         if (pricingHint) {
-            pricingHint.textContent = editable
-                ? "Set Base Price and Shipping Fee for this custom request before approving."
-                : "Pricing details are locked after approval.";
+            const qty = computeTotalQuantity(order);
+            const promoFreeShip = qty >= 10;
+
+            if (!editable) {
+                pricingHint.textContent = "Pricing details are locked after approval.";
+            } else if (promoFreeShip) {
+                pricingHint.textContent = "Free shipping promo applied (10+ pcs). Shipping Fee is locked to 0.";
+            } else if (isCustom) {
+                pricingHint.textContent = "Set Base Price and Shipping Fee for this custom request before approving.";
+            } else {
+                pricingHint.textContent = "Set Shipping Fee for this order before approving.";
+            }
         }
 
         const syncQuoteFromInputs = () => {
@@ -794,12 +825,33 @@
         const updateApproveEnabled = () => {
             const approveBtn = qs("#approveDbBtn");
             if (!approveBtn) return;
-            const baseOk = Number.isFinite(Number(order?.admin?.quote?.basePrice)) && Number(order.admin.quote.basePrice) > 0;
             const shipOk = Number.isFinite(Number(order?.admin?.quote?.shippingFee)) && Number(order.admin.quote.shippingFee) >= 0;
+            if (!isCustom) {
+                approveBtn.disabled = !shipOk;
+                return;
+            }
+            const baseOk = Number.isFinite(Number(order?.admin?.quote?.basePrice)) && Number(order.admin.quote.basePrice) > 0;
             approveBtn.disabled = !(baseOk && shipOk);
         };
 
+        const enforcePromo = () => {
+            const qty = computeTotalQuantity(order);
+            const promoFreeShip = qty >= 10;
+            if (!promoFreeShip) {
+                if (shippingFeeInput) shippingFeeInput.disabled = !editable;
+                return;
+            }
+
+            if (shippingFeeInput) {
+                shippingFeeInput.value = "0";
+                shippingFeeInput.disabled = true;
+            }
+            if (!order?.admin?.quote) order.admin.quote = { basePrice: null, shippingFee: null };
+            order.admin.quote.shippingFee = 0;
+        };
+
         const onInput = () => {
+            enforcePromo();
             syncQuoteFromInputs();
             renderRemainingBalance(order);
             updateApproveEnabled();
@@ -873,10 +925,12 @@
                     });
                     if (!ok) return;
                     try {
+                        const ship = shippingFeeInput?.value === "" ? 0 : Number(shippingFeeInput?.value);
                         if (order?.admin?.orderType === "custom") {
                             const base = Number(basePriceInput?.value);
-                            const ship = Number(shippingFeeInput?.value);
-                            await updateDbPricing(numericId, base, ship);
+                            await updateDbPricing(numericId, { basePrice: base, shippingFee: ship });
+                        } else {
+                            await updateDbPricing(numericId, { shippingFee: ship });
                         }
                         await approveDbOrder(numericId);
                         const refreshed = await loadDbOrderById(numericId);
@@ -924,7 +978,6 @@
 
                 stageButtons.innerHTML = `
                     <button class="table-btn" type="button" id="verifyDownBtn">Verify 50% Downpayment</button>
-                    <button class="table-btn" type="button" id="verifyFullBtn">Verify 100% Full Payment</button>
                 `;
 
                 if (stageHint) stageHint.textContent = hasReceipt
@@ -932,9 +985,7 @@
                     : "Waiting for customer to upload a receipt.";
 
                 const downBtn = qs("#verifyDownBtn");
-                const fullBtn = qs("#verifyFullBtn");
                 if (downBtn) downBtn.disabled = !hasReceipt;
-                if (fullBtn) fullBtn.disabled = !hasReceipt;
 
                 downBtn?.addEventListener("click", async () => {
                     const ok = await uiConfirm("Verify 50% downpayment for this order?", {
@@ -950,23 +1001,6 @@
                         if (refreshed) renderReadOnly(numericId, refreshed);
                     } catch (e) {
                         uiAlert(e?.message || "Failed to verify downpayment.", { title: "Payment", tone: "danger" });
-                    }
-                });
-
-                fullBtn?.addEventListener("click", async () => {
-                    const ok = await uiConfirm("Verify 100% full payment for this order?", {
-                        title: "Verify Full Payment",
-                        tone: "danger",
-                        okText: "Verify",
-                        cancelText: "Cancel",
-                    });
-                    if (!ok) return;
-                    try {
-                        await verifyDbPayment(numericId, "full");
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
-                    } catch (e) {
-                        uiAlert(e?.message || "Failed to verify full payment.", { title: "Payment", tone: "danger" });
                     }
                 });
             } else if (status === "proofing") {
@@ -1206,8 +1240,9 @@
 
                 const verifiedType = order?.admin?.payment?.verifiedType ? String(order.admin.payment.verifiedType).toLowerCase() : null;
                 const finalVerified = order?.admin?.payment?.finalVerified === true;
+                const method = String(order?.admin?.payment?.method || "GCash").toUpperCase();
 
-                if (verifiedType === "downpayment" && !finalVerified) {
+                if (verifiedType === "downpayment" && !finalVerified && method !== "COD") {
                     stageButtons.innerHTML = `<button class="table-btn" type="button" id="awaitFinalDbBtn">Set Awaiting Final Payment</button>`;
                     if (stageHint) stageHint.textContent = "Downpayment verified. Request final payment before shipping.";
 
@@ -1230,7 +1265,9 @@
                     });
                 } else {
                     stageButtons.innerHTML = `<button class="table-btn" type="button" id="readyToShipDbBtn">Mark Ready to Ship</button>`;
-                    if (stageHint) stageHint.textContent = "Production is ongoing. Mark Ready to Ship when finished.";
+                    if (stageHint) stageHint.textContent = method === "COD"
+                        ? "COD: production is ongoing. You can ship without final receipt; final payment will be collected on delivery."
+                        : "Production is ongoing. Mark Ready to Ship when finished.";
 
                     const btn = qs("#readyToShipDbBtn");
                     btn?.addEventListener("click", async () => {
@@ -1260,38 +1297,62 @@
                     viewBtnId: "viewDownReceiptFinalStageBtn",
                 });
 
-                appendReceiptPanel({
-                    title: "Final Payment Receipt",
-                    dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
-                    uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
-                    viewBtnId: "viewFinalReceiptFinalStageBtn",
-                    emptyTitle: "Waiting for customer final receipt",
-                    emptySub: "Customer uploads the final payment receipt screenshot. Verify it here once available.",
-                });
+                const method = String(order?.admin?.payment?.method || "GCash").toUpperCase();
+                if (method === "COD") {
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="readyToShipFromFinalDbBtn">Mark Ready to Ship</button>`;
+                    if (stageHint) stageHint.textContent = "COD orders don't require a final receipt. Mark Ready to Ship when finished.";
 
-                const hasReceipt = Boolean(order?.admin?.payment?.finalReceiptDataUrl);
-
-                stageButtons.innerHTML = `<button class="table-btn" type="button" id="verifyFinalBtn">Verify Final Payment</button>`;
-                const btn = qs("#verifyFinalBtn");
-                if (btn) btn.disabled = !hasReceipt;
-                if (stageHint) stageHint.textContent = hasReceipt ? "Verify final payment after reviewing the uploaded receipt." : "Waiting for customer to upload the final payment receipt.";
-
-                btn?.addEventListener("click", async () => {
-                    const ok = await uiConfirm("Verify final payment for this order?", {
-                        title: "Verify Final Payment",
-                        tone: "danger",
-                        okText: "Verify",
-                        cancelText: "Cancel",
+                    const btn = qs("#readyToShipFromFinalDbBtn");
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Mark this order as Ready to Ship?", {
+                            title: "Ready to Ship",
+                            tone: "danger",
+                            okText: "Mark Ready",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await markDbReadyToShip(numericId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
+                        }
                     });
-                    if (!ok) return;
-                    try {
-                        await verifyDbPayment(numericId, "final");
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
-                    } catch (e) {
-                        uiAlert(e?.message || "Failed to verify final payment.", { title: "Payment", tone: "danger" });
-                    }
-                });
+                } else {
+                    appendReceiptPanel({
+                        title: "Final Payment Receipt",
+                        dataUrl: order?.admin?.payment?.finalReceiptDataUrl || "",
+                        uploadedAt: order?.admin?.payment?.finalReceiptMeta?.uploadedAt || null,
+                        viewBtnId: "viewFinalReceiptFinalStageBtn",
+                        emptyTitle: "Waiting for customer final receipt",
+                        emptySub: "Customer uploads the final payment receipt screenshot. Verify it here once available.",
+                    });
+
+                    const hasReceipt = Boolean(order?.admin?.payment?.finalReceiptDataUrl);
+
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="verifyFinalBtn">Verify Final Payment</button>`;
+                    const btn = qs("#verifyFinalBtn");
+                    if (btn) btn.disabled = !hasReceipt;
+                    if (stageHint) stageHint.textContent = hasReceipt ? "Verify final payment after reviewing the uploaded receipt." : "Waiting for customer to upload the final payment receipt.";
+
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Verify final payment for this order?", {
+                            title: "Verify Final Payment",
+                            tone: "danger",
+                            okText: "Verify",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await verifyDbPayment(numericId, "final");
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to verify final payment.", { title: "Payment", tone: "danger" });
+                        }
+                    });
+                }
             } else if (status === "ready_to_ship") {
                 appendReceiptPanel({
                     title: "Downpayment Receipt",
@@ -1356,27 +1417,54 @@
                     });
                 }
 
-                stageButtons.innerHTML = `<button class="table-btn" type="button" id="completeDbBtn">Mark Completed</button>`;
-                const tracking = order?.admin?.trackingNumber ? String(order.admin.trackingNumber) : "-";
-                if (stageHint) stageHint.textContent = `Tracking: ${tracking}`;
+                const method = String(order?.admin?.payment?.method || "GCash").toUpperCase();
+                const isFinalVerified = order?.admin?.payment?.finalVerified === true;
 
-                const btn = qs("#completeDbBtn");
-                btn?.addEventListener("click", async () => {
-                    const ok = await uiConfirm("Mark this order as Completed?", {
-                        title: "Complete Order",
-                        tone: "danger",
-                        okText: "Mark Completed",
-                        cancelText: "Cancel",
+                if (method === "COD" && !isFinalVerified) {
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="codFinalReceivedBtn">Mark COD Final Payment Received</button>`;
+                    const tracking = order?.admin?.trackingNumber ? String(order.admin.trackingNumber) : "-";
+                    if (stageHint) stageHint.textContent = `COD: collect remaining balance on delivery. Tracking: ${tracking}`;
+
+                    const btn = qs("#codFinalReceivedBtn");
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Confirm COD final payment received for this order?", {
+                            title: "COD Final Payment",
+                            tone: "danger",
+                            okText: "Confirm",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await markDbCodFinalReceived(numericId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to mark COD final payment.", { title: "Payment", tone: "danger" });
+                        }
                     });
-                    if (!ok) return;
-                    try {
-                        await markDbCompleted(numericId);
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
-                    } catch (e) {
-                        uiAlert(e?.message || "Failed to mark completed.", { title: "Order", tone: "danger" });
-                    }
-                });
+                } else {
+                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="completeDbBtn">Mark Completed</button>`;
+                    const tracking = order?.admin?.trackingNumber ? String(order.admin.trackingNumber) : "-";
+                    if (stageHint) stageHint.textContent = `Tracking: ${tracking}`;
+
+                    const btn = qs("#completeDbBtn");
+                    btn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Mark this order as Completed?", {
+                            title: "Complete Order",
+                            tone: "danger",
+                            okText: "Mark Completed",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await markDbCompleted(numericId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to mark completed.", { title: "Order", tone: "danger" });
+                        }
+                    });
+                }
             } else if (status === "completed") {
                 appendReceiptPanel({
                     title: "Downpayment Receipt",
@@ -1465,11 +1553,9 @@
     };
 
     const canMoveToProofing = (order) => {
-        // After payment verification rules.
-        const method = String(order.admin.payment.method);
+        // After payment verification rules: always require downpayment verification.
         if (!order.admin.payment.verified) return false;
-        if (method === "COD") return order.admin.payment.verifiedType === "downpayment";
-        return order.admin.payment.verifiedType === "full" || order.admin.payment.verifiedType === "downpayment";
+        return String(order.admin.payment.verifiedType || "").toLowerCase() === "downpayment";
     };
 
     const ensureProofing = (orderId) => {
@@ -2193,7 +2279,6 @@
                 );
             }
             addStageButton("verifyDownBtn", "Verify 50% Downpayment");
-            addStageButton("verifyFullBtn", "Verify 100% Full Payment");
             stageHint.textContent = buildPaymentHint(order);
         } else if (wf === "Proofing") {
             addStageUpload("Upload layout mockup (image)", "mockupUpload", "image/*");
@@ -2229,10 +2314,8 @@
         if (acceptProceedBtn) acceptProceedBtn.disabled = !canAccept(order);
 
         const verifyDownBtn = qs("#verifyDownBtn");
-        const verifyFullBtn = qs("#verifyFullBtn");
         const hasReceipt = Boolean(order.admin.payment.receiptDataUrl);
         if (verifyDownBtn) verifyDownBtn.disabled = !hasReceipt;
-        if (verifyFullBtn) verifyFullBtn.disabled = !hasReceipt || order.admin.payment.method === "COD";
 
         const sendProofBtn = qs("#sendProofBtn");
         if (sendProofBtn) sendProofBtn.disabled = !order.admin.proof.mockupDataUrl;
@@ -2240,10 +2323,8 @@
 
     const buildPaymentHint = (order) => {
         const method = String(order.admin.payment.method);
-        if (method === "COD") {
-            return "COD rule: must verify 50% downpayment before moving to Proofing.";
-        }
-        return "GCash: verify 50% downpayment or 100% full payment to move to Proofing.";
+        if (method === "COD") return "COD rule: must verify 50% downpayment before moving to Proofing.";
+        return "GCash: must verify 50% downpayment before moving to Proofing.";
     };
 
     const buildProofingHint = (order) => {
@@ -2277,7 +2358,6 @@
         const acceptProceedBtn = qs("#acceptProceedBtn");
 
         const verifyDownBtn = qs("#verifyDownBtn");
-        const verifyFullBtn = qs("#verifyFullBtn");
         const viewReceiptBtn = qs("#viewReceiptBtn");
 
         const mockupUpload = qs("#mockupUpload");
@@ -2343,14 +2423,10 @@
                 return;
             }
 
-            if (order.admin.payment.method === "COD" && type !== "downpayment") {
-                uiAlert("COD requires verifying the 50% downpayment.", { title: "COD Rule", tone: "info" });
-                return;
-            }
+            if (type !== "downpayment") return;
 
             const run = async () => {
-                const label = type === "downpayment" ? "50% downpayment" : "100% full payment";
-                const ok = await uiConfirm(`Confirm payment verification: ${label}?`, {
+                const ok = await uiConfirm("Confirm 50% downpayment verification?", {
                     title: "Confirm Payment",
                     tone: "danger",
                     okText: "Confirm",
@@ -2373,7 +2449,6 @@
         };
 
         verifyDownBtn?.addEventListener("click", () => verifyPayment("downpayment"));
-        verifyFullBtn?.addEventListener("click", () => verifyPayment("full"));
 
         mockupUpload?.addEventListener("change", async () => {
             const file = mockupUpload.files?.[0];

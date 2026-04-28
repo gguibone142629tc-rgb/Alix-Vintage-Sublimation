@@ -7,6 +7,7 @@ namespace App\Presentation\AdminOrders;
 use App\Application\Orders\ListAllOrders;
 use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
+use App\Application\Orders\MarkCodFinalPaymentReceived;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
 use App\Application\Orders\UpdateOrderPricing;
@@ -24,6 +25,7 @@ final class AdminOrderController
         private readonly UpdateOrderStatus $updateOrderStatus,
         private readonly UpdateOrderPricing $updateOrderPricing,
         private readonly VerifyOrderPayment $verifyOrderPayment,
+        private readonly MarkCodFinalPaymentReceived $markCodFinalPaymentReceived,
         private readonly SetOrderOnTransit $setOrderOnTransit,
         private readonly SendOrderProof $sendOrderProof,
         private readonly ListOrderDesignProofs $listOrderDesignProofs,
@@ -138,7 +140,50 @@ final class AdminOrderController
         $this->assertAdmin($request);
 
         $body = $request->json();
-        $result = $this->updateOrderPricing->handle(is_array($body) ? $body : []);
+
+        $payload = is_array($body) ? $body : [];
+        $orderIdRaw = $payload['order_id'] ?? $payload['orderId'] ?? null;
+        $orderId = is_numeric($orderIdRaw) ? (int) $orderIdRaw : 0;
+
+        if ($orderId > 0) {
+            $existingStmt = $this->pdo->prepare('SELECT base_price, shipping_fee FROM orders WHERE order_id = :order_id');
+            $existingStmt->execute(['order_id' => $orderId]);
+            $existing = $existingStmt->fetch();
+            if (!is_array($existing)) {
+                Response::json(['error' => 'Order not found'], 404);
+            }
+
+            $baseRaw = $payload['base_price'] ?? $payload['basePrice'] ?? null;
+            $shipRaw = $payload['shipping_fee'] ?? $payload['shippingFee'] ?? null;
+
+            // Allow admin to update only Shipping Fee (for fixed orders) by defaulting
+            // Base Price to the existing order value.
+            if (!is_numeric($baseRaw)) {
+                $payload['base_price'] = (float) ($existing['base_price'] ?? 0);
+            }
+
+            // Allow admin to update only Base Price (rare) by defaulting Shipping Fee.
+            if (!is_numeric($shipRaw)) {
+                $payload['shipping_fee'] = (float) ($existing['shipping_fee'] ?? 0);
+                $shipRaw = $payload['shipping_fee'];
+            }
+
+            $qtyStmt = $this->pdo->prepare('SELECT COALESCE(SUM(quantity), 0) FROM order_items WHERE order_id = :order_id');
+            $qtyStmt->execute(['order_id' => $orderId]);
+            $totalQty = (int) $qtyStmt->fetchColumn();
+
+            // Promo: 10+ pcs => shipping must be 0
+            if ($totalQty >= 10) {
+                $ship = is_numeric($shipRaw) ? (float) $shipRaw : 0.0;
+                if ($ship > 0.0001) {
+                    Response::json(['error' => 'Free shipping promo applies for orders with 10+ pcs. Set Shipping Fee to 0.'], 422);
+                }
+                // Prevent bypass by omitting shipping_fee.
+                $payload['shipping_fee'] = 0.0;
+            }
+        }
+
+        $result = $this->updateOrderPricing->handle($payload);
         if (!($result['ok'] ?? false)) {
             Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
         }
@@ -152,6 +197,19 @@ final class AdminOrderController
 
         $body = $request->json();
         $result = $this->verifyOrderPayment->handle(is_array($body) ? $body : []);
+        if (!($result['ok'] ?? false)) {
+            Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
+        }
+
+        Response::json(['ok' => true], 200);
+    }
+
+    public function markCodFinalReceived(Request $request): void
+    {
+        $this->assertAdmin($request);
+
+        $body = $request->json();
+        $result = $this->markCodFinalPaymentReceived->handle(is_array($body) ? $body : []);
         if (!($result['ok'] ?? false)) {
             Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
         }

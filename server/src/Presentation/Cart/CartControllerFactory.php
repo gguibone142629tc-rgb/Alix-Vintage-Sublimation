@@ -14,6 +14,7 @@ use App\Infrastructure\Auth\JwtTokenVerifier;
 use App\Infrastructure\Cart\PdoDraftOrderCartRepository;
 use App\Infrastructure\Orders\PdoOrderRepository;
 use App\Infrastructure\Products\PdoProductRepository;
+use App\Infrastructure\Users\PdoUserRepository;
 use App\Presentation\Http\Auth;
 
 final class CartControllerFactory
@@ -23,6 +24,7 @@ final class CartControllerFactory
         $cartRepo = new PdoDraftOrderCartRepository($pdo);
         $productRepo = new PdoProductRepository($pdo);
         $orderRepo = new PdoOrderRepository($pdo);
+        $userRepo = new PdoUserRepository($pdo);
 
         $auth = new Auth(new JwtTokenVerifier());
 
@@ -31,7 +33,7 @@ final class CartControllerFactory
         $remove = new RemoveCartItem($cartRepo);
         $updateQty = new UpdateCartItemQuantity($cartRepo);
         $clear = new ClearCart($cartRepo);
-        $checkout = new CheckoutCart($cartRepo, $productRepo, $orderRepo);
+        $checkout = new CheckoutCart($cartRepo, $productRepo, $orderRepo, $userRepo);
 
         return new CartController($auth, $get, $add, $remove, $updateQty, $clear, $checkout);
     }

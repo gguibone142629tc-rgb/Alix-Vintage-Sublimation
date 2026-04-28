@@ -94,7 +94,10 @@
                         </div>
                         <div class="field-group field-group-wide">
                             <label for="profileAddress">Address</label>
-                            <textarea id="profileAddress" rows="3" placeholder="Street, Barangay, City, Province"></textarea>
+                            <div class="address-autocomplete" id="profileAddressAutocomplete">
+                                <textarea id="profileAddress" rows="3" placeholder="Street, Barangay, City, Province" aria-describedby="profileAddressSuggestions"></textarea>
+                                <div id="profileAddressSuggestions" class="address-suggestions is-hidden" role="listbox" aria-label="Address suggestions"></div>
+                            </div>
                         </div>
                     </div>
 

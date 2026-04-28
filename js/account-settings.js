@@ -158,6 +158,136 @@
 
     hydrateForm(initialUser);
 
+    // Philippines address autocomplete (Nominatim)
+    const addressInputElement = fields.address;
+    const addressSuggestionsElement = document.getElementById("profileAddressSuggestions");
+    const addressAutocompleteWrap = document.getElementById("profileAddressAutocomplete");
+
+    const hideAddressSuggestions = () => {
+        if (!addressSuggestionsElement) {
+            return;
+        }
+        addressSuggestionsElement.classList.add("is-hidden");
+        addressSuggestionsElement.innerHTML = "";
+    };
+
+    const renderAddressSuggestions = (items) => {
+        if (!addressSuggestionsElement || !Array.isArray(items) || items.length === 0) {
+            hideAddressSuggestions();
+            return;
+        }
+
+        addressSuggestionsElement.innerHTML = "";
+
+        items.forEach((item) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "address-suggestion";
+            button.setAttribute("role", "option");
+            button.textContent = item.label;
+            button.addEventListener("click", () => {
+                if (addressInputElement) {
+                    addressInputElement.value = item.value;
+                    addressInputElement.focus();
+                }
+                hideAddressSuggestions();
+            });
+            addressSuggestionsElement.appendChild(button);
+        });
+
+        addressSuggestionsElement.classList.remove("is-hidden");
+    };
+
+    if (addressInputElement && addressSuggestionsElement) {
+        let debounceTimer = null;
+        let currentRequestId = 0;
+        let activeAbortController = null;
+
+        const scheduleSuggestionFetch = () => {
+            const query = String(addressInputElement.value || "").trim();
+
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
+
+            if (query.length < 4) {
+                hideAddressSuggestions();
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                const requestId = ++currentRequestId;
+
+                if (activeAbortController) {
+                    activeAbortController.abort();
+                }
+                activeAbortController = new AbortController();
+
+                try {
+                    const url = new URL("https://nominatim.openstreetmap.org/search");
+                    url.searchParams.set("format", "jsonv2");
+                    url.searchParams.set("addressdetails", "1");
+                    url.searchParams.set("limit", "6");
+                    url.searchParams.set("countrycodes", "ph");
+                    url.searchParams.set("q", query);
+
+                    const response = await fetch(url.toString(), {
+                        headers: { Accept: "application/json" },
+                        signal: activeAbortController.signal,
+                    });
+
+                    if (!response.ok) {
+                        if (requestId === currentRequestId) {
+                            hideAddressSuggestions();
+                        }
+                        return;
+                    }
+
+                    const data = await response.json().catch(() => []);
+                    if (requestId !== currentRequestId) {
+                        return;
+                    }
+
+                    const items = Array.isArray(data)
+                        ? data
+                              .filter((item) => item && typeof item.display_name === "string")
+                              .map((item) => ({ label: item.display_name, value: item.display_name }))
+                        : [];
+
+                    renderAddressSuggestions(items);
+                } catch (error) {
+                    if (error && error.name === "AbortError") {
+                        return;
+                    }
+                    hideAddressSuggestions();
+                }
+            }, 450);
+        };
+
+        addressInputElement.addEventListener("input", scheduleSuggestionFetch);
+        addressInputElement.addEventListener("focus", scheduleSuggestionFetch);
+
+        document.addEventListener("click", (event) => {
+            if (!addressAutocompleteWrap) {
+                return;
+            }
+
+            const target = event.target;
+            if (target instanceof Node && addressAutocompleteWrap.contains(target)) {
+                return;
+            }
+
+            hideAddressSuggestions();
+        });
+
+        addressInputElement.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                hideAddressSuggestions();
+            }
+        });
+    }
+
     resetBtn?.addEventListener("click", () => {
         hydrateForm(initialUser);
         setStatus("Changes reset.");

@@ -35,10 +35,17 @@ final class UpdateOrderStatus
         // Enforce staged final payment when only a downpayment was verified.
         $meta = $this->orders->getOrderMeta($orderId);
         $paymentMeta = is_array($meta) && isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
+
+        $methodRaw = isset($paymentMeta['method']) && is_string($paymentMeta['method']) ? strtoupper(trim($paymentMeta['method'])) : '';
+        $method = $methodRaw === 'COD' ? 'COD' : 'GCash';
+
         $verifiedType = isset($paymentMeta['verified_type']) && is_string($paymentMeta['verified_type']) ? strtolower(trim($paymentMeta['verified_type'])) : null;
         $finalVerified = ($paymentMeta['final_verified'] ?? false) === true;
 
         if ($status === 'awaiting_final_payment') {
+            if ($method === 'COD') {
+                return ['ok' => false, 'status' => 409, 'error' => 'COD orders do not require a final payment receipt'];
+            }
             if ($currentLower !== 'processing') {
                 return ['ok' => false, 'status' => 409, 'error' => 'Order must be In Progress to request final payment'];
             }
@@ -52,8 +59,26 @@ final class UpdateOrderStatus
 
         if ($status === 'ready_to_ship') {
             $needsFinal = $verifiedType === 'downpayment' && !$finalVerified;
-            if ($needsFinal && ($currentLower === 'processing' || $currentLower === 'awaiting_final_payment')) {
+            if ($needsFinal && $method !== 'COD' && ($currentLower === 'processing' || $currentLower === 'awaiting_final_payment')) {
                 return ['ok' => false, 'status' => 409, 'error' => 'Final payment must be verified before Ready to Ship'];
+            }
+        }
+
+        if ($status === 'completed') {
+            // Enforce full payment before completion.
+            $isFullyPaid = ($verifiedType === 'full') || $finalVerified;
+
+            if ($method === 'COD') {
+                if ($currentLower !== 'shipped') {
+                    return ['ok' => false, 'status' => 409, 'error' => 'COD orders can only be completed after delivery'];
+                }
+                if (!$finalVerified) {
+                    return ['ok' => false, 'status' => 409, 'error' => 'COD final payment must be marked received before completion'];
+                }
+            } else {
+                if (!$isFullyPaid) {
+                    return ['ok' => false, 'status' => 409, 'error' => 'Order must be fully paid before completion'];
+                }
             }
         }
 

@@ -41,10 +41,6 @@ final class RegisterUser
             return ['ok' => false, 'status' => 422, 'error' => 'Password must be at least 8 characters'];
         }
 
-        if ($roleName === 'customer' && ($address === null || $address === '')) {
-            return ['ok' => false, 'status' => 422, 'error' => 'Missing address'];
-        }
-
         if ($this->users->findByEmail($email) !== null) {
             return ['ok' => false, 'status' => 409, 'error' => 'Email already exists'];
         }

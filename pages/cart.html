@@ -58,32 +58,6 @@
                 <div class="muted">Loading…</div>
             </div>
 
-            <div class="cart-section" aria-label="Delivery address">
-                <h2 class="cart-section-title">Delivery Address</h2>
-                <div class="cart-form-grid">
-                    <div class="cart-field">
-                        <label for="shipCountry">Country</label>
-                        <input id="shipCountry" type="text" value="Philippines" placeholder="Philippines" required>
-                    </div>
-                    <div class="cart-field">
-                        <label for="shipProvince">Province</label>
-                        <input id="shipProvince" type="text" placeholder="Davao del Norte" required>
-                    </div>
-                    <div class="cart-field">
-                        <label for="shipCity">City</label>
-                        <input id="shipCity" type="text" placeholder="Tagum City" required>
-                    </div>
-                    <div class="cart-field">
-                        <label for="shipStreet">Street</label>
-                        <input id="shipStreet" type="text" placeholder="Purok / Street / Barangay" required>
-                    </div>
-                    <div class="cart-field">
-                        <label for="shipPostalCode">Postal Code</label>
-                        <input id="shipPostalCode" type="text" placeholder="8100" required>
-                    </div>
-                </div>
-            </div>
-
             <div class="cart-totals" aria-label="Cart totals">
                 <div class="cart-totals-row">
                     <div class="cart-totals-label">Subtotal</div>
@@ -99,6 +73,21 @@
                 </div>
             </div>
 
+            <section class="cart-section" aria-label="Payment method">
+                <h2 class="cart-section-title">Payment Method</h2>
+                <div class="cart-payment-options">
+                    <label class="cart-radio">
+                        <input type="radio" name="paymentMethod" value="GCash" checked>
+                        <span class="cart-radio-label">GCash (50% downpayment)</span>
+                    </label>
+                    <label class="cart-radio">
+                        <input type="radio" name="paymentMethod" value="COD">
+                        <span class="cart-radio-label">COD (50% downpayment, 50% on delivery)</span>
+                    </label>
+                </div>
+                <div class="muted cart-payment-note">All orders require a 50% downpayment before proofing/production.</div>
+            </section>
+
             <div class="cart-actions">
                 <button id="checkoutBtn" class="btn btn-primary cart-checkout" type="button">Place Order</button>
                 <button id="clearCartBtn" class="btn btn-danger cart-clear" type="button">Clear Cart</button>
@@ -109,6 +98,7 @@
     <footer class="site-footer"></footer>
 
     <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js"></script>
     <script src="../js/nav-auth.js"></script>
     <script src="../js/cart-client.js"></script>
 
@@ -161,6 +151,27 @@
                 return await window.AVDialog.confirm(String(message || ''), opts);
             }
             return window.confirm(String(message || ''));
+        };
+
+        const getProfileAddress = () => {
+            const user = window.AlixAuth && typeof window.AlixAuth.getUser === 'function' ? window.AlixAuth.getUser() : null;
+            return String(user?.address || '').trim();
+        };
+
+        const ensureProfileAddressOrRedirect = async () => {
+            const addr = getProfileAddress();
+            if (addr) return addr;
+
+            const go = await uiConfirm('Please set your address in Account Settings before placing an order.', {
+                title: 'Address required',
+                tone: 'info',
+                okText: 'Go to Account Settings',
+                cancelText: 'Cancel',
+            });
+            if (go) {
+                window.location.href = 'account-settings.html';
+            }
+            return null;
         };
 
         const renderMeta = (meta) => {
@@ -290,23 +301,14 @@
             });
 
             document.getElementById('checkoutBtn').addEventListener('click', async () => {
-                const country = String(document.getElementById('shipCountry')?.value || '').trim();
-                const province = String(document.getElementById('shipProvince')?.value || '').trim();
-                const city = String(document.getElementById('shipCity')?.value || '').trim();
-                const street = String(document.getElementById('shipStreet')?.value || '').trim();
-                const postal_code = String(document.getElementById('shipPostalCode')?.value || '').trim();
-
-                const missing = [];
-                if (!country) missing.push('Country');
-                if (!province) missing.push('Province');
-                if (!city) missing.push('City');
-                if (!street) missing.push('Street');
-                if (!postal_code) missing.push('Postal Code');
-
-                if (missing.length) {
-                    await uiAlert(`Please fill up your Delivery Address: ${missing.join(', ')}`, { title: 'Error', tone: 'danger' });
+                if (!localStorage.getItem('alix_auth_token')) {
+                    await uiAlert('Please log in to place an order.', { title: 'Login required', tone: 'info' });
+                    window.location.href = 'login.html';
                     return;
                 }
+
+                const addr = await ensureProfileAddressOrRedirect();
+                if (!addr) return;
 
                 const ok = await uiConfirm('Place order for all items in your cart?', {
                     title: 'Confirm',
@@ -316,17 +318,8 @@
                 });
                 if (!ok) return;
                 try {
-                    await window.AlixCart.checkout({
-                        meta: {
-                            delivery_address: {
-                                country,
-                                province,
-                                city,
-                                street,
-                                postal_code,
-                            },
-                        },
-                    });
+                    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'GCash';
+                    await window.AlixCart.checkout({ payment_method: paymentMethod });
                     await uiAlert('Order placed successfully.', { title: 'Success', tone: 'success', okText: 'Continue' });
                     window.location.href = 'order-history.html';
                 } catch (e) {

@@ -90,6 +90,35 @@ body {
     color: var(--theme-ink, #111);
 }
 
+.cart-payment-options {
+    display: grid;
+    gap: 10px;
+}
+
+.cart-radio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+}
+
+.cart-radio input {
+    accent-color: var(--primary);
+}
+
+.cart-radio-label {
+    font-weight: 800;
+    color: var(--theme-ink, #111);
+}
+
+.cart-payment-note {
+    margin-top: 10px;
+}
+
 .cart-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

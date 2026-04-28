@@ -8,7 +8,7 @@ use App\Domain\Orders\OrderRepository;
 
 final class VerifyOrderPayment
 {
-    private const ALLOWED = ['downpayment', 'full', 'final'];
+    private const ALLOWED = ['downpayment', 'final'];
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -53,6 +53,13 @@ final class VerifyOrderPayment
             $meta = $this->orders->getOrderMeta($orderId);
             $paymentMeta = is_array($meta) && isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
 
+            $methodRaw = isset($paymentMeta['method']) && is_string($paymentMeta['method'])
+                ? strtoupper(trim($paymentMeta['method']))
+                : '';
+            if ($methodRaw === 'COD') {
+                return ['ok' => false, 'status' => 409, 'error' => 'COD orders do not require a final receipt verification'];
+            }
+
             $verifiedType = isset($paymentMeta['verified_type']) && is_string($paymentMeta['verified_type'])
                 ? strtolower(trim($paymentMeta['verified_type']))
                 : null;
@@ -87,11 +94,11 @@ final class VerifyOrderPayment
             return ['ok' => false, 'status' => 500, 'error' => 'Failed to compute order total'];
         }
 
-        $amountPaid = ($type === 'full' || $type === 'final')
+        $amountPaid = ($type === 'final')
             ? $orderTotal
             : round($orderTotal * 0.5, 2);
 
-        $paymentType = ($type === 'full' || $type === 'final') ? 'full' : 'partial';
+        $paymentType = ($type === 'final') ? 'full' : 'partial';
         $paymentId = $this->orders->upsertOrderPaymentRecord(
             $orderId,
             $amountPaid,

@@ -139,12 +139,6 @@
                     <label for="notes">Design Notes</label>
                     <textarea id="notes" placeholder="Add your preferred colors, placements, and sizing notes."></textarea>
                 </div>
-
-                <div class="form-group full-width">
-                    <label for="delivery-address">Delivery Address</label>
-                    <textarea id="delivery-address" placeholder="Street / Barangay, City, Province"></textarea>
-                    <div class="field-error" id="delivery-address-error" aria-live="polite"></div>
-                </div>
             </div>
 
             <div class="section-title">Personalization</div>
@@ -320,8 +314,6 @@
         const designNameInput = document.getElementById("design-name");
         const productTypeSelect = document.getElementById("product-type");
         const notesInput = document.getElementById("notes");
-        const deliveryAddressInput = document.getElementById("delivery-address");
-        const deliveryAddressError = document.getElementById("delivery-address-error");
         const termsAckInput = document.getElementById("termsAck");
         const submitRequestBtn = document.getElementById("submitRequestBtn");
         const saveDraftBtn = document.getElementById("saveDraftBtn");
@@ -357,6 +349,31 @@
         const authHeaders = () => {
             const token = localStorage.getItem('alix_auth_token');
             return token ? { Authorization: `Bearer ${token}` } : {};
+        };
+
+        const getProfileAddress = () => {
+            const user = window.AlixAuth && typeof window.AlixAuth.getUser === 'function' ? window.AlixAuth.getUser() : null;
+            return String(user?.address || '').trim();
+        };
+
+        const ensureProfileAddressOrRedirect = async () => {
+            const addr = getProfileAddress();
+            if (addr) return addr;
+
+            const go = await (window.AVDialog?.confirm
+                ? window.AVDialog.confirm('Please set your address in Account Settings before submitting a custom request.', {
+                      title: 'Address required',
+                      tone: 'info',
+                      okText: 'Go to Account Settings',
+                      cancelText: 'Cancel',
+                  })
+                : Promise.resolve(window.confirm('Please set your address in Account Settings before submitting a custom request.\n\nGo now?')));
+
+            if (go) {
+                window.location.href = 'account-settings.html';
+            }
+
+            return null;
         };
 
         const extOf = (name) => {
@@ -539,7 +556,6 @@
                 productType: String(productTypeSelect?.value || ""),
                 quantity: Number.isFinite(qty) ? qty : null,
                 notes: String(notesInput?.value || ""),
-                deliveryAddress: String(deliveryAddressInput?.value || ""),
                 designType: getDesignType(),
                 personalization: getPersonalization(),
                 roster: readRoster(),
@@ -555,7 +571,6 @@
             if (designNameInput && draft.designName != null) designNameInput.value = String(draft.designName);
             if (productTypeSelect && draft.productType != null) productTypeSelect.value = String(draft.productType);
             if (notesInput && draft.notes != null) notesInput.value = String(draft.notes);
-            if (deliveryAddressInput && draft.deliveryAddress != null) deliveryAddressInput.value = String(draft.deliveryAddress);
             if (termsAckInput && typeof draft.termsAck === "boolean") termsAckInput.checked = draft.termsAck;
 
             if (typeof draft.designType === "string" && referenceOnlyInput) {
@@ -830,27 +845,16 @@
                 return;
             }
 
+            const addr = await ensureProfileAddressOrRedirect();
+            if (!addr) {
+                return;
+            }
+
             if (!termsAckInput?.checked) {
                 const message = "Please acknowledge the payment obligation and terms before submitting.";
                 window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
                 return;
             }
-
-            const setAddressError = (message) => {
-                if (deliveryAddressInput) deliveryAddressInput.classList.toggle("is-invalid", Boolean(message));
-                if (deliveryAddressError) {
-                    deliveryAddressError.textContent = message || "";
-                    deliveryAddressError.classList.toggle("is-visible", Boolean(message));
-                }
-            };
-
-            const addressText = String(deliveryAddressInput?.value || "").trim();
-            if (!addressText) {
-                setAddressError("Please enter your delivery address.");
-                deliveryAddressInput?.focus();
-                return;
-            }
-            setAddressError("");
 
             const draft = buildDraftPayload();
 
@@ -880,7 +884,6 @@
                 fd.append('product_type', String(draft.productType || 'Custom'));
                 fd.append('quantity', String(effectiveQty));
                 fd.append('notes', String(draft.notes || ''));
-                fd.append('delivery_address_street', addressText);
                 fd.append('design_type', String(draft.designType || 'final'));
                 fd.append('personalization', String(draft.personalization || 'names_numbers'));
                 fd.append('payment_preference', String(draft.paymentPreference || 'GCash'));
@@ -978,17 +981,6 @@
 
         submitRequestBtn?.addEventListener("click", submitCustomRequest);
         saveDraftBtn?.addEventListener("click", saveDraft);
-
-        deliveryAddressInput?.addEventListener("input", () => {
-            const v = String(deliveryAddressInput.value || "").trim();
-            if (v) {
-                deliveryAddressInput.classList.remove("is-invalid");
-                if (deliveryAddressError) {
-                    deliveryAddressError.textContent = "";
-                    deliveryAddressError.classList.remove("is-visible");
-                }
-            }
-        });
 
         wireFilePickers();
         restoreDraft();

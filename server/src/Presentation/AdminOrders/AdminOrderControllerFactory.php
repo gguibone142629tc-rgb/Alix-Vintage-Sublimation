@@ -7,6 +7,7 @@ namespace App\Presentation\AdminOrders;
 use App\Application\Orders\ListAllOrders;
 use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
+use App\Application\Orders\MarkCodFinalPaymentReceived;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
 use App\Application\Orders\UpdateOrderPricing;
@@ -23,10 +24,11 @@ final class AdminOrderControllerFactory
         $update = new UpdateOrderStatus($repo);
         $updatePricing = new UpdateOrderPricing($repo);
         $verifyPayment = new VerifyOrderPayment($repo);
+        $markCodFinal = new MarkCodFinalPaymentReceived($repo);
         $setOnTransit = new SetOrderOnTransit($repo);
         $sendProof = new SendOrderProof($repo);
         $listProofs = new ListOrderDesignProofs($repo);
         $listTransactions = new ListPaymentTransactions($repo);
-        return new AdminOrderController($pdo, $list, $update, $updatePricing, $verifyPayment, $setOnTransit, $sendProof, $listProofs, $listTransactions);
+        return new AdminOrderController($pdo, $list, $update, $updatePricing, $verifyPayment, $markCodFinal, $setOnTransit, $sendProof, $listProofs, $listTransactions);
     }
 }

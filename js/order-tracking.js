@@ -511,8 +511,15 @@
         return s !== "completed" && s !== "cancelled";
     };
 
-    const computeStatusCard = (workflowStatus) => {
+    const getPaymentMethod = (order) => {
+        const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+        const raw = paymentMeta.method ?? paymentMeta.payment_method ?? paymentMeta.paymentMethod;
+        return String(raw || "GCash").trim().toUpperCase();
+    };
+
+    const computeStatusCard = (workflowStatus, paymentMethod) => {
         const wf = getWorkflowDisplay(workflowStatus);
+        const method = String(paymentMethod || "GCash").toUpperCase();
 
         if (wf === "Pending Review") {
             return {
@@ -524,14 +531,18 @@
         if (wf === "Awaiting Payment") {
             return {
                 title: "AWAITING PAYMENT",
-                body: "Please pay the required 50% downpayment and upload your receipt screenshot. Admin will verify before proofing.",
+                body: method === "COD"
+                    ? "Please pay the required 50% downpayment and upload your receipt screenshot. Admin will verify before proofing. The remaining balance will be paid on delivery."
+                    : "Please pay the required 50% downpayment and upload your receipt screenshot. Admin will verify before proofing.",
             };
         }
 
         if (wf === "Awaiting Final Payment") {
             return {
                 title: "AWAITING FINAL PAYMENT",
-                body: "Please upload your final payment receipt screenshot (remaining balance). Admin will verify before shipping.",
+                body: method === "COD"
+                    ? "COD orders don't require a final payment receipt. The remaining balance will be paid on delivery."
+                    : "Please upload your final payment receipt screenshot (remaining balance). Admin will verify before shipping.",
             };
         }
 
@@ -908,7 +919,9 @@
         const stepIndex = getWorkflowStepIndex(workflowDisplay);
 
         if (paymentPanelEl) {
-            const showPayment = workflowDisplay === "Awaiting Payment" || workflowDisplay === "Awaiting Final Payment";
+            const method = getPaymentMethod(order);
+            const isCod = method === "COD";
+            const showPayment = workflowDisplay === "Awaiting Payment" || (workflowDisplay === "Awaiting Final Payment" && !isCod);
             paymentPanelEl.style.display = showPayment ? "block" : "none";
 
             if (showPayment) {
@@ -923,9 +936,13 @@
                 if (paymentRequiredLabelEl) paymentRequiredLabelEl.textContent = isFinal ? "Required Final Payment" : "Required Downpayment (50%)";
 
                 if (paymentNoteEl) {
-                    paymentNoteEl.textContent = isFinal
-                        ? "Upload your final payment receipt screenshot so admin can verify your payment."
-                        : "Upload your downpayment receipt screenshot so admin can verify your payment.";
+                    if (!isFinal && isCod) {
+                        paymentNoteEl.textContent = "Upload your downpayment receipt screenshot so admin can verify your payment. Remaining balance will be paid on delivery.";
+                    } else {
+                        paymentNoteEl.textContent = isFinal
+                            ? "Upload your final payment receipt screenshot so admin can verify your payment."
+                            : "Upload your downpayment receipt screenshot so admin can verify your payment.";
+                    }
                 }
 
                 const receiptUrl = isFinal
@@ -1148,12 +1165,13 @@
         }
 
         const workflowDisplay = dbStatusToWorkflow(order?.status);
+        const paymentMethod = getPaymentMethod(order);
 
         if (orderTitleEl) orderTitleEl.textContent = `ORDER #${String(order.id || "")}`;
         if (orderPlacedAtEl) orderPlacedAtEl.textContent = `Placed on ${formatDate(order.date)}`;
         if (orderPillEl) orderPillEl.textContent = workflowDisplay;
 
-        const status = computeStatusCard(workflowDisplay);
+        const status = computeStatusCard(workflowDisplay, paymentMethod);
         if (statusTitleEl) statusTitleEl.textContent = status.title;
         if (statusBodyEl) statusBodyEl.textContent = status.body;
 
@@ -1169,6 +1187,7 @@
         if (summaryPaymentEl) {
             const status = String(order.status || "").toLowerCase();
             const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+            const method = getPaymentMethod(order);
             const hasReceipt = typeof paymentMeta.receipt_data_url === "string" && String(paymentMeta.receipt_data_url).trim() !== "";
             const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified";
 
@@ -1179,9 +1198,13 @@
             if (status === "paid") {
                 summaryPaymentEl.textContent = verified ? "Verified" : (hasReceipt ? "Pending Verification" : "Awaiting Receipt");
             } else if (status === "awaiting_final_payment") {
-                const finalHas = typeof paymentMeta.final_receipt_data_url === "string" && String(paymentMeta.final_receipt_data_url).trim() !== "";
-                const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified";
-                summaryPaymentEl.textContent = finalVerified ? "Fully Paid" : (finalHas ? "Final Payment Pending Verification" : "Awaiting Final Receipt");
+                if (method === "COD") {
+                    summaryPaymentEl.textContent = "COD - Balance due on delivery";
+                } else {
+                    const finalHas = typeof paymentMeta.final_receipt_data_url === "string" && String(paymentMeta.final_receipt_data_url).trim() !== "";
+                    const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified";
+                    summaryPaymentEl.textContent = finalVerified ? "Fully Paid" : (finalHas ? "Final Payment Pending Verification" : "Awaiting Final Receipt");
+                }
             } else if (status === "proofing" || status === "processing" || status === "ready_to_ship" || status === "shipped" || status === "completed") {
                 summaryPaymentEl.textContent = fullyPaid ? "Fully Paid" : (partiallyPaid ? "Partially Paid" : "Unpaid");
             } else {
@@ -1233,10 +1256,19 @@
         }
 
         const workflowDisplay = dbStatusToWorkflow(order?.status);
+        const method = getPaymentMethod(order);
         const stage = workflowDisplay === "Awaiting Final Payment" ? "final" : "initial";
         if (workflowDisplay !== "Awaiting Payment" && workflowDisplay !== "Awaiting Final Payment") {
             uiAlert("Receipt upload is only available while the order is Awaiting Payment or Awaiting Final Payment.", {
                 title: "Receipt Upload",
+                tone: "info",
+            });
+            return;
+        }
+
+        if (stage === "final" && method === "COD") {
+            uiAlert("COD orders don't require a final payment receipt. The remaining balance will be paid on delivery.", {
+                title: "COD Payment",
                 tone: "info",
             });
             return;

@@ -24,6 +24,24 @@ final class CustomDesignController
         return $this->auth->requireUserId($request);
     }
 
+    private function requireUserAddress(int $userId): string
+    {
+        $stmt = $this->pdo->prepare('SELECT address FROM users WHERE user_id = :user_id LIMIT 1');
+        $stmt->execute(['user_id' => $userId]);
+        $raw = $stmt->fetchColumn();
+
+        if ($raw === false) {
+            Response::json(['error' => 'User not found'], 404);
+        }
+
+        $address = trim((string) ($raw ?? ''));
+        if ($address === '') {
+            Response::json(['error' => 'Please set your address in Account Settings before submitting a custom request'], 422);
+        }
+
+        return $address;
+    }
+
     private function repoRoot(): string
     {
         // server/src/Presentation/CustomDesign -> repo root
@@ -353,6 +371,8 @@ final class CustomDesignController
             Response::json(['error' => 'Invalid payment preference'], 400);
         }
 
+        $profileAddress = $this->requireUserAddress($userId);
+
         $effectiveQty = $quantity > 0 ? $quantity : max(1, count($roster));
 
         // Allow submitting from an existing draft to avoid duplicate rows.
@@ -503,6 +523,14 @@ final class CustomDesignController
                 $orderMeta = [
                     'source' => 'custom_design',
                     'custom_design_request_id' => $requestId,
+                    'payment' => [
+                        'method' => $paymentPreference,
+                    ],
+                    'delivery_address' => [
+                        // Minimal required for admin display; stored in the same shape as checkout.
+                        'street' => $profileAddress,
+                    ],
+                    'promo' => $effectiveQty >= 10 ? ['free_shipping_min_qty_10' => true] : [],
                     // Comments panel (customer + admin) reads from orders.meta.comments
                     'comments' => $noteOnly === '' ? [] : [[
                         'author' => 'Customer',
