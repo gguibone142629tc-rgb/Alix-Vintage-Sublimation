@@ -23,6 +23,7 @@
     const orderIdEl = qs("#orderId");
     const customerNameEl = qs("#customerName");
     const customerMobileEl = qs("#customerMobile");
+    const paymentMethodEl = qs("#paymentMethod");
     const customerAddressEl = qs("#customerAddress");
     const orderDateEl = qs("#orderDate");
     const workflowPill = qs("#workflowPill");
@@ -872,6 +873,7 @@
         const cust = getCustomerSummary(order);
         if (customerNameEl) customerNameEl.textContent = cust.customerName;
         if (customerMobileEl) customerMobileEl.textContent = cust.mobile;
+        if (paymentMethodEl) paymentMethodEl.textContent = String(order?.admin?.payment?.method || "-");
 
         renderStepper(order);
         renderRemainingBalance(order);
@@ -1172,9 +1174,9 @@
                         updateBtn();
                         return;
                     }
-                    const maxBytes = 2_000_000;
+                    const maxBytes = 20_000_000;
                     if (typeof file.size === "number" && file.size > maxBytes) {
-                        uiAlert("Image is too large (max 2MB).", { title: "Proofing", tone: "danger" });
+                        uiAlert("Image is too large (max 20MB).", { title: "Proofing", tone: "danger" });
                         upload.value = "";
                         pendingMockup = "";
                         updateBtn();
@@ -2554,6 +2556,7 @@
         const cust = getCustomerSummary(order);
         if (customerNameEl) customerNameEl.textContent = cust.customerName;
         if (customerMobileEl) customerMobileEl.textContent = cust.mobile;
+        if (paymentMethodEl) paymentMethodEl.textContent = String(order?.admin?.payment?.method || "-");
 
         if (stockConfirmedInput) stockConfirmedInput.checked = Boolean(order.admin.stockConfirmed);
         if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";

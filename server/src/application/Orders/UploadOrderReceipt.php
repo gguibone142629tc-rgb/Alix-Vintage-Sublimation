@@ -8,7 +8,7 @@ use App\Domain\Orders\OrderRepository;
 
 final class UploadOrderReceipt
 {
-    private const MAX_BYTES = 2_000_000; // 2MB
+    private const MAX_BYTES = 20_000_000; // 20MB
 
     public function __construct(private readonly OrderRepository $orders)
     {
@@ -60,7 +60,7 @@ final class UploadOrderReceipt
         }
 
         if ($size > self::MAX_BYTES) {
-            return ['ok' => false, 'status' => 413, 'error' => 'Receipt image is too large (max 2MB)'];
+            return ['ok' => false, 'status' => 413, 'error' => 'Receipt image is too large (max 20MB)'];
         }
 
         $stageRaw = $input['receipt_stage'] ?? null;

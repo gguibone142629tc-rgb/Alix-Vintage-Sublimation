@@ -1,0 +1,57 @@
+TC ID,Area,Title,Priority,Preconditions,Steps,Expected Result,Status (Pass/Fail),Actual Result / Notes,Evidence (link/path)
+TC-A01,Account,Register (no address field),High,None,"1) Open Register
+2) Enter valid name/email/mobile/password
+3) Submit",Account is created; OTP flow starts; no address-required validation.,Not Run,,
+TC-A02,Account/Checkout,Login required for checkout,High,User is logged out; cart has at least 1 item,"1) Open Cart
+2) Click Place Order",User is blocked and redirected/prompted to log in; no order is created.,Not Run,,
+TC-A03,Account/Checkout,Address required for cart checkout,High,Logged-in user; profile address is empty; cart has at least 1 item,"1) Open Cart
+2) Click Place Order",Checkout is blocked with message to set address in Account Settings; redirect option works.,Not Run,,
+TC-A04,Account/Custom Design,Address required for custom design submit,High,Logged-in user; profile address is empty,"1) Open Upload Custom Design
+2) Fill required fields
+3) Click Submit Request",Submission is blocked with message to set address in Account Settings; redirect option works.,Not Run,,
+TC-A05,Account,PH address autocomplete suggestions,Medium,None,"1) Open Account Settings
+2) Type 4+ chars in Address field
+3) Pick a suggestion
+4) Press ESC / click outside",Suggestions appear; selection fills the textarea; ESC/outside click closes suggestions.,Not Run,,
+TC-B01,Cart,Checkout with GCash selected,High,Logged-in user; profile address set; cart has at least 1 item,"1) Open Cart
+2) Select GCash
+3) Place Order",Order is created; order meta payment method is 'GCash'.,Not Run,,
+TC-B02,Cart,Checkout with COD selected,High,Logged-in user; profile address set; cart has at least 1 item,"1) Open Cart
+2) Select COD
+3) Place Order",Order is created; order meta payment method is 'COD'.,Not Run,,
+TC-B03,Cart/Promo,Free shipping promo recorded for 10+ qty,High,Logged-in user; profile address set,"1) Add items so total qty >= 10
+2) Place Order
+3) Open admin order details",Promo is tagged (free shipping 10+); admin shipping fee is enforced to 0.,Not Run,,
+TC-C01,Payments,Customer uploads downpayment receipt,High,Order is in Awaiting Payment stage,"1) Open Order Tracking
+2) Choose receipt image
+3) Upload receipt",Receipt is saved; status shows pending verification until admin verifies.,Not Run,,
+TC-C02,Admin/Payments,Cannot proceed to proofing without downpayment verification,High,Order exists; downpayment receipt not verified,"1) Open Admin Order Details
+2) Attempt to move to Proofing/next stage",Action is blocked (UI and/or server rejection).,Not Run,,
+TC-C03,Admin/Payments,Admin verifies 50% downpayment (DB order),High,Downpayment receipt uploaded; order in paid/Awaiting Payment stage,"1) Open Admin Order Details
+2) Click Verify 50% Downpayment
+3) Confirm",Payment meta becomes verified_type=downpayment; order can proceed to Proofing.,Not Run,,
+TC-C04,Admin/Payments,No 'Verify 100% Full Payment' path,High,Any order in paid/Awaiting Payment stage,"1) Open Admin Order Details
+2) Inspect available payment verification buttons",There is no 'Verify 100% Full Payment' button; backend rejects verify_type=full.,Not Run,,
+TC-D01,COD,COD skips Awaiting Final Payment flow,High,COD order; downpayment verified; order in processing,"1) Open Admin Order Details
+2) From Processing, attempt to request final payment
+3) Mark Ready to Ship",COD does not require final receipt; Ready to Ship is allowed without final verification.,Not Run,,
+TC-D02,COD,Customer cannot upload final receipt for COD,High,COD order,"1) Open Order Tracking
+2) Navigate to any final-payment UI (if visible)
+3) Try uploading final receipt",Final receipt upload is not shown or is blocked with message: balance due on delivery.,Not Run,,
+TC-D03,COD/Admin,COD completion requires 'Mark COD Final Payment Received',High,COD order shipped; downpayment verified; final not verified,"1) Open Admin Order Details
+2) Attempt Mark Completed",Completion is blocked until COD final payment is marked received (server-enforced).,Not Run,,
+TC-D04,COD/Admin,Admin marks COD final payment received,High,COD order shipped; downpayment verified,"1) Open Admin Order Details
+2) Click 'Mark COD Final Payment Received'
+3) Confirm
+4) Mark Completed",Payment final_verified=true and amount_paid=total; order can be completed.,Not Run,,
+TC-E01,GCash,Non-COD can request final payment,High,GCash order; downpayment verified; order in processing,"1) Open Admin Order Details
+2) Click 'Set Awaiting Final Payment'",Status updates to awaiting_final_payment; customer sees final payment instructions.,Not Run,,
+TC-E02,GCash,Final receipt upload + admin verify,High,GCash order in awaiting_final_payment,"1) Customer uploads final receipt
+2) Admin verifies final payment
+3) Admin marks Ready to Ship",Final is verified; order can proceed to shipping.,Not Run,,
+TC-F01,Admin/Pricing,Admin sets shipping fee for qty < 10,Medium,Order qty < 10; order pending approval,"1) Open Admin Order Details
+2) Set Shipping Fee
+3) Save/Approve",Shipping fee is saved; totals update; approval can proceed.,Not Run,,
+TC-F02,Admin/Pricing,Admin cannot set shipping fee > 0 for qty >= 10,High,Order qty >= 10; order pending approval,"1) Open Admin Order Details
+2) Try setting Shipping Fee to a non-zero value
+3) Save",Server rejects or forces shipping fee to 0; no bypass.,Not Run,,

@@ -37,8 +37,8 @@ final class SendOrderProof
         }
 
         // Keep files reasonably sized.
-        if (strlen($binary) > 2_000_000) {
-            throw new \InvalidArgumentException('Mockup image is too large');
+        if (strlen($binary) > 20_000_000) {
+            throw new \InvalidArgumentException('Mockup image is too large (max 20MB)');
         }
 
         $root = dirname(__DIR__, 4);

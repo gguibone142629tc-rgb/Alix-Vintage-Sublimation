@@ -1285,9 +1285,9 @@
             return;
         }
 
-        const maxBytes = 2_000_000;
+        const maxBytes = 20_000_000;
         if (typeof file.size === "number" && file.size > maxBytes) {
-            uiAlert("Image is too large (max 2MB).", { title: "Receipt Upload", tone: "danger" });
+            uiAlert("Image is too large (max 20MB).", { title: "Receipt Upload", tone: "danger" });
             return;
         }
 

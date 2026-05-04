@@ -9,5 +9,8 @@ tmp_roster.json
 Thumbs.db
 .vscode/
 
+# Office temp lock files
+~$*.xlsx
+
 # Node (if added later)
 node_modules/
