@@ -16,6 +16,7 @@ final class CustomDesignRoutes
         // Customer
         $router->post('/api/custom-design/drafts', [$controller, 'saveDraft']);
         $router->post('/api/custom-design/requests', [$controller, 'submit']);
+        $router->patch('/api/custom-design/requests/payment-preference', [$controller, 'setPaymentPreference']);
 
         // Admin
         $router->get('/api/admin/custom-design/requests', [$adminController, 'list']);

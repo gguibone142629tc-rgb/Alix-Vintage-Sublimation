@@ -6,7 +6,7 @@ namespace App\Infrastructure\Db;
 
 use App\Shared\Config\Env;
 
-final class PdoConnectionFactory
+final class PdoConnectionFactory implements ConnectionFactory
 {
     public function create(): \PDO
     {

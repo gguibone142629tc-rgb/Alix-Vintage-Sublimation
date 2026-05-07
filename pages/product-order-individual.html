@@ -81,6 +81,17 @@
                 <input id="name" type="text" placeholder="Last name">
             </div>
             <div class="form-group">
+                <label for="size">Size</label>
+                <select id="size">
+                    <option value="" selected disabled>Select size</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="upload-logo">Upload Logo</label>
                 <div class="upload-box" id="upload-logo">Drag and drop here<br>Choose file</div>
             </div>
@@ -269,9 +280,27 @@
             const jerseyNumber = (document.getElementById('number')?.value || '').trim();
             const playerName = (document.getElementById('name')?.value || '').trim();
 
+            const groupName = (document.getElementById('group-name')?.value || '').trim();
+            const size = (document.getElementById('size')?.value || '').trim();
+
+            if (!groupName) {
+                const title = 'Group name missing';
+                const message = 'Enter a team name for group orders.';
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
             if (!playerName) {
-                const message = 'Please enter your full name before placing the order.';
-                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                const title = 'Name missing';
+                const message = 'Enter a name to continue.';
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
+            if (!size) {
+                const title = 'Size not selected';
+                const message = 'Choose a size to continue.';
+                window.AVToast?.danger(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
                 return;
             }
 
@@ -284,8 +313,6 @@
                     profileEmail = String(u.email || '').trim();
                 }
             } catch {}
-
-            const groupName = (document.getElementById('group-name')?.value || '').trim();
 
             const productIdFromQuery = (() => {
                 try {
@@ -309,6 +336,7 @@
                         groupName,
                         playerName,
                         jerseyNumber,
+                        size,
                         ...(uploadedLogo?.dataUrl ? { logoDataUrl: uploadedLogo.dataUrl, logoFileName: uploadedLogo.fileName, logoMime: uploadedLogo.mime, logoSize: uploadedLogo.size } : {}),
                         customerMobile: profilePhone,
                         customerEmail: profileEmail,
@@ -322,12 +350,13 @@
 
             // Notify other pages
             window.dispatchEvent(new Event('cartItemAdded'));
-            window.AVToast?.success('\u2713 Order added! View it in Order History') || showNotification('\u2713 Order added! View it in Order History');
+            window.AVToast?.success('Order added to cart\nView order history') || showNotification('Order added to cart\nView order history');
         }
 
         function showNotification(message) {
             const notif = document.createElement('div');
             notif.textContent = message;
+            notif.style.whiteSpace = 'pre-line';
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 4000);
         }

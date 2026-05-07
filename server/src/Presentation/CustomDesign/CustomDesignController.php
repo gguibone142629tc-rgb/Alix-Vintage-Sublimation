@@ -68,6 +68,93 @@ final class CustomDesignController
         return $name === '' ? 'file' : $name;
     }
 
+    private function normalizePaymentPreference(mixed $value): ?string
+    {
+        $v = is_string($value) ? trim($value) : '';
+        if ($v === '') {
+            return null;
+        }
+        if ($v === 'GCash' || $v === 'COD') {
+            return $v;
+        }
+        // Accept lower/upper from clients.
+        $u = strtoupper($v);
+        return $u === 'COD' ? 'COD' : ($u === 'GCASH' ? 'GCash' : null);
+    }
+
+    /** Update payment method after submission (used by post-submit popup). */
+    public function setPaymentPreference(Request $request): void
+    {
+        $userId = $this->requireUserId($request);
+        $body = $request->json();
+
+        $requestIdRaw = $body['request_id'] ?? null;
+        $requestId = is_numeric($requestIdRaw) ? (int) $requestIdRaw : 0;
+        if ($requestId <= 0) {
+            Response::json(['error' => 'Missing request_id'], 422);
+        }
+
+        $pref = $this->normalizePaymentPreference($body['payment_preference'] ?? null);
+        if ($pref === null) {
+            Response::json(['error' => 'Invalid payment preference'], 422);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT status, order_id FROM custom_design_requests WHERE request_id = :request_id AND user_id = :user_id LIMIT 1'
+        );
+        $stmt->execute(['request_id' => $requestId, 'user_id' => $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            Response::json(['error' => 'Request not found'], 404);
+        }
+
+        $status = strtolower((string) ($row['status'] ?? ''));
+        if ($status === 'completed' || $status === 'cancelled') {
+            Response::json(['error' => 'Request can no longer be updated'], 409);
+        }
+
+        $upd = $this->pdo->prepare(
+            'UPDATE custom_design_requests SET payment_preference = :payment_preference, updated_at = NOW() '
+            . 'WHERE request_id = :request_id AND user_id = :user_id'
+        );
+        $upd->execute([
+            'payment_preference' => $pref,
+            'request_id' => $requestId,
+            'user_id' => $userId,
+        ]);
+
+        $orderId = isset($row['order_id']) && is_numeric($row['order_id']) ? (int) $row['order_id'] : 0;
+        if ($orderId > 0) {
+            $orderStmt = $this->pdo->prepare('SELECT meta FROM orders WHERE order_id = :order_id AND user_id = :user_id LIMIT 1');
+            $orderStmt->execute(['order_id' => $orderId, 'user_id' => $userId]);
+            $metaRaw = $orderStmt->fetchColumn();
+
+            $meta = [];
+            if (is_array($metaRaw)) {
+                $meta = $metaRaw;
+            } elseif (is_string($metaRaw) && trim($metaRaw) !== '') {
+                $decoded = json_decode($metaRaw, true);
+                $meta = is_array($decoded) ? $decoded : [];
+            }
+
+            $payment = isset($meta['payment']) && is_array($meta['payment']) ? $meta['payment'] : [];
+            $payment['method'] = $pref;
+            $meta['payment'] = $payment;
+
+            $metaJson = json_encode($meta, JSON_UNESCAPED_UNICODE);
+            if ($metaJson !== false) {
+                $orderUpd = $this->pdo->prepare('UPDATE orders SET meta = :meta WHERE order_id = :order_id AND user_id = :user_id');
+                $orderUpd->execute([
+                    'meta' => $metaJson,
+                    'order_id' => $orderId,
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+
+        Response::json(['ok' => true, 'request_id' => $requestId, 'payment_preference' => $pref, 'order_id' => $orderId ?: null], 200);
+    }
+
     private function fileExt(string $name): string
     {
         $pos = strrpos($name, '.');

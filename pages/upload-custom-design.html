@@ -36,12 +36,14 @@
                     <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
                 </div>
                 </div>
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6h14l-2 9H8L6 6z" />
-                    <path d="M6 6H4" />
-                    <circle cx="9" cy="19" r="1" />
-                    <circle cx="17" cy="19" r="1" />
-                </svg>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
             </div>
             <button class="nav-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav-menu">
                 <span></span>
@@ -59,7 +61,6 @@
     <main>
         <div class="page-title">
             <h1>Upload Custom Design</h1>
-            <span>PNG, JPG, SVG up to 25MB</span>
         </div>
 
         <section class="panel">
@@ -174,12 +175,13 @@
                                 <td><input type="text" placeholder="00"></td>
                                 <td>
                                     <select>
-                                        <option>XS</option>
-                                        <option>S</option>
-                                        <option>M</option>
-                                        <option>L</option>
-                                        <option>XL</option>
-                                        <option>2XL</option>
+                                        <option value="" selected disabled>Select size</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="2XL">2XL</option>
                                     </select>
                                 </td>
                             </tr>
@@ -189,12 +191,13 @@
                                 <td><input type="text" placeholder="00"></td>
                                 <td>
                                     <select>
-                                        <option>XS</option>
-                                        <option>S</option>
-                                        <option>M</option>
-                                        <option>L</option>
-                                        <option>XL</option>
-                                        <option>2XL</option>
+                                        <option value="" selected disabled>Select size</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="2XL">2XL</option>
                                     </select>
                                 </td>
                             </tr>
@@ -204,12 +207,13 @@
                                 <td><input type="text" placeholder="00"></td>
                                 <td>
                                     <select>
-                                        <option>XS</option>
-                                        <option>S</option>
-                                        <option>M</option>
-                                        <option>L</option>
-                                        <option>XL</option>
-                                        <option>2XL</option>
+                                        <option value="" selected disabled>Select size</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="2XL">2XL</option>
                                     </select>
                                 </td>
                             </tr>
@@ -217,13 +221,6 @@
                     </table>
                 </div>
             </div>
-
-            <div class="section-title">Payment Preference</div>
-            <div class="choice-row">
-                <label class="choice-item"><input type="radio" name="payment" checked> GCash (50% or 100%)</label>
-                <label class="choice-item"><input type="radio" name="payment"> COD (50% downpayment required)</label>
-            </div>
-            <p class="helper-text">Payment will be collected after Admin approval and manual quote.</p>
 
             <div class="section-title">Design Proofing</div>
             <p class="helper-text">You will receive a digital mockup to Approve or Request Revision before production.</p>
@@ -520,12 +517,6 @@
             }
         };
 
-        const getPaymentPreference = () => {
-            const selected = document.querySelector('input[name="payment"]:checked');
-            const labelText = selected?.closest("label")?.textContent || "";
-            return labelText.toLowerCase().includes("cod") ? "COD" : "GCash";
-        };
-
         const getDesignType = () => (referenceOnlyInput && referenceOnlyInput.checked ? "reference" : "final");
 
         const getPersonalization = () => {
@@ -559,7 +550,6 @@
                 designType: getDesignType(),
                 personalization: getPersonalization(),
                 roster: readRoster(),
-                paymentPreference: getPaymentPreference(),
                 termsAck: Boolean(termsAckInput?.checked),
             };
         };
@@ -588,7 +578,7 @@
                 const body = rosterTableElement.querySelector("tbody");
                 if (body) {
                     body.innerHTML = "";
-                    const rosterRows = draft.roster.length ? draft.roster : [{ name: "", number: "", size: "S" }];
+                    const rosterRows = draft.roster.length ? draft.roster : [{ name: "", number: "", size: "" }];
                     rosterRows.forEach((r, idx) => {
                         const row = createRosterRow(idx + 1);
                         const tds = row.querySelectorAll("td");
@@ -611,15 +601,54 @@
                 quantityInputElement.value = String(draft.quantity);
             }
 
-            // Restore payment radio by label match
-            if (typeof draft.paymentPreference === "string") {
-                const radios = document.querySelectorAll('input[name="payment"]');
-                radios.forEach((r) => {
-                    const text = r.closest("label")?.textContent || "";
-                    if (draft.paymentPreference === "COD" && text.toLowerCase().includes("cod")) r.checked = true;
-                    if (draft.paymentPreference === "GCash" && text.toLowerCase().includes("gcash")) r.checked = true;
+        };
+
+        const selectPaymentMethodPopup = async () => {
+            const message =
+                "Select your payment method for this custom order.\n\n" +
+                "GCash: Pay via receipt upload after admin approval and quote.\n" +
+                "COD: 50% downpayment required; remaining balance paid on delivery.";
+
+            if (window.AVDialog?.confirm) {
+                // Confirm dialog focuses the Cancel button by default; map Cancel->GCash, OK->COD for safer default.
+                const isCod = await window.AVDialog.confirm(message, {
+                    title: "Payment Method",
+                    tone: "info",
+                    okText: "COD",
+                    cancelText: "GCash",
                 });
+                return isCod ? "COD" : "GCash";
             }
+
+            const isCod = window.confirm(message + "\n\nOK = COD, Cancel = GCash");
+            return isCod ? "COD" : "GCash";
+        };
+
+        const updateSubmittedPaymentPreference = async (requestId, paymentPreference) => {
+            const id = Number(requestId || 0);
+            const pref = String(paymentPreference || "").trim();
+            if (!Number.isFinite(id) || id <= 0) {
+                throw new Error("Missing request id.");
+            }
+            if (pref !== "GCash" && pref !== "COD") {
+                throw new Error("Invalid payment preference.");
+            }
+
+            const res = await fetch(getApiBaseUrl() + "/api/custom-design/requests/payment-preference", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeaders(),
+                },
+                body: JSON.stringify({ request_id: id, payment_preference: pref }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const message = typeof data.error === "string" ? data.error : "Failed to set payment method.";
+                throw new Error(message);
+            }
+            return data;
         };
 
         const updateQuantityFromRoster = () => {
@@ -638,12 +667,13 @@
                 <td><input type="text" placeholder="00"></td>
                 <td>
                     <select>
-                        <option>XS</option>
-                        <option>S</option>
-                        <option>M</option>
-                        <option>L</option>
-                        <option>XL</option>
-                        <option>2XL</option>
+                        <option value="" selected disabled>Select size</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="2XL">2XL</option>
                     </select>
                 </td>
             `;
@@ -851,26 +881,69 @@
             }
 
             if (!termsAckInput?.checked) {
-                const message = "Please acknowledge the payment obligation and terms before submitting.";
-                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+                const message =
+                    "Before submitting, please check the box to acknowledge the payment obligation and agree to the Terms and Conditions.";
+                window.AVDialog?.alert(message, { title: 'Submission requirement', tone: 'info' }) || alert(message);
                 return;
             }
 
             const draft = buildDraftPayload();
 
+            const groupName = String(draft.designName || '').trim();
+            if (!groupName) {
+                const title = 'Group name missing';
+                const message = 'Enter a team name for group orders.';
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
+            if (draft.personalization === 'names_numbers') {
+                if (!Array.isArray(draft.roster) || draft.roster.length === 0) {
+                    const title = 'Name missing';
+                    const message = 'Add at least one player name to continue.';
+                    window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                    return;
+                }
+
+                const missingNameIndex = draft.roster.findIndex((r) => !String(r?.name || '').trim());
+                if (missingNameIndex >= 0) {
+                    const title = 'Name missing';
+                    const message = `Enter a name for row ${missingNameIndex + 1} to continue.`;
+                    window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                    return;
+                }
+
+                const missingSizeIndex = draft.roster.findIndex((r) => !String(r?.size || '').trim());
+                if (missingSizeIndex >= 0) {
+                    const title = 'Size not selected';
+                    const message = `Choose a size for row ${missingSizeIndex + 1} to continue.`;
+                    window.AVToast?.danger(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                    return;
+                }
+            }
+
             try {
                 const qty = Number(draft.quantity || 0);
                 const effectiveQty = Number.isFinite(qty) && qty > 0 ? qty : Math.max(1, draft.roster.length || 1);
 
-                // Client validation for required uploads
+                // Client validation for required uploads (submission requirements, not a system error)
                 if (draft.designType === 'final' && selectedMainFiles.length === 0) {
-                    const message = "Please upload your main design file, or choose Reference image only.";
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
+                    const message =
+                        "To submit your request, we need at least 1 upload:\n\n" +
+                        "Option A (current): 'I have a final design file'\n" +
+                        "- Upload at least 1 Main Design file (PNG/JPG/SVG)\n\n" +
+                        "Option B: 'Reference image only'\n" +
+                        "- Select 'Reference image only', then upload at least 1 Reference image\n\n" +
+                        "After uploading, click Submit Request again.";
+                    window.AVDialog?.alert(message, { title: 'Submission requirement', tone: 'info' }) || alert(message);
                     return;
                 }
                 if (draft.designType === 'reference' && selectedReferenceFiles.length === 0 && selectedMainFiles.length === 0) {
-                    const message = "Please upload at least one reference image.";
-                    window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' });
+                    const message =
+                        "You selected 'Reference image only'.\n\n" +
+                        "To submit, upload at least 1 Reference image (or upload a Main Design file instead).\n\n" +
+                        "After uploading, click Submit Request again.";
+                    window.AVDialog?.alert(message, { title: 'Submission requirement', tone: 'info' }) || alert(message);
                     return;
                 }
 
@@ -886,7 +959,9 @@
                 fd.append('notes', String(draft.notes || ''));
                 fd.append('design_type', String(draft.designType || 'final'));
                 fd.append('personalization', String(draft.personalization || 'names_numbers'));
-                fd.append('payment_preference', String(draft.paymentPreference || 'GCash'));
+                // Payment method is selected via popup after submission.
+                // Backend requires a value on submit, so we send a safe default and immediately update it.
+                fd.append('payment_preference', 'GCash');
                 fd.append('roster', JSON.stringify(draft.roster || []));
 
                 selectedMainFiles.forEach((f) => fd.append('main_files[]', f));
@@ -905,6 +980,16 @@
                 if (!res.ok) {
                     const message = typeof data.error === 'string' ? data.error : 'Failed to submit request.';
                     throw new Error(message);
+                }
+
+                const chosenMethod = await selectPaymentMethodPopup();
+                try {
+                    await updateSubmittedPaymentPreference(data?.request_id, chosenMethod);
+                } catch (e) {
+                    const message = e?.message || "Failed to set payment method.";
+                    await (window.AVDialog?.alert
+                        ? window.AVDialog.alert(message, { title: "Payment Method", tone: "warning" })
+                        : alert(message));
                 }
 
                 localStorage.removeItem(DRAFT_KEY);
@@ -954,7 +1039,7 @@
                         notes: payload.notes || '',
                         design_type: payload.designType || 'final',
                         personalization: payload.personalization || 'names_numbers',
-                        payment_preference: payload.paymentPreference || 'GCash',
+                        payment_preference: 'GCash',
                         roster: payload.roster || [],
                     };
 

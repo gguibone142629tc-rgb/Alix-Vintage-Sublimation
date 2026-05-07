@@ -54,15 +54,15 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <a href="order-tracking.html" class="sidebar-item">
-                <span>&#128230;</span>
+                <img class="sidebar-icon" src="../assets/icons/Order.png" alt="">
                 Orders
             </a>
             <a href="order-history.html" class="sidebar-item active">
-                <span>&#128203;</span>
+                <img class="sidebar-icon" src="../assets/icons/Order_History.png" alt="">
                 Order History
             </a>
             <a href="account-settings.html" class="sidebar-item">
-                <span>&#9881;&#65039;</span>
+                <img class="sidebar-icon" src="../assets/icons/Settings.png" alt="">
                 Account Settings
             </a>
         </aside>
@@ -107,8 +107,33 @@
 
                 <!-- Filter Tabs -->
                 <div class="filter-tabs">
-                    <button class="tab-btn active" data-workflow="all">All</button>
-                    <button class="tab-btn" data-workflow="completed">Completed</button>
+                    <button class="tab-btn" data-workflow="all">All</button>
+                    <button class="tab-btn active" data-workflow="completed">Completed</button>
+                    <button class="tab-btn" data-workflow="cancelled">Cancelled</button>
+                </div>
+
+                <div id="advancedFilters" class="advanced-filters is-hidden" aria-label="Advanced filters">
+                    <div class="advanced-filters-row">
+                        <label class="af-field">
+                            <span class="af-label">Min Amount</span>
+                            <input id="minAmountInput" class="af-input" type="number" inputmode="decimal" min="0" step="1" placeholder="0">
+                        </label>
+
+                        <label class="af-field">
+                            <span class="af-label">Max Amount</span>
+                            <input id="maxAmountInput" class="af-input" type="number" inputmode="decimal" min="0" step="1" placeholder="Any">
+                        </label>
+
+                        <label class="af-field">
+                            <span class="af-label">Sort</span>
+                            <select id="sortSelect" class="af-input">
+                                <option value="date_desc" selected>Newest</option>
+                                <option value="date_asc">Oldest</option>
+                                <option value="amount_desc">Amount (High → Low)</option>
+                                <option value="amount_asc">Amount (Low → High)</option>
+                            </select>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -192,12 +217,16 @@
         };
 
         let orders = [];
-        let currentStatusFilter = 'all';
+        let currentStatusFilter = 'completed';
         let currentSearchTerm = '';
+        let currentMonthOnly = false;
+        let minAmountFilter = null;
+        let maxAmountFilter = null;
+        let sortKey = 'date_desc';
 
         const isHistoryStatus = (status) => {
             const s = String(status || '').toLowerCase();
-            return s === 'completed' || s === 'cancelled';
+            return s === 'completed' || s === 'cancelled' || s === 'canceled';
         };
 
         const isAuthed = () => Boolean(localStorage.getItem('alix_auth_token'));
@@ -222,6 +251,20 @@
                     })),
                 };
             });
+        };
+
+        const isInCurrentMonth = (dateString) => {
+            if (!dateString) return false;
+            const dt = new Date(dateString);
+            if (Number.isNaN(dt.getTime())) return false;
+            const now = new Date();
+            return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
+        };
+
+        const asNumberOrNull = (value) => {
+            if (value === '' || value === null || value === undefined) return null;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
         };
 
         const loadAndDisplay = async () => {
@@ -261,7 +304,33 @@
                 });
             }
 
-            return filtered.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+            if (currentMonthOnly) {
+                filtered = filtered.filter((o) => isInCurrentMonth(o.date));
+            }
+
+            if (minAmountFilter !== null) {
+                filtered = filtered.filter((o) => Number(o.total || 0) >= minAmountFilter);
+            }
+
+            if (maxAmountFilter !== null) {
+                filtered = filtered.filter((o) => Number(o.total || 0) <= maxAmountFilter);
+            }
+
+            const cmpDateDesc = (a, b) => String(b.date || '').localeCompare(String(a.date || ''));
+            const cmpDateAsc = (a, b) => String(a.date || '').localeCompare(String(b.date || ''));
+            const cmpAmountDesc = (a, b) => Number(b.total || 0) - Number(a.total || 0);
+            const cmpAmountAsc = (a, b) => Number(a.total || 0) - Number(b.total || 0);
+
+            const cmp =
+                sortKey === 'date_asc'
+                    ? cmpDateAsc
+                    : sortKey === 'amount_desc'
+                        ? cmpAmountDesc
+                        : sortKey === 'amount_asc'
+                            ? cmpAmountAsc
+                            : cmpDateDesc;
+
+            return filtered.sort(cmp);
         };
 
         const renderRows = () => {
@@ -294,7 +363,13 @@
 
                         const statusLower = String(o.status || '').toLowerCase();
                         const badgeClass =
-                            statusLower === 'completed' ? 'completed' : statusLower === 'cancelled' ? 'cancelled' : statusLower === 'pending' ? 'pending' : 'active';
+                            statusLower === 'completed'
+                                ? 'completed'
+                                : (statusLower === 'cancelled' || statusLower === 'canceled')
+                                    ? 'cancelled'
+                                    : statusLower === 'pending'
+                                        ? 'pending'
+                                        : 'active';
 
                         return `
                             <tr>
@@ -328,7 +403,10 @@
             const historyOrders = orders.filter((o) => isHistoryStatus(o.status));
             const totalOrders = historyOrders.length;
             const completedOrders = historyOrders.filter((o) => String(o.status).toLowerCase() === 'completed').length;
-            const cancelledOrders = historyOrders.filter((o) => String(o.status).toLowerCase() === 'cancelled').length;
+            const cancelledOrders = historyOrders.filter((o) => {
+                const s = String(o.status).toLowerCase();
+                return s === 'cancelled' || s === 'canceled';
+            }).length;
             const totalSpent = historyOrders
                 .filter((o) => String(o.status).toLowerCase() === 'completed')
                 .reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -355,15 +433,51 @@
                 renderRows();
             });
 
-            document.getElementById('filterBtn')?.addEventListener('click', () => {
-                window.AVDialog?.alert('Filter options are not implemented yet.', { title: 'Notice', tone: 'info' })
-                    || alert('Filter options are not implemented yet.');
-            });
+            const filterBtn = document.getElementById('filterBtn');
+            const advancedFilters = document.getElementById('advancedFilters');
 
-            document.getElementById('dateRangeBtn')?.addEventListener('click', () => {
-                window.AVDialog?.alert('Date range selection is not implemented yet.', { title: 'Notice', tone: 'info' })
-                    || alert('Date range selection is not implemented yet.');
-            });
+            if (filterBtn && advancedFilters) {
+                filterBtn.addEventListener('click', () => {
+                    const willShow = advancedFilters.classList.contains('is-hidden');
+                    advancedFilters.classList.toggle('is-hidden');
+                    filterBtn.classList.toggle('is-active', willShow);
+                    filterBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+                });
+            }
+
+            const dateRangeBtn = document.getElementById('dateRangeBtn');
+            if (dateRangeBtn) {
+                dateRangeBtn.addEventListener('click', () => {
+                    currentMonthOnly = !currentMonthOnly;
+                    dateRangeBtn.classList.toggle('is-active', currentMonthOnly);
+                    dateRangeBtn.setAttribute('aria-pressed', currentMonthOnly ? 'true' : 'false');
+                    renderRows();
+                });
+            }
+
+            const minAmountInput = document.getElementById('minAmountInput');
+            if (minAmountInput) {
+                minAmountInput.addEventListener('input', (e) => {
+                    minAmountFilter = asNumberOrNull(e.target.value);
+                    renderRows();
+                });
+            }
+
+            const maxAmountInput = document.getElementById('maxAmountInput');
+            if (maxAmountInput) {
+                maxAmountInput.addEventListener('input', (e) => {
+                    maxAmountFilter = asNumberOrNull(e.target.value);
+                    renderRows();
+                });
+            }
+
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) {
+                sortSelect.addEventListener('change', (e) => {
+                    sortKey = String(e.target.value || 'date_desc');
+                    renderRows();
+                });
+            }
 
             document.getElementById('clearBtn')?.addEventListener('click', () => {
                 loadAndDisplay();

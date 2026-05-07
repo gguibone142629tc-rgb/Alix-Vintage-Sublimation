@@ -51,7 +51,6 @@
         <div class="cart-card">
             <div class="cart-header cart-header--order">
                 <h1 class="cart-title">Order</h1>
-                <button id="refreshBtn" class="cart-edit" type="button">Edit Cart</button>
             </div>
 
             <div id="cartItems" class="cart-items" aria-label="Cart items">
@@ -78,11 +77,23 @@
                 <div class="cart-payment-options">
                     <label class="cart-radio">
                         <input type="radio" name="paymentMethod" value="GCash" checked>
-                        <span class="cart-radio-label">GCash (50% downpayment)</span>
+                        <span class="cart-radio-body">
+                            <span class="cart-radio-title">GCash</span>
+                            <span class="cart-radio-sub">50% downpayment via GCash</span>
+                        </span>
+                        <span class="cart-radio-icon" aria-hidden="true">
+                            <img class="cart-radio-icon-img" src="../assets/icons/Gcash.png" alt="">
+                        </span>
                     </label>
                     <label class="cart-radio">
                         <input type="radio" name="paymentMethod" value="COD">
-                        <span class="cart-radio-label">COD (50% downpayment, 50% on delivery)</span>
+                        <span class="cart-radio-body">
+                            <span class="cart-radio-title">Cash on Delivery</span>
+                            <span class="cart-radio-sub">50% downpayment, 50% on delivery</span>
+                        </span>
+                        <span class="cart-radio-icon" aria-hidden="true">
+                            <img class="cart-radio-icon-img" src="../assets/icons/Cash_On_Delivery.png" alt="">
+                        </span>
                     </label>
                 </div>
                 <div class="muted cart-payment-note">All orders require a 50% downpayment before proofing/production.</div>
@@ -212,7 +223,7 @@
                 .join('');
         };
 
-        const renderCart = (cartEnvelope) => {
+            const renderCart = (cartEnvelope) => {
             const cart = cartEnvelope?.cart && typeof cartEnvelope.cart === 'object' ? cartEnvelope.cart : cartEnvelope;
             const items = Array.isArray(cart?.items) ? cart.items : [];
 
@@ -251,17 +262,23 @@
                     <div class="cart-item-media">
                         ${imgUrl ? `<img class="cart-item-thumb" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(productName)}" loading="lazy" />` : `<div class="cart-item-thumb cart-item-thumb--empty">No image</div>`}
                     </div>
-                    <div class="cart-item-main">
-                        <div class="cart-item-head">
-                            <div class="cart-item-title">${escapeHtml(productName)}</div>
-                            <div class="cart-item-price">${peso(price)}</div>
-                        </div>
-                        <div class="cart-item-sub muted">Delivery 24th July</div>
 
-                        <div class="cart-item-foot">
-                            <div class="cart-qty" aria-label="Quantity">Qty: ${qty}</div>
-                            <button type="button" class="cart-remove" data-remove>Remove</button>
-                        </div>
+                    <div class="cart-item-main">
+                        <div class="cart-item-title">${escapeHtml(productName)}</div>
+                        <div class="cart-item-meta muted">${renderMeta(it?.meta || {})}</div>
+                    </div>
+
+                    <div class="cart-item-qty" aria-label="Quantity">
+                        <div class="qty-sub"><strong>Qty:</strong> ${escapeHtml(qty)}</div>
+                        <div class="qty-sub muted">${escapeHtml(peso(price))} each</div>
+                    </div>
+
+                    <div class="cart-item-amount" aria-label="Line total">
+                        <div class="cart-item-total">${escapeHtml(peso(lineTotal || (price * qty)))}</div>
+                    </div>
+
+                    <div class="cart-item-actions">
+                        <button type="button" class="cart-remove" data-remove aria-label="Remove">Remove</button>
                     </div>
                 `;
 
@@ -282,8 +299,6 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('refreshBtn').addEventListener('click', refresh);
-
             document.getElementById('clearCartBtn').addEventListener('click', async () => {
                 const ok = await uiConfirm('Clear all items in your cart?', {
                     title: 'Confirm',

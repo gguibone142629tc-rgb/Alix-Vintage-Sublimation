@@ -28,6 +28,38 @@
     const orderDateEl = qs("#orderDate");
     const workflowPill = qs("#workflowPill");
 
+    const statusKeyOf = (status) => {
+        const s = String(status || "").trim().toLowerCase();
+        if (!s) return "default";
+        if (s.includes("pending")) return "pending";
+        if (s.includes("rejected")) return "rejected";
+        if (s.includes("cancel")) return "cancelled";
+        if (s.includes("ready") && s.includes("ship")) return "ready";
+        if (s.includes("transit") || s.includes("shipped") || s.includes("shipping")) return "transit";
+        if (s.includes("complete") || s.includes("done")) return "completed";
+        if (s.includes("revision") || s.includes("reject") || s.includes("cancel")) return "revision";
+        if (s.includes("proof")) return "proofing";
+        if (s.includes("progress") || s.includes("process")) return "progress";
+        if (s.includes("final") && s.includes("payment")) return "final-payment";
+        if (s.includes("awaiting") && s.includes("payment")) return "payment";
+        if (s.includes("payment") || s.includes("pay")) return "payment";
+        return s.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "default";
+    };
+
+    const setWorkflowPill = (label) => {
+        if (!workflowPill) return;
+        const text = String(label || "").trim() || "-";
+        workflowPill.textContent = text;
+
+        const key = statusKeyOf(text);
+        Array.from(workflowPill.classList).forEach((cls) => {
+            if (cls.startsWith("status-pill--")) workflowPill.classList.remove(cls);
+        });
+        if (key && key !== "default") {
+            workflowPill.classList.add(`status-pill--${key}`);
+        }
+    };
+
     const designDetails = qs("#designDetails");
     const orderContents = qs("#orderContents");
     const orderContentsNotice = qs("#orderContentsNotice");
@@ -868,7 +900,7 @@
         activeDbOrderId = numericId;
         if (orderIdEl) orderIdEl.textContent = order.id;
         if (orderDateEl) orderDateEl.textContent = formatDate(order.date);
-        if (workflowPill) workflowPill.textContent = getWorkflowDisplay(order.admin.workflowStatus);
+        setWorkflowPill(getWorkflowDisplay(order.admin.workflowStatus));
 
         const cust = getCustomerSummary(order);
         if (customerNameEl) customerNameEl.textContent = cust.customerName;
@@ -1750,14 +1782,35 @@
                 `;
             }
 
+            const normalizeLabel = (s) =>
+                String(s || "")
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, " ")
+                    .trim();
+
+            const isRedundantLabel = (view, outerTitle) => {
+                const v = normalizeLabel(view);
+                const t = normalizeLabel(outerTitle);
+                if (!v || !t) return false;
+                // If the outer title already contains the label (e.g. "Design Reference" + "REFERENCE" or "Logo" + "LOGO")
+                // then the inner label is redundant.
+                return t.includes(v);
+            };
+
             const tiles = list
                 .map((img) => {
                     const view = String(img?.view || "").trim().toUpperCase();
                     const url = resolveAssetUrl(img?.url);
                     if (!url) return "";
+
+                    const showLabel = list.length > 1 || !isRedundantLabel(view, title);
+                    const tileClass = showLabel ? "reference-tile" : "reference-tile reference-tile--no-label";
+                    const labelHtml = showLabel
+                        ? `<div class="reference-tile-label">${escapeHtml(view || "VIEW")}</div>`
+                        : "";
                     return `
-                        <div class="reference-tile">
-                            <div class="reference-tile-label">${escapeHtml(view || "VIEW")}</div>
+                        <div class="${tileClass}">
+                            ${labelHtml}
                             <img src="${escapeHtml(url)}" alt="${escapeHtml(title)} ${escapeHtml(view)}" loading="lazy">
                         </div>
                     `;
@@ -1766,13 +1819,13 @@
                 .join("");
 
             const body = tiles
-                ? `<div class="reference-grid">${tiles}</div>`
+                ? `<div class="reference-grid${list.length === 1 ? " reference-grid--single" : ""}">${tiles}</div>`
                 : `<div class="mini-note">${escapeHtml(fallbackText)}</div>`;
 
             return `
                 <div class="upload-card upload-card--wide">
                     <div class="upload-card-title">${escapeHtml(title)}</div>
-                    <div class="upload-card-box">${body}</div>
+                    <div class="upload-card-box upload-card-box--gallery">${body}</div>
                 </div>
             `;
         };
@@ -2551,7 +2604,7 @@
     const render = (orderId, order) => {
         orderIdEl.textContent = order.id;
         orderDateEl.textContent = formatDate(order.date);
-        workflowPill.textContent = getWorkflowDisplay(order.admin.workflowStatus);
+        setWorkflowPill(getWorkflowDisplay(order.admin.workflowStatus));
 
         const cust = getCustomerSummary(order);
         if (customerNameEl) customerNameEl.textContent = cust.customerName;

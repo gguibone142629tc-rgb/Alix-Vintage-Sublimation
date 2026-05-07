@@ -1,6 +1,7 @@
 (function () {
     const ADMIN_SESSION_KEY = "alix_admin_logged_in";
     const ADMIN_LOGIN_AT_KEY = "alix_admin_logged_in_at";
+    const ADMIN_API_KEY_STORAGE = "alix_admin_api_key";
     const ADMIN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 
     const path = String(window.location.pathname || "");
@@ -45,15 +46,24 @@
         document.head.appendChild(style);
     }
 
+    // Admin login should not persist across browser restarts.
+    // Clear any legacy persistent flags.
+    try {
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+    } catch {
+        // ignore
+    }
+
     const isAdminSessionFresh = () => {
-        const flag = localStorage.getItem(ADMIN_SESSION_KEY) === "true";
-        const loginAt = Number(localStorage.getItem(ADMIN_LOGIN_AT_KEY));
+        const flag = sessionStorage.getItem(ADMIN_SESSION_KEY) === "true";
+        const loginAt = Number(sessionStorage.getItem(ADMIN_LOGIN_AT_KEY));
         const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
         const isFresh = hasValidTimestamp && Date.now() - loginAt <= ADMIN_MAX_AGE_MS;
 
         if (flag && !isFresh) {
-            localStorage.removeItem(ADMIN_SESSION_KEY);
-            localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
         }
 
         return flag && isFresh;
@@ -245,8 +255,15 @@
     logoutButton.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+        try {
+            localStorage.removeItem(ADMIN_SESSION_KEY);
+            localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+            localStorage.removeItem(ADMIN_API_KEY_STORAGE);
+        } catch {
+            // ignore
+        }
         closeDropdown();
         window.location.href = loginUrl;
     });

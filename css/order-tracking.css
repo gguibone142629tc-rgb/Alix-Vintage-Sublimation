@@ -179,6 +179,13 @@ main {
     font-weight: 600;
 }
 
+.sidebar-item img.sidebar-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+}
+
 .content {
     flex: 1;
     padding: 32px;
@@ -309,14 +316,68 @@ main {
 
 .status-badge {
     display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
-    background: #eaf2ff;
-    color: #1b5cff;
     font-weight: 800;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    --status-fg: var(--ink-strong);
+    background: #f8f8f8;
+    border: 1px solid var(--line);
+    --status-bg: color-mix(in srgb, var(--status-fg) 14%, #ffffff);
+    --status-border: color-mix(in srgb, var(--status-fg) 34%, var(--line));
+    background: var(--status-bg, #f8f8f8);
+    border-color: var(--status-border, var(--line));
+    color: var(--status-fg);
+}
+
+.status-badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.75;
+}
+
+/* Status tones (reuse theme palette) */
+.tone-pending {
+    --status-fg: var(--theme-brand);
+}
+
+.tone-payment {
+    --status-fg: color-mix(in srgb, var(--theme-brand-2) 55%, var(--theme-muted));
+}
+
+.tone-final-payment {
+    --status-fg: color-mix(in srgb, var(--theme-brand-3) 55%, var(--theme-muted));
+}
+
+.tone-proofing {
+    --status-fg: color-mix(in srgb, var(--theme-brand-2) 55%, var(--theme-ok));
+}
+
+.tone-progress {
+    --status-fg: color-mix(in srgb, var(--theme-brand) 55%, var(--theme-ok));
+}
+
+.tone-ready {
+    --status-fg: color-mix(in srgb, var(--theme-brand-3) 72%, var(--theme-ok));
+}
+
+.tone-transit {
+    --status-fg: color-mix(in srgb, var(--theme-brand-3) 62%, var(--theme-danger));
+}
+
+.tone-completed {
+    --status-fg: var(--theme-ok);
+}
+
+.tone-cancelled {
+    --status-fg: var(--theme-muted);
 }
 
 .action-btn {
@@ -376,8 +437,13 @@ main {
 
 .order-pill {
     border: 1px solid var(--line);
+    --status-fg: var(--ink-strong);
     background: #f8f8f8;
-    color: var(--ink-strong);
+    --status-bg: color-mix(in srgb, var(--status-fg) 14%, #ffffff);
+    --status-border: color-mix(in srgb, var(--status-fg) 34%, var(--line));
+    background: var(--status-bg, #f8f8f8);
+    border-color: var(--status-border, var(--line));
+    color: var(--status-fg);
     padding: 8px 10px;
     border-radius: 999px;
     font-size: 12px;
@@ -387,11 +453,24 @@ main {
     white-space: nowrap;
 }
 
+.order-pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    display: inline-block;
+    background: currentColor;
+    opacity: 0.75;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 .stepper {
     display: grid;
     grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 10px;
     margin-top: 16px;
+    --status-accent: var(--status-fg, var(--accent));
 }
 
 .step {
@@ -416,13 +495,15 @@ main {
 }
 
 .step.is-done .dot {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--status-accent);
+    border-color: var(--status-accent);
 }
 
 .step.is-active .dot {
     background: #ffffff;
-    border-color: var(--accent);
+    border-color: var(--status-accent);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-accent) 18%, transparent);
 }
 
 .step.is-active .label,

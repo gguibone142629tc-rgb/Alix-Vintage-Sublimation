@@ -326,6 +326,38 @@
             activeCollection = fromUrl;
         }
 
+        const typeParam =
+            params.get("type") ||
+            params.get("productType") ||
+            params.get("shirtType") ||
+            params.get("shirt_type");
+        const typeKey = normalizeTypeLabel(typeParam);
+        if (typeKey && typeKey !== "all") {
+            const optionByKey = {
+                poloshirt: "Polo Shirt",
+                tshirt: "T-shirt",
+                hoodie: "Hoodie",
+                jersey: "Jersey",
+                shorts: "Shorts",
+            };
+
+            if (shirtTypeSelect && optionByKey[typeKey]) {
+                shirtTypeSelect.value = optionByKey[typeKey];
+            }
+
+            checkRows.forEach((row) => {
+                const input = row.querySelector("input[type='checkbox']");
+                if (!input) return;
+                const rowKey = normalizeTypeLabel(String(row.textContent || ""));
+                input.checked = rowKey === typeKey;
+            });
+
+            mobileTypeChecks.forEach((check) => {
+                const key = normalizeTypeLabel(check.value);
+                check.checked = key === typeKey;
+            });
+        }
+
         syncCollectionButtons();
 
         try {

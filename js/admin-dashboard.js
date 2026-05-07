@@ -137,16 +137,35 @@
             return;
         }
 
+        const statusKeyOf = (status) => {
+            const s = String(status || "").trim().toLowerCase();
+            if (!s) return "default";
+            if (s.includes("pending")) return "pending";
+            if (s.includes("rejected")) return "rejected";
+            if (s.includes("cancel")) return "cancelled";
+            if (s.includes("ready") && s.includes("ship")) return "ready";
+            if (s.includes("transit") || s.includes("shipped") || s.includes("shipping")) return "transit";
+            if (s.includes("complete") || s.includes("done")) return "completed";
+            if (s.includes("revision") || s.includes("reject") || s.includes("cancel")) return "revision";
+            if (s.includes("proof")) return "proofing";
+            if (s.includes("progress") || s.includes("process")) return "progress";
+            if (s.includes("final") && s.includes("payment")) return "final-payment";
+            if (s.includes("awaiting") && s.includes("payment")) return "payment";
+            if (s.includes("payment") || s.includes("pay")) return "payment";
+            return s.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "default";
+        };
+
         tbody.innerHTML = recent
             .map((o, idx) => {
                 const status = String(o.admin?.workflowStatus || "Pending");
+                const statusKey = statusKeyOf(status);
                 return `
                     <tr>
                         <td>${idx + 1}</td>
                         <td><strong>${escapeHtml(o.id)}</strong></td>
                         <td>${escapeHtml(getCustomerLabel(o))}</td>
                         <td>${escapeHtml(formatDate(o.date))}</td>
-                        <td><span class="status-pill">${escapeHtml(status)}</span></td>
+                        <td><span class="status-pill status-pill--${escapeHtml(statusKey)}">${escapeHtml(status)}</span></td>
                         <td><a class="table-btn" href="admin-order-details.html?id=${encodeURIComponent(String(o.rawId ?? ""))}&db=1">View</a></td>
                     </tr>
                 `;
@@ -187,59 +206,6 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
-    const renderRecentActivity = (logs) => {
-        const list = qs(".activity-list");
-        if (!list) return;
-
-        const items = Array.isArray(logs) ? logs : [];
-        if (items.length === 0) {
-            list.innerHTML = `
-                <li class="activity-item">
-                    <span class="activity-dot" aria-hidden="true"></span>
-                    <span>No recent activity yet.</span>
-                </li>
-            `;
-            return;
-        }
-
-        list.innerHTML = items
-            .slice(0, 5)
-            .map((l) => {
-                const when = formatDateTime(l.created_at);
-                const action = String(l.action || "activity");
-                const desc = String(l.description || action);
-                const who = l.actor_role ? `(${String(l.actor_role)})` : "";
-                return `
-                    <li class="activity-item">
-                        <span class="activity-dot" aria-hidden="true"></span>
-                        <span><strong>${escapeHtml(when)}</strong> ${escapeHtml(who)} ${escapeHtml(desc)}</span>
-                    </li>
-                `;
-            })
-            .join("");
-    };
-
-    const loadRecentActivity = async () => {
-        try {
-            const res = await fetch(`${getApiBaseUrl()}/api/admin/activity-logs?limit=5&offset=0`, {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                },
-            });
-
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || !data || data.ok !== true) {
-                renderRecentActivity([]);
-                return;
-            }
-
-            renderRecentActivity(Array.isArray(data.logs) ? data.logs : []);
-        } catch {
-            renderRecentActivity([]);
-        }
-    };
-
     const loadOrders = async () => {
         const res = await fetchJson("/api/admin/orders?limit=50&offset=0");
         return normalizeDbOrders(res?.orders);
@@ -254,8 +220,6 @@
             renderStats([]);
             renderRecent([]);
         }
-
-        loadRecentActivity();
     };
 
     start();

@@ -135,25 +135,24 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
 
 -- =========
--- Activity logs
+-- Contact inquiries
 -- =========
-CREATE TABLE IF NOT EXISTS activity_logs (
-  log_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS contact_inquiries (
+  inquiry_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  actor_user_id BIGINT NULL REFERENCES users(user_id) ON DELETE SET NULL,
-  actor_role VARCHAR(50),
-  action VARCHAR(120) NOT NULL,
-  description TEXT,
+  name VARCHAR(200) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50),
+  topic VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
 
   ip_address INET,
-  user_agent TEXT,
-
-  meta JSONB NOT NULL DEFAULT '{}'::jsonb
+  user_agent TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs (action);
+CREATE INDEX IF NOT EXISTS idx_contact_inquiries_created_at ON contact_inquiries (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contact_inquiries_email ON contact_inquiries (email);
 
 -- =========
 -- Custom design requests

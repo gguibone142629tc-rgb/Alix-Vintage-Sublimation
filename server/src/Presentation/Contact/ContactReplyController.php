@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 namespace App\Presentation\Contact;
-
-use App\Application\ActivityLogs\LogActivity;
 use App\Domain\Notifications\EmailSender;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
@@ -15,7 +13,6 @@ final class ContactReplyController
     public function __construct(
         private readonly \PDO $pdo,
         private readonly EmailSender $emailSender,
-        private readonly LogActivity $logActivity,
     ) {
     }
 
@@ -40,21 +37,6 @@ final class ContactReplyController
         }
     }
 
-    /** @return array<string,mixed> */
-    private function normalizeMeta(mixed $meta): array
-    {
-        if (is_array($meta)) {
-            return $meta;
-        }
-
-        if (is_string($meta)) {
-            $decoded = json_decode($meta, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-
-        return [];
-    }
-
     public function reply(Request $request): void
     {
         $this->assertAdmin($request);
@@ -75,25 +57,26 @@ final class ContactReplyController
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT log_id, meta FROM activity_logs WHERE log_id = :id AND action = :action LIMIT 1'
+            'SELECT inquiry_id, name, email, topic, message '
+            . 'FROM contact_inquiries '
+            . 'WHERE inquiry_id = :id '
+            . 'LIMIT 1'
         );
-        $stmt->execute(['id' => $inquiryId, 'action' => 'contact.submit']);
+        $stmt->execute(['id' => $inquiryId]);
 
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!is_array($row)) {
             Response::json(['error' => 'Inquiry not found'], 404);
         }
 
-        $meta = $this->normalizeMeta($row['meta'] ?? []);
-
-        $toEmail = trim((string) ($meta['email'] ?? ''));
+        $toEmail = trim((string) ($row['email'] ?? ''));
         if ($toEmail === '' || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
             Response::json(['error' => 'Inquiry has no valid email'], 422);
         }
 
-        $name = trim((string) ($meta['name'] ?? ''));
-        $topic = trim((string) ($meta['topic'] ?? ''));
-        $originalMessage = trim((string) ($meta['message'] ?? ''));
+        $name = trim((string) ($row['name'] ?? ''));
+        $topic = trim((string) ($row['topic'] ?? ''));
+        $originalMessage = trim((string) ($row['message'] ?? ''));
 
         $subject = $topic !== '' ? "Re: {$topic} - Alix Vintage" : 'Reply from Alix Vintage';
 
@@ -127,24 +110,6 @@ final class ContactReplyController
                 Response::json(['error' => 'Failed to send reply: ' . $sendError], 502);
             }
         }
-
-        $this->logActivity->handle([
-            'action' => 'contact.reply',
-            'actor_user_id' => null,
-            'actor_role' => 'admin',
-            'description' => 'Replied to contact inquiry',
-            'ip_address' => $request->ipAddress(),
-            'user_agent' => $request->userAgent(),
-            'meta' => [
-                'inquiry_id' => $inquiryId,
-                'to_email' => $toEmail,
-                'topic' => $topic === '' ? null : $topic,
-                'subject' => $subject,
-                'reply_message' => $replyMessage,
-                'sent' => $sent,
-                'send_error' => $sendError,
-            ],
-        ]);
 
         $payload = ['ok' => true, 'sent' => $sent];
         if (!$sent && $sendError !== null) {

@@ -27,6 +27,7 @@ video {
     height: auto;
 }
 
+
 .table-wrap,
 .table-container,
 .cart-table-wrap,
@@ -405,23 +406,30 @@ header,
 .av-toast-stack {
     position: fixed;
     top: 80px;
-    right: 20px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
     z-index: 10000;
     display: grid;
     gap: 10px;
-    width: min(420px, calc(100vw - 40px));
+    width: min(520px, calc(100vw - 40px));
 }
 
 .av-toast {
+    --av-toast-accent: var(--theme-brand);
+    --av-toast-bg: rgba(36, 25, 20, 0.92);
     display: grid;
-    grid-template-columns: 22px 1fr 28px;
+    grid-template-columns: 34px 1fr 44px;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
-    color: rgba(255, 255, 255, 0.96);
+    gap: 12px;
+    padding: 12px 12px;
+    border-radius: 16px;
+    background: var(--av-toast-bg);
+    border: 1px solid color-mix(in srgb, var(--av-toast-accent) 58%, transparent);
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.42),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.94);
     animation: avToastIn 0.22s ease;
 }
 
@@ -430,22 +438,39 @@ header,
 }
 
 .av-toast-message {
-    font-weight: 700;
-    line-height: 1.35;
+    display: grid;
+    gap: 2px;
+    line-height: 1.25;
+}
+
+.av-toast-title {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: color-mix(in srgb, var(--av-toast-accent) 78%, rgba(255, 255, 255, 0.95));
+}
+
+.av-toast-sub {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 600;
 }
 
 .av-toast-close {
-    width: 28px;
-    height: 28px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.92);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--av-toast-accent) 28%, rgba(255, 255, 255, 0.18));
+    background: rgba(0, 0, 0, 0.12);
+    color: rgba(255, 255, 255, 0.86);
     cursor: pointer;
     display: grid;
     place-items: center;
     font-size: 18px;
     line-height: 1;
+}
+
+.av-toast-close:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .av-toast-close:focus {
@@ -454,23 +479,33 @@ header,
 }
 
 .av-toast-icon {
-    width: 22px;
-    height: 22px;
+    width: 34px;
+    height: 34px;
     border-radius: 999px;
     display: grid;
     place-items: center;
+    background: color-mix(in srgb, var(--av-toast-accent) 22%, rgba(0, 0, 0, 0.18));
+    border: 1px solid color-mix(in srgb, var(--av-toast-accent) 58%, transparent);
+    color: color-mix(in srgb, var(--av-toast-accent) 78%, rgba(255, 255, 255, 0.95));
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
 }
 
 .av-toast--success {
-    background: var(--theme-ok);
+    --av-toast-accent: var(--theme-brand-2);
 }
 
 .av-toast--danger {
-    background: var(--theme-danger);
+    --av-toast-accent: var(--theme-danger);
+}
+
+.av-toast--warning {
+    --av-toast-accent: var(--theme-brand-2);
 }
 
 .av-toast--info {
-    background: linear-gradient(92deg, #2c1a12 0%, #3a2418 54%, #4a3022 100%);
+    --av-toast-accent: var(--theme-brand-3);
 }
 
 .av-toast--success .av-toast-icon::before {
@@ -479,6 +514,11 @@ header,
 }
 
 .av-toast--danger .av-toast-icon::before {
+    content: "!";
+    font-weight: 900;
+}
+
+.av-toast--warning .av-toast-icon::before {
     content: "!";
     font-weight: 900;
 }

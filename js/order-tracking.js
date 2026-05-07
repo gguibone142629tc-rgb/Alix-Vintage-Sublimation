@@ -408,6 +408,7 @@
         if (wf === "Ready to Ship") return 5;
         if (wf === "On Transit") return 6;
         if (wf === "Completed") return 7;
+        if (wf === "Cancelled") return 7;
         return 0;
     };
 
@@ -422,7 +423,7 @@
     const dbStatusToWorkflow = (status) => {
         const s = String(status || "pending").toLowerCase();
         if (s === "completed") return "Completed";
-        if (s === "cancelled") return "Completed";
+        if (s === "cancelled" || s === "canceled") return "Cancelled";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
         if (s === "awaiting_final_payment") return "Awaiting Final Payment";
@@ -430,6 +431,38 @@
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";
         return "Pending Review";
+    };
+
+    const TONE_CLASSES = [
+        "tone-pending",
+        "tone-payment",
+        "tone-final-payment",
+        "tone-proofing",
+        "tone-progress",
+        "tone-ready",
+        "tone-transit",
+        "tone-completed",
+        "tone-cancelled",
+    ];
+
+    const workflowToToneClass = (workflowStatus) => {
+        const wf = String(workflowStatus || "");
+        if (wf === "Pending Review") return "tone-pending";
+        if (wf === "Awaiting Payment") return "tone-payment";
+        if (wf === "Awaiting Final Payment") return "tone-final-payment";
+        if (wf === "Proofing") return "tone-proofing";
+        if (wf === "In Progress") return "tone-progress";
+        if (wf === "Ready to Ship") return "tone-ready";
+        if (wf === "On Transit") return "tone-transit";
+        if (wf === "Completed") return "tone-completed";
+        if (wf === "Cancelled") return "tone-cancelled";
+        return "tone-pending";
+    };
+
+    const applyToneClass = (el, workflowStatus) => {
+        if (!el) return;
+        TONE_CLASSES.forEach((c) => el.classList.remove(c));
+        el.classList.add(workflowToToneClass(workflowStatus));
     };
 
     const normalizeOrders = (apiOrders) => {
@@ -508,7 +541,7 @@
 
     const isInProcessOrder = (order) => {
         const s = String(order?.status || "").toLowerCase();
-        return s !== "completed" && s !== "cancelled";
+        return s !== "completed" && s !== "cancelled" && s !== "canceled";
     };
 
     const getPaymentMethod = (order) => {
@@ -581,6 +614,13 @@
             };
         }
 
+        if (wf === "Cancelled") {
+            return {
+                title: "CANCELLED",
+                body: "This order was cancelled.",
+            };
+        }
+
         return { title: wf.toUpperCase(), body: "" };
     };
 
@@ -618,7 +658,7 @@
     const renderStepper = (workflowStatus) => {
         const wf = String(workflowStatus || "");
         const current = getWorkflowStepIndex(wf);
-        const isCompleted = wf === "Completed";
+        const isCompleted = wf === "Completed" || wf === "Cancelled";
         document.querySelectorAll(".stepper .step").forEach((el) => {
             const step = Number(el.getAttribute("data-step"));
             const isStep = Number.isFinite(step);
@@ -1082,6 +1122,7 @@
         ordersTableBodyEl.innerHTML = filtered
             .map((order) => {
                 const wf = dbStatusToWorkflow(order?.status);
+                const tone = workflowToToneClass(wf);
                 const items = Array.isArray(order.items) ? order.items : [];
                 const itemsHtml = items
                     .map((it) => `<div class="order-item-line">${escapeHtml(it.name || "-")} (x${escapeHtml(it.quantity || 0)})</div>`)
@@ -1092,7 +1133,7 @@
                         <td><strong>${escapeHtml(order.id || "-")}</strong></td>
                         <td>${escapeHtml(formatDate(order.date))}</td>
                         <td><div class="order-items-wrap">${itemsHtml}</div></td>
-                        <td><span class="status-badge">${escapeHtml(wf)}</span></td>
+                        <td><span class="status-badge ${escapeHtml(tone)}">${escapeHtml(wf)}</span></td>
                         <td><strong>${escapeHtml(formatMoney(amount))}</strong></td>
                         <td>
                             <button class="action-btn" type="button" data-view-order="${escapeHtml(order.rawId ?? "")}">VIEW</button>
@@ -1169,7 +1210,12 @@
 
         if (orderTitleEl) orderTitleEl.textContent = `ORDER #${String(order.id || "")}`;
         if (orderPlacedAtEl) orderPlacedAtEl.textContent = `Placed on ${formatDate(order.date)}`;
-        if (orderPillEl) orderPillEl.textContent = workflowDisplay;
+        if (orderPillEl) {
+            orderPillEl.textContent = workflowDisplay;
+            applyToneClass(orderPillEl, workflowDisplay);
+        }
+
+        applyToneClass(document.querySelector(".stepper"), workflowDisplay);
 
         const status = computeStatusCard(workflowDisplay, paymentMethod);
         if (statusTitleEl) statusTitleEl.textContent = status.title;

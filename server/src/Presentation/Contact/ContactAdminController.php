@@ -36,38 +36,21 @@ final class ContactAdminController
     }
 
     /** @return array<string,mixed> */
-    private function normalizeMeta(mixed $meta): array
-    {
-        if (is_array($meta)) {
-            return $meta;
-        }
-
-        if (is_string($meta)) {
-            $decoded = json_decode($meta, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-
-        return [];
-    }
-
-    /** @return array<string,mixed> */
     private function toPayload(array $row): array
     {
         $createdAtRaw = (string) ($row['created_at'] ?? '');
         $createdAt = new \DateTimeImmutable($createdAtRaw === '' ? 'now' : $createdAtRaw);
 
-        $meta = $this->normalizeMeta($row['meta'] ?? []);
-
         return [
-            'inquiry_id' => isset($row['log_id']) ? (int) $row['log_id'] : null,
+            'inquiry_id' => isset($row['inquiry_id']) ? (int) $row['inquiry_id'] : null,
             'created_at' => $createdAt->format('c'),
-            'name' => (string) ($meta['name'] ?? ''),
-            'email' => (string) ($meta['email'] ?? ''),
-            'phone' => $meta['phone'] ?? null,
-            'topic' => (string) ($meta['topic'] ?? ''),
-            'message' => (string) ($meta['message'] ?? ''),
-            'ip_address' => isset($row['ip_address']) ? (string) $row['ip_address'] : null,
-            'user_agent' => isset($row['user_agent']) ? (string) $row['user_agent'] : null,
+            'name' => (string) ($row['name'] ?? ''),
+            'email' => (string) ($row['email'] ?? ''),
+            'phone' => $row['phone'] ?? null,
+            'topic' => (string) ($row['topic'] ?? ''),
+            'message' => (string) ($row['message'] ?? ''),
+            'ip_address' => isset($row['ip_address']) ? (string) ($row['ip_address'] ?? '') : null,
+            'user_agent' => isset($row['user_agent']) ? (string) ($row['user_agent'] ?? '') : null,
         ];
     }
 
@@ -92,13 +75,11 @@ final class ContactAdminController
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT log_id, created_at, ip_address, user_agent, meta '
-            . 'FROM activity_logs '
-            . 'WHERE action = :action '
+            'SELECT inquiry_id, created_at, name, email, phone, topic, message, ip_address, user_agent '
+            . 'FROM contact_inquiries '
             . 'ORDER BY created_at DESC '
             . 'LIMIT :limit OFFSET :offset'
         );
-        $stmt->bindValue('action', 'contact.submit');
         $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();

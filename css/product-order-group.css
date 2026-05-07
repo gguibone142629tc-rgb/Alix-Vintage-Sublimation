@@ -235,11 +235,18 @@ nav a.active {
             color: var(--ink-strong);
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             border: 1px solid var(--line);
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 10px 12px;
             font-size: 12px;
+            min-height: 40px;
+            background: #ffffff;
+        }
+
+        .form-group select {
+            cursor: pointer;
         }
 
         .upload-box {
@@ -280,6 +287,7 @@ nav a.active {
             border-radius: 4px;
             padding: 4px 6px;
             font-size: 10px;
+            min-height: 28px;
         }
 
         .roster-actions {

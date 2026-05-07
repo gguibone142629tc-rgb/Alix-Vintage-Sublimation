@@ -9,6 +9,46 @@
         lastMaxId: 0,
     };
 
+    const getTableWrap = () => {
+        const table = qs("#messagesTable");
+        if (!table) return null;
+        return table.closest(".table-wrap") || null;
+    };
+
+    const captureScroll = () => {
+        const wrap = getTableWrap();
+        return {
+            windowY: window.scrollY || 0,
+            wrapTop: wrap ? wrap.scrollTop : 0,
+            wrapLeft: wrap ? wrap.scrollLeft : 0,
+        };
+    };
+
+    const restoreScroll = (snap) => {
+        if (!snap) return;
+
+        try {
+            const wrap = getTableWrap();
+            if (wrap) {
+                wrap.scrollTop = snap.wrapTop || 0;
+                wrap.scrollLeft = snap.wrapLeft || 0;
+            }
+        } catch {
+            // ignore
+        }
+
+        try {
+            window.scrollTo({ top: snap.windowY || 0, left: 0, behavior: "auto" });
+        } catch {
+            // Older browsers: behavior not supported
+            try {
+                window.scrollTo(0, snap.windowY || 0);
+            } catch {
+                // ignore
+            }
+        }
+    };
+
     const getApiBaseUrl = () => {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
             return window.AlixAuth.apiBaseUrl();
@@ -154,6 +194,42 @@
         state.openId = null;
     };
 
+    const getOpenDraftState = () => {
+        if (!state.openId) return null;
+
+        const tbody = qs("#messagesTable tbody");
+        if (!tbody) return null;
+
+        const detailsRow = tbody.querySelector(
+            'tr.message-details-row[data-details-id="' + cssEscape(state.openId) + '"]'
+        );
+        if (!detailsRow) return { openId: state.openId, draft: "", focused: false };
+
+        const input = detailsRow.querySelector(".message-reply-input");
+        const draft = input && typeof input.value === "string" ? input.value : "";
+        const focused = !!(document.activeElement && detailsRow.contains(document.activeElement));
+
+        let selectionStart = null;
+        let selectionEnd = null;
+        try {
+            if (input && typeof input.selectionStart === "number" && typeof input.selectionEnd === "number") {
+                selectionStart = input.selectionStart;
+                selectionEnd = input.selectionEnd;
+            }
+        } catch {
+            // ignore
+        }
+
+        return { openId: state.openId, draft, focused, selectionStart, selectionEnd };
+    };
+
+    const isComposingReply = () => {
+        const draftState = getOpenDraftState();
+        if (!draftState) return false;
+        const hasText = String(draftState.draft || "").trim().length > 0;
+        return hasText || draftState.focused;
+    };
+
     const toggleDetails = (clickedRow, id) => {
         const tbody = qs("#messagesTable tbody");
         if (!tbody || !clickedRow) return;
@@ -280,15 +356,57 @@
     start();
 
     // Optional external refresh hook for the realtime badge poller.
-    // Keeps behavior minimal: refresh list and close any open details row.
+    // Preserves scroll/open draft to avoid "jumping" while replying.
     window.AlixAdminMessages = {
         refresh: (inquiries) => {
-            try {
-                closeOpenDetails();
-            } catch {
-                // ignore
-            }
+            // If the admin is actively composing a reply, do not re-render.
+            // Re-rendering would reset scroll and/or wipe the draft text.
+            if (isComposingReply()) return;
+
+            const scrollSnap = captureScroll();
+            const draftSnap = getOpenDraftState();
+
             render(inquiries);
+
+            // Re-open the previously open inquiry (if still present), and restore the draft.
+            if (draftSnap && draftSnap.openId) {
+                const tbody = qs("#messagesTable tbody");
+                const row =
+                    tbody &&
+                    tbody.querySelector(
+                        'tr[data-row-id="' + cssEscape(draftSnap.openId) + '"]'
+                    );
+
+                if (row && state.inquiriesById.has(draftSnap.openId)) {
+                    state.openId = null;
+                    toggleDetails(row, draftSnap.openId);
+
+                    const detailsRow = tbody.querySelector(
+                        'tr.message-details-row[data-details-id="' + cssEscape(draftSnap.openId) + '"]'
+                    );
+                    const input = detailsRow && detailsRow.querySelector(".message-reply-input");
+
+                    if (input) {
+                        input.value = draftSnap.draft || "";
+
+                        if (draftSnap.focused) {
+                            try {
+                                input.focus();
+                                if (
+                                    typeof draftSnap.selectionStart === "number" &&
+                                    typeof draftSnap.selectionEnd === "number"
+                                ) {
+                                    input.setSelectionRange(draftSnap.selectionStart, draftSnap.selectionEnd);
+                                }
+                            } catch {
+                                // ignore
+                            }
+                        }
+                    }
+                }
+            }
+
+            restoreScroll(scrollSnap);
         },
     };
 })();

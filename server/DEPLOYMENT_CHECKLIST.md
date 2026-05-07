@@ -50,7 +50,6 @@ Use this checklist before public launch.
 - [ ] Order tracking and order history visible on mobile and desktop.
 - [ ] Admin login works.
 - [ ] Admin order flow updates status correctly.
-- [ ] Admin activity logs load and paginate.
 
 ## 7. Monitoring and Ops
 

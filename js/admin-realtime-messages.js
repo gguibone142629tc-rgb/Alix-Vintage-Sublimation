@@ -27,6 +27,15 @@
         return Number.isFinite(raw) && raw > 0 ? raw : 0;
     };
 
+    const resetLastSeen = () => {
+        try {
+            localStorage.removeItem(STORAGE_LAST_SEEN_ID);
+            localStorage.removeItem(STORAGE_LAST_COUNT);
+        } catch {
+            // ignore
+        }
+    };
+
     const setLastSeenId = (id) => {
         if (!Number.isFinite(id) || id <= 0) return;
         localStorage.setItem(STORAGE_LAST_SEEN_ID, String(Math.floor(id)));
@@ -108,7 +117,17 @@
         const data = await fetchJson("/api/admin/contact-inquiries?limit=200&offset=0");
         const inquiries = data?.inquiries;
 
-        const lastSeenId = getLastSeenId();
+        // If browser has an old last-seen id from the previous storage
+        // (when inquiries lived in a different table), ids may have reset.
+        // In that case, clear cached values so the badge can work again.
+        const storedLastSeenId = getLastSeenId();
+        const { maxId: currentMaxId } = computeNewCount(inquiries, 0);
+        let lastSeenId = storedLastSeenId;
+        if (currentMaxId > 0 && storedLastSeenId > currentMaxId) {
+            resetLastSeen();
+            lastSeenId = 0;
+        }
+
         const { count, maxId } = computeNewCount(inquiries, lastSeenId);
 
         if (isMessagesPage()) {

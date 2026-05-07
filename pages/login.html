@@ -202,15 +202,25 @@
             setInlineErrorState(adminPasswordInputElement, adminPasswordErrorElement, '');
         });
 
+        // Admin login should NOT persist across browser restarts.
+        // Use sessionStorage (tab session) instead of localStorage.
+        // Also clear any legacy persistent flags.
+        try {
+            localStorage.removeItem(ADMIN_SESSION_KEY);
+            localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+        } catch {
+            // ignore
+        }
+
         const isAdminSessionFresh = () => {
-            const flag = localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
-            const loginAt = Number(localStorage.getItem(ADMIN_LOGIN_AT_KEY));
+            const flag = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+            const loginAt = Number(sessionStorage.getItem(ADMIN_LOGIN_AT_KEY));
             const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
             const isFresh = hasValidTimestamp && Date.now() - loginAt <= ADMIN_MAX_AGE_MS;
 
             if (flag && !isFresh) {
-                localStorage.removeItem(ADMIN_SESSION_KEY);
-                localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+                sessionStorage.removeItem(ADMIN_SESSION_KEY);
+                sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
             }
 
             return flag && isFresh;
@@ -225,9 +235,8 @@
                 adminLoginFormElement.classList.toggle('is-hidden', !isAdminMode);
             }
 
-            if (isAdminMode && isAdminSessionFresh()) {
-                window.location.replace('admin-homepage.html');
-            }
+            // Do not auto-redirect just because a prior session exists.
+            // Admin should explicitly sign in each new browser session.
         };
 
         const getModeFromHash = () => {
@@ -285,8 +294,8 @@
 
                 try {
                     await window.AlixAuth.postJson('/api/admin/login', { username, password });
-                    localStorage.setItem(ADMIN_SESSION_KEY, 'true');
-                    localStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    sessionStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';

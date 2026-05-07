@@ -196,14 +196,22 @@
 
     const toast = (message, opts = {}) => {
         const stack = ensureToastStack();
-        const safeTone = String(opts.tone || "info").trim() || "info"; // info | success | danger
+        const safeTone = String(opts.tone || "info").trim() || "info"; // info | success | warning | danger
         const duration = Number.isFinite(Number(opts.duration)) ? Number(opts.duration) : 4000;
 
         const wrap = document.createElement("div");
         wrap.className = `av-toast av-toast--${safeTone}`;
         wrap.setAttribute("role", "status");
 
-        const msg = escapeHtml(String(message ?? "").trim()).replaceAll("\n", "<br>");
+        const raw = String(message ?? "").trim();
+        const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        const title = escapeHtml(lines[0] || "");
+        const subtitle = lines.length > 1 ? escapeHtml(lines.slice(1).join(" ")) : "";
+
+        const msg = subtitle
+            ? `<div class="av-toast-title">${title}</div><div class="av-toast-sub">${subtitle}</div>`
+            : `<div class="av-toast-title">${title}</div>`;
+
         wrap.innerHTML = `
             <div class="av-toast-icon" aria-hidden="true"></div>
             <div class="av-toast-message">${msg}</div>
@@ -274,6 +282,7 @@
         show: (message, opts = {}) => toast(message, opts),
         info: (message, opts = {}) => toast(message, { ...opts, tone: "info" }),
         success: (message, opts = {}) => toast(message, { ...opts, tone: "success" }),
+        warning: (message, opts = {}) => toast(message, { ...opts, tone: "warning" }),
         danger: (message, opts = {}) => toast(message, { ...opts, tone: "danger" }),
         clear: clearToasts,
     };

@@ -96,10 +96,12 @@
                             <td><input type="text" placeholder="21"></td>
                             <td>
                                 <select>
-                                    <option>S</option>
-                                    <option>M</option>
-                                    <option>L</option>
-                                    <option>XL</option>
+                                    <option value="" selected disabled>Select size</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
                                 </select>
                             </td>
                         </tr>
@@ -108,10 +110,12 @@
                             <td><input type="text" placeholder="21"></td>
                             <td>
                                 <select>
-                                    <option>S</option>
-                                    <option>M</option>
-                                    <option>L</option>
-                                    <option>XL</option>
+                                    <option value="" selected disabled>Select size</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
                                 </select>
                             </td>
                         </tr>
@@ -120,10 +124,12 @@
                             <td><input type="text" placeholder="21"></td>
                             <td>
                                 <select>
-                                    <option>S</option>
-                                    <option>M</option>
-                                    <option>L</option>
-                                    <option>XL</option>
+                                    <option value="" selected disabled>Select size</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
                                 </select>
                             </td>
                         </tr>
@@ -305,10 +311,12 @@
                 <td><input type="text" placeholder="21"></td>
                 <td>
                     <select>
-                        <option>S</option>
-                        <option>M</option>
-                        <option>L</option>
-                        <option>XL</option>
+                        <option value="" selected disabled>Select size</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
                     </select>
                 </td>
             `;
@@ -365,6 +373,12 @@
             } catch {}
 
             const groupName = (document.getElementById('group-name')?.value || '').trim();
+            if (!groupName) {
+                const title = 'Group name missing';
+                const message = 'Enter a team name for group orders.';
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
 
             const productIdFromQuery = (() => {
                 try {
@@ -377,17 +391,41 @@
                 }
             })();
             const rosterRows = Array.from(document.querySelectorAll('#group-roster tbody tr'));
-            const roster = rosterRows
-                .map((tr) => {
-                    const tds = tr.querySelectorAll('td');
-                    const personName = (tds[0]?.querySelector('input')?.value || '').trim();
-                    const personNumber = (tds[1]?.querySelector('input')?.value || '').trim();
-                    const size = (tds[2]?.querySelector('select')?.value || '').trim();
-                    return { name: personName, number: personNumber, size };
-                })
-                .filter((r) => r.name || r.number || r.size);
+            const parsedRows = rosterRows.map((tr, idx) => {
+                const tds = tr.querySelectorAll('td');
+                const personName = (tds[0]?.querySelector('input')?.value || '').trim();
+                const personNumber = (tds[1]?.querySelector('input')?.value || '').trim();
+                const size = (tds[2]?.querySelector('select')?.value || '').trim();
+                return { index: idx + 1, name: personName, number: personNumber, size };
+            });
 
-            const quantity = Math.max(1, roster.length || 1);
+            const usedRows = parsedRows.filter((r) => r.name || r.number || r.size);
+
+            if (!usedRows.length) {
+                const title = 'Name missing';
+                const message = 'Add at least one player name to continue.';
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
+            const missingNameRow = usedRows.find((r) => !r.name);
+            if (missingNameRow) {
+                const title = 'Name missing';
+                const message = `Enter a name for row ${missingNameRow.index} to continue.`;
+                window.AVToast?.warning(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
+            const missingSizeRow = usedRows.find((r) => !r.size);
+            if (missingSizeRow) {
+                const title = 'Size not selected';
+                const message = `Choose a size for row ${missingSizeRow.index} to continue.`;
+                window.AVToast?.danger(`${title}\n${message}`) || window.AVDialog?.alert(message, { title, tone: 'warning' }) || alert(`${title}\n${message}`);
+                return;
+            }
+
+            const roster = usedRows.map(({ name, number, size }) => ({ name, number, size }));
+            const quantity = roster.length;
             try {
                 await window.AlixCart.addItem({
                     ...(productIdFromQuery ? { product_id: productIdFromQuery } : {}),
@@ -411,12 +449,13 @@
             }
 
             window.dispatchEvent(new Event('cartItemAdded'));
-            window.AVToast?.success('\u2713 Order added! View it in Order History') || showNotification('\u2713 Order added! View it in Order History');
+            window.AVToast?.success('Order added to cart\nView order history') || showNotification('Order added to cart\nView order history');
         }
 
         function showNotification(message) {
             const notif = document.createElement('div');
             notif.textContent = message;
+            notif.style.whiteSpace = 'pre-line';
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 4000);
         }
