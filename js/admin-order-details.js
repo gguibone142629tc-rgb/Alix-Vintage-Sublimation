@@ -2427,7 +2427,7 @@
         rejectBtn?.addEventListener("click", async () => {
             const order = window.AdminStore.getOrderById(orderId);
             if (!order) return;
-            const ok = await uiConfirm("Reject this order?", { title: "Reject Order", tone: "danger", okText: "Reject", cancelText: "Cancel" });
+            const ok = await uiConfirm("Reject this order?", { title: "Reject Order", tone: "danger", okText: "Reject", cancelText: "Cancel", destructive: true });
             if (!ok) return;
             window.AdminStore.updateOrder(orderId, (o) => {
                 o.admin.workflowStatus = "Rejected";

@@ -250,7 +250,6 @@
                 </div>
                 <div class="action-row">
                     <button class="btn" type="button" id="submitRequestBtn">Submit Request</button>
-                    <button class="btn secondary" type="button" id="saveDraftBtn">Save Draft</button>
                 </div>
             </div>
         </aside>
@@ -313,7 +312,6 @@
         const notesInput = document.getElementById("notes");
         const termsAckInput = document.getElementById("termsAck");
         const submitRequestBtn = document.getElementById("submitRequestBtn");
-        const saveDraftBtn = document.getElementById("saveDraftBtn");
 
         const DRAFT_KEY = "alix_custom_design_draft";
         const DRAFT_ID_KEY = "alix_custom_design_draft_id";
@@ -1023,49 +1021,7 @@
             }
         };
 
-        const saveDraft = async () => {
-            const payload = buildDraftPayload();
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
-
-            // If logged in, also persist draft to DB (so it isn't lost across devices).
-            const token = localStorage.getItem('alix_auth_token');
-            if (token) {
-                try {
-                    const body = {
-                        draft_id: localStorage.getItem(DRAFT_ID_KEY) || undefined,
-                        design_name: payload.designName || 'Draft',
-                        product_type: payload.productType || 'Custom',
-                        quantity: payload.quantity || Math.max(1, payload.roster?.length || 1),
-                        notes: payload.notes || '',
-                        design_type: payload.designType || 'final',
-                        personalization: payload.personalization || 'names_numbers',
-                        payment_preference: 'GCash',
-                        roster: payload.roster || [],
-                    };
-
-                    const res = await fetch(getApiBaseUrl() + '/api/custom-design/drafts', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...authHeaders(),
-                        },
-                        body: JSON.stringify(body),
-                    });
-
-                    const data = await res.json().catch(() => ({}));
-                    if (res.ok && data && data.request_id) {
-                        localStorage.setItem(DRAFT_ID_KEY, String(data.request_id));
-                    }
-                } catch {
-                    // keep local draft even if server fails
-                }
-            }
-
-            showToast("Draft saved.");
-        };
-
         submitRequestBtn?.addEventListener("click", submitCustomRequest);
-        saveDraftBtn?.addEventListener("click", saveDraft);
 
         wireFilePickers();
         restoreDraft();

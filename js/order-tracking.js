@@ -315,12 +315,14 @@
 
     const uiAlert = (message, opts = {}) => {
         const tone = String(opts.tone || "info").trim() || "info";
-        const title = tone === "success" ? "Success" : tone === "danger" ? "Error" : "Notice";
-        showThemedDialog({
-            title,
-            message,
-            tone,
-        });
+        const title = String(opts.title || (tone === "success" ? "Success" : tone === "danger" ? "Error" : "Notice")).trim() || "Notice";
+
+        if (window.AVDialog?.alert) {
+            window.AVDialog.alert(message, { ...opts, title, tone });
+            return;
+        }
+
+        showThemedDialog({ title, message, tone });
     };
 
     const uiConfirm = (messageOrOptions, opts = {}) =>
@@ -330,13 +332,28 @@
                     ? { ...opts, message: messageOrOptions }
                     : (messageOrOptions && typeof messageOrOptions === "object" ? messageOrOptions : {});
 
-            const { message, tone, okText, cancelText } = options;
+            const { message, tone, okText, cancelText, title, icon, destructive } = options;
 
-            const safeTitle = "Confirm";
+            const safeTitle = String(title || "Confirm").trim() || "Confirm";
             const safeMessage = String(message || "Are you sure?").trim() || "Are you sure?";
             const safeTone = String(tone || "danger").trim() || "danger";
             const safeOkText = String(okText || "OK").trim() || "OK";
             const safeCancelText = String(cancelText || "Cancel").trim() || "Cancel";
+
+            if (window.AVDialog?.confirm) {
+                window.AVDialog
+                    .confirm(safeMessage, {
+                        title: safeTitle,
+                        tone: safeTone,
+                        okText: safeOkText,
+                        cancelText: safeCancelText,
+                        icon,
+                        destructive,
+                    })
+                    .then((ok) => resolve(Boolean(ok)))
+                    .catch(() => resolve(false));
+                return;
+            }
 
             const backdrop = document.createElement("div");
             backdrop.className = "av-dialog-backdrop";
