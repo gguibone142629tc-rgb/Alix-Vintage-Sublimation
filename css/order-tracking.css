@@ -1,11 +1,11 @@
 :root {
-    --bg: #f1f1f1;
-    --panel: #ffffff;
-    --ink: #3a3a3a;
-    --ink-strong: #1f1f1f;
-    --line: #d0d0d0;
-    --dark: #3f3f3f;
-    --muted: #6b6b6b;
+    --bg: #06070b;
+    --panel: rgba(16, 18, 26, 0.72);
+    --ink: #e4eaf2;
+    --ink-strong: #ffffff;
+    --line: rgba(255, 255, 255, 0.07);
+    --dark: #0e1018;
+    --muted: #8a9cb8;
     --accent: #333333;
 }
 
@@ -16,20 +16,20 @@
 }
 
 body {
-    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     background: var(--bg);
     color: var(--ink);
     line-height: 1.5;
 }
 
 header {
-    background: var(--dark);
+    background: rgba(6, 7, 11, 0.75); backdrop-filter: saturate(150%) blur(14px);
     color: #ffffff;
     padding: 16px 24px;
     position: sticky;
     top: 0;
     z-index: 20;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .nav {
@@ -235,7 +235,7 @@ main {
 .search-input:focus {
     outline: none;
     border-color: var(--ink-strong);
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .filter-tabs {
@@ -274,7 +274,7 @@ main {
     border-radius: 10px;
     overflow-x: auto;
     overflow-y: hidden;
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .orders-table {
@@ -485,7 +485,7 @@ main {
     height: 12px;
     border-radius: 999px;
     border: 2px solid var(--line);
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .step .label {
@@ -544,7 +544,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 14px;
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .summary-k {
@@ -571,7 +571,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 14px;
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .order-content-top {
@@ -590,7 +590,7 @@ main {
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid var(--line);
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .order-content-main {
@@ -657,7 +657,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 14px;
-    background: #ffffff;
+    background: rgba(14, 16, 24, 0.8);
 }
 
 .payment-k {
@@ -887,7 +887,7 @@ main {
 }
 
 .site-footer {
-    background: var(--dark);
+    background: rgba(6, 7, 11, 0.75); backdrop-filter: saturate(150%) blur(14px);
     color: #ffffff;
     margin-top: 30px;
     padding: 28px 24px;

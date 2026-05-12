@@ -1,16 +1,18 @@
 :root {
-    --theme-bg-1: #f7f2ea;
-    --theme-bg-2: #efe6da;
-    --theme-panel: rgba(255, 255, 255, 0.88);
-    --theme-text: #241914;
-    --theme-muted: #6b5b4c;
-    --theme-line: rgba(36, 25, 20, 0.14);
-    --theme-brand: #c79b6d;
-    --theme-brand-2: #e0c090;
-    --theme-brand-3: #b5835d;
-    --theme-ok: #0b8f62;
-    --theme-danger: #b3352d;
-    --theme-shadow: 0 14px 36px rgba(32, 16, 0, 0.14);
+    --theme-bg-1: #06070b;
+    --theme-bg-2: #0e1018;
+    --theme-panel: rgba(16, 18, 26, 0.72);
+    --theme-text: #e4eaf2;
+    --theme-muted: #8a9cb8;
+    --theme-line: rgba(255, 255, 255, 0.07);
+    --theme-brand: #e63946;
+    --theme-brand-2: #ff6b6b;
+    --theme-brand-3: #d62e3b;
+    --theme-ok: #22c55e;
+    --theme-danger: #f43f5e;
+    --theme-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    --theme-glass-border: rgba(255, 255, 255, 0.06);
+    --theme-glow: 0 0 30px rgba(230, 57, 70, 0.15);
 }
 
 html {
@@ -52,9 +54,10 @@ body {
     font-family: "Manrope", "Segoe UI", sans-serif;
     color: var(--theme-text);
     background:
-        radial-gradient(circle at 8% -10%, rgba(224, 192, 144, 0.34), transparent 32%),
-        radial-gradient(circle at 92% 4%, rgba(176, 128, 96, 0.2), transparent 26%),
-        linear-gradient(160deg, var(--theme-bg-1), var(--theme-bg-2));
+        radial-gradient(ellipse at 10% -8%, rgba(230, 57, 70, 0.12), transparent 36%),
+        radial-gradient(ellipse at 90% 2%, rgba(214, 46, 59, 0.08), transparent 30%),
+        radial-gradient(ellipse at 50% 100%, rgba(230, 57, 70, 0.04), transparent 50%),
+        linear-gradient(165deg, var(--theme-bg-1) 0%, var(--theme-bg-2) 100%);
     min-height: 100vh;
 }
 
@@ -79,11 +82,16 @@ select.is-invalid,
 
 .topbar,
 .admin-sidebar {
-    backdrop-filter: saturate(130%) blur(8px);
+    backdrop-filter: saturate(150%) blur(12px);
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
 }
 
 header {
-    backdrop-filter: none;
+    backdrop-filter: saturate(150%) blur(12px);
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 /* Uniform customer top navigation */
@@ -150,7 +158,7 @@ header .nav-shop-link::after {
     right: 12px;
     bottom: -4px;
     height: 2px;
-    background: linear-gradient(90deg, var(--theme-brand-2), #f0d9b5, var(--theme-brand-3));
+    background: linear-gradient(90deg, var(--theme-brand-2), #ffedd5, var(--theme-brand-3));
     transform: scaleX(0.25);
     transform-origin: center;
     opacity: 0;
@@ -160,9 +168,9 @@ header .nav-shop-link::after {
 header .nav-shop-link:hover {
     border-bottom: 0;
     opacity: 1;
-    color: #f6e4cb;
+    color: #ffedd5;
     transform: translateY(-2px);
-    text-shadow: 0 0 16px rgba(224, 192, 144, 0.45);
+    text-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
 }
 
 header .nav-shop-link:hover::after {
@@ -193,9 +201,9 @@ header .nav-contact-link {
 
 header .nav-contact-link:hover {
     opacity: 1;
-    color: #f6e4cb;
-    background: rgba(224, 192, 144, 0.14);
-    border-color: rgba(224, 192, 144, 0.28);
+    color: var(--theme-brand-2);
+    background: rgba(230, 57, 70, 0.1);
+    border-color: rgba(230, 57, 70, 0.3);
     transform: translateY(-1px);
 }
 
@@ -211,12 +219,12 @@ header .nav-logout-btn-link {
 
 header,
 .topbar {
-    background: linear-gradient(92deg, #2c1a12 0%, #3a2418 54%, #4a3022 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(9, 10, 15, 0.7);
+    border-bottom: 1px solid var(--theme-glass-border);
 }
 
 .admin-sidebar {
-    background: linear-gradient(180deg, #2c1a12 0%, #3a2418 55%, #4a3022 100%);
+    background: linear-gradient(180deg, #090a0f 0%, #12141c 55%, #181b24 100%);
 }
 
 .admin-sidebar .sidebar-brand {
@@ -228,11 +236,11 @@ header,
 }
 
 .admin-sidebar .nav-item:hover {
-    background: rgba(224, 192, 144, 0.12);
+    background: rgba(245, 158, 11, 0.12);
 }
 
 .admin-sidebar .nav-item.active {
-    background: rgba(224, 192, 144, 0.16);
+    background: rgba(245, 158, 11, 0.16);
     border-left-color: var(--theme-brand-2);
 }
 
@@ -375,8 +383,8 @@ header,
 }
 
 .av-dialog-btn--primary {
-    background: linear-gradient(120deg, var(--theme-brand), var(--theme-brand-2) 45%, var(--theme-brand-3));
-    color: rgba(36, 25, 20, 0.92);
+    background: var(--theme-brand);
+    color: #ffffff;
 }
 
 .av-dialog--success .av-dialog-btn--primary {
@@ -397,11 +405,10 @@ header,
     color: rgba(255, 255, 255, 0.96);
 }
 
-/* Confirm dialogs: consistent primary button color (brand), unless destructive */
 .av-dialog--confirm .av-dialog-btn--primary {
-    background: linear-gradient(120deg, var(--theme-brand), var(--theme-brand-2) 45%, var(--theme-brand-3));
-    border-color: rgba(36, 25, 20, 0.16);
-    color: rgba(36, 25, 20, 0.92);
+    background: var(--theme-brand);
+    border-color: rgba(230, 57, 70, 0.3);
+    color: #ffffff;
 }
 
 .av-dialog--confirm.av-dialog--destructive .av-dialog-btn--primary {
@@ -412,7 +419,7 @@ header,
 
 .av-dialog-btn:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.38);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.25);
 }
 
 /* Toast notifications (used for "Order added" etc.) */
@@ -622,11 +629,12 @@ a,
 .admin-login-btn,
 .mini-btn,
 .toggle-btn.active {
-    background: linear-gradient(120deg, var(--theme-brand), var(--theme-brand-2) 45%, var(--theme-brand-3));
-    color: #201000;
-    border-color: rgba(176, 128, 96, 0.45);
-    box-shadow: 0 8px 20px rgba(176, 128, 96, 0.3);
-    font-weight: 800;
+    background: var(--theme-brand);
+    color: #ffffff;
+    border-color: var(--theme-brand-3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    font-weight: 700;
+    text-shadow: none;
 }
 
 .btn:hover,
@@ -636,24 +644,26 @@ a,
 .mini-btn:hover,
 .nav-login-btn-link:hover,
 .nav-logout-btn-link:hover {
-    transform: translateY(-1px);
-    filter: saturate(108%);
-    box-shadow: 0 12px 24px rgba(176, 128, 96, 0.4);
+    transform: translateY(-2px);
+    background: var(--theme-brand-2);
+    box-shadow: 0 8px 20px rgba(230, 57, 70, 0.25);
 }
 
 .btn.secondary,
 .toggle-btn,
 .mini-btn.secondary {
-    background: rgba(255, 255, 255, 0.88);
-    color: #2f1c10;
-    border-color: rgba(36, 25, 20, 0.24);
-    box-shadow: 0 8px 18px rgba(32, 16, 0, 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    border-color: var(--theme-line);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
 }
 
 .btn.secondary:hover,
 .toggle-btn:hover,
 .mini-btn.secondary:hover {
-    box-shadow: 0 12px 22px rgba(32, 16, 0, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.3);
 }
 
 nav a.active,
@@ -668,7 +678,8 @@ textarea,
 .search-input {
     border-radius: 10px;
     border: 1px solid var(--theme-line);
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(15, 17, 23, 0.6);
+    color: var(--theme-text);
 }
 
 input:focus,
@@ -676,8 +687,8 @@ select:focus,
 textarea:focus,
 .search-input:focus {
     outline: none;
-    border-color: rgba(176, 128, 96, 0.55);
-    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.26);
+    border-color: rgba(245, 158, 11, 0.55);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.26);
 }
 
 .product-card,
@@ -702,22 +713,22 @@ textarea:focus,
 .image-placeholder,
 .banner,
 .upload-box {
-    background: linear-gradient(135deg, rgba(224, 192, 144, 0.28), rgba(181, 131, 93, 0.2));
-    border: 1px solid rgba(36, 25, 20, 0.1);
+    background: linear-gradient(135deg, rgba(20, 22, 28, 0.8), rgba(15, 17, 23, 0.6));
+    border: 1px solid var(--theme-glass-border);
 }
 
 .hero {
     background:
-    radial-gradient(circle at 15% 12%, rgba(224, 192, 144, 0.3), transparent 28%),
-    radial-gradient(circle at 85% 8%, rgba(181, 131, 93, 0.22), transparent 24%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(248, 241, 232, 0.8));
+    radial-gradient(circle at 15% 12%, rgba(245, 158, 11, 0.15), transparent 28%),
+    radial-gradient(circle at 85% 8%, rgba(217, 119, 6, 0.1), transparent 24%),
+    linear-gradient(145deg, rgba(20, 22, 28, 0.8), rgba(15, 17, 23, 0.9));
 }
 
 .hero h1,
 .page-title,
 .topbar-title {
-    color: #2f1c10;
-    text-shadow: 0 2px 0 rgba(255, 255, 255, 0.65);
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
 .action-card,
@@ -735,22 +746,23 @@ textarea:focus,
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(120deg, transparent 55%, rgba(224, 192, 144, 0.2) 100%);
+    background: linear-gradient(120deg, transparent 55%, rgba(245, 158, 11, 0.15) 100%);
     pointer-events: none;
 }
 
 .action-card.dark {
-    background: linear-gradient(140deg, #4a362b, #6b4933);
-    color: #f5f8ff;
+    background: linear-gradient(140deg, #1f222e, #14161c);
+    color: #ffffff;
 }
 
 .process {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 252, 255, 0.88));
+    background: linear-gradient(180deg, rgba(20, 22, 28, 0.8), rgba(15, 17, 23, 0.9));
+    border: 1px solid var(--theme-glass-border);
 }
 
 .site-footer .footer-col h3,
 .site-footer .footer-col h4 {
-    color: #eac89e;
+    color: var(--theme-brand-2);
 }
 
 table,
@@ -763,38 +775,37 @@ table,
 th,
 .roster-table th,
 .orders-table th {
-    background: linear-gradient(92deg, #201000, #3a2110);
+    background: linear-gradient(92deg, #14161c, #1f222e);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--theme-line);
 }
 
 tr:nth-child(even),
 .roster-table tr:nth-child(even),
 .orders-table tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .site-footer {
-    background: linear-gradient(94deg, #2a190f 0%, #3d2719 100%);
-    color: #f6f7fa;
-    border-top: 4px solid var(--theme-brand);
+    background: #06070b;
+    color: #94a3b8;
+    
 }
 
 .site-footer a {
-    color: #f2d6b5;
+    color: var(--theme-brand-2);
 }
 
-/* Auth pages: unify button and form box design with the brand theme */
 .login-btn,
 .register-btn,
 .verify-btn,
 .send-btn,
 .reset-btn {
-    background: linear-gradient(120deg, var(--theme-brand), var(--theme-brand-2) 45%, var(--theme-brand-3));
-    color: #201000;
-    border: 1px solid rgba(176, 128, 96, 0.5);
-    box-shadow: 0 10px 24px rgba(176, 128, 96, 0.3);
-    font-weight: 800;
+    background: var(--theme-brand);
+    color: #ffffff;
+    border: 1px solid rgba(230, 57, 70, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    font-weight: 700;
 }
 
 .login-btn:hover,
@@ -802,20 +813,21 @@ tr:nth-child(even),
 .verify-btn:hover,
 .send-btn:hover,
 .reset-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(176, 128, 96, 0.38);
+    transform: translateY(-2px);
+    background: var(--theme-brand-2);
+    box-shadow: 0 8px 20px rgba(230, 57, 70, 0.25);
     opacity: 1;
 }
 
 .resend-btn {
-    border-color: rgba(176, 128, 96, 0.4);
-    color: #6b4933;
-    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(230, 57, 70, 0.3);
+    color: var(--theme-brand-2);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .resend-btn:hover:not(:disabled) {
-    background: rgba(224, 192, 144, 0.16);
-    color: #4a3022;
+    background: rgba(230, 57, 70, 0.12);
+    color: #ffffff;
 }
 
 .form-card,
@@ -826,14 +838,16 @@ tr:nth-child(even),
 .verify-panel,
 .forgot-panel,
 .reset-panel {
-    border: 1px solid rgba(176, 128, 96, 0.24);
+    border: 1px solid var(--theme-glass-border);
     border-radius: 14px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(251, 245, 236, 0.86));
-    box-shadow: 0 14px 30px rgba(32, 16, 0, 0.12);
+    background: rgba(20, 22, 28, 0.8);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
 }
 
 .title-line {
-    background: linear-gradient(90deg, transparent, rgba(176, 128, 96, 0.55), transparent);
+    background: linear-gradient(90deg, transparent, rgba(230, 57, 70, 0.45), transparent);
 }
 
 input[type="text"],
@@ -842,8 +856,9 @@ input[type="tel"],
 input[type="password"],
 .password-wrap input,
 .otp-input {
-    border: 1px solid rgba(176, 128, 96, 0.28);
-    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--theme-line);
+    background: rgba(15, 17, 23, 0.6);
+    color: #ffffff;
 }
 
 input[type="text"]:focus,
@@ -852,8 +867,8 @@ input[type="tel"]:focus,
 input[type="password"]:focus,
 .password-wrap input:focus,
 .otp-input:focus {
-    border-color: rgba(176, 128, 96, 0.62);
-    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.26);
+    border-color: rgba(230, 57, 70, 0.5);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.15);
 }
 
 main > * {

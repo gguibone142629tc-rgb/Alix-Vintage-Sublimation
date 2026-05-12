@@ -1,178 +1,86 @@
 :root {
-    --bg: var(--theme-bg-1, #f7f2ea);
-    --panel: var(--theme-panel, #ffffff);
-    --ink: var(--theme-text, #241914);
-    --muted: var(--theme-muted, #6b5b4c);
-    --line: var(--theme-line, rgba(36, 25, 20, 0.14));
-    --accent: var(--theme-brand-3, #b5835d);
-    --accent-soft: var(--theme-brand-2, #e0c090);
+    --bg: var(--theme-bg-1, #06070b);
+    --panel: var(--theme-panel, rgba(16, 18, 26, 0.72));
+    --ink: var(--theme-text, #e4eaf2);
+    --muted: var(--theme-muted, #8a9cb8);
+    --line: var(--theme-line, rgba(255, 255, 255, 0.07));
+    --accent: var(--theme-brand, #e63946);
+    --accent-soft: var(--theme-brand-2, #ff6b6b);
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
     font-family: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     color: var(--ink);
     background:
-        radial-gradient(circle at 8% -10%, rgba(224, 192, 144, 0.28), transparent 34%),
-        radial-gradient(circle at 90% 0%, rgba(176, 128, 96, 0.2), transparent 28%),
-        linear-gradient(160deg, var(--theme-bg-1, #f7f2ea), var(--theme-bg-2, #efe6da));
+        radial-gradient(ellipse at 10% -8%, rgba(230, 57, 70, 0.1), transparent 36%),
+        radial-gradient(ellipse at 90% 2%, rgba(214, 46, 59, 0.06), transparent 30%),
+        linear-gradient(165deg, var(--theme-bg-1, #06070b), var(--theme-bg-2, #0e1018));
+    -webkit-font-smoothing: antialiased;
 }
 
-.legal-page {
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 28px 20px 44px;
-}
-
-.legal-top {
-    margin-bottom: 18px;
-}
-
+.legal-page { max-width: 980px; margin: 0 auto; padding: 28px 20px 44px; }
+.legal-top { margin-bottom: 18px; }
 .legal-back {
-    color: var(--accent);
-    font-weight: 700;
-    text-decoration: none;
-    font-size: 13px;
-    letter-spacing: 0.4px;
+    color: var(--accent-soft);
+    font-weight: 700; text-decoration: none; font-size: 13px; letter-spacing: 0.4px;
+    transition: color 0.2s;
 }
-
-.legal-back:hover {
-    color: var(--theme-brand, #c79b6d);
-}
+.legal-back:hover { color: var(--accent); }
 
 .legal-card {
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: 18px;
     background: var(--panel);
-    box-shadow: var(--theme-shadow, 0 14px 36px rgba(32, 16, 0, 0.14));
-    padding: 22px 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    padding: 28px 24px;
+    backdrop-filter: blur(16px);
 }
 
-h1 {
-    margin: 0 0 8px;
-    font-size: 30px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #2a1c14;
-}
+h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 1.5px; text-transform: uppercase; color: #ffffff; }
+.effective { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
 
-.effective {
-    margin: 0 0 16px;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-section + section {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(36, 25, 20, 0.12);
-}
-
-h2 {
-    margin: 0 0 8px;
-    font-size: 15px;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: #3a2418;
-}
-
-p,
-li {
-    margin: 0;
-    line-height: 1.6;
-    color: rgba(36, 25, 20, 0.88);
-    font-size: 14px;
-}
-
-ul {
-    margin: 0;
-    padding-left: 18px;
-}
-
-ul li + li {
-    margin-top: 6px;
-}
+section + section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+h2 { margin: 0 0 8px; font-size: 15px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--accent-soft); }
+p, li { margin: 0; line-height: 1.65; color: rgba(228, 234, 242, 0.85); font-size: 14px; }
+ul { margin: 0; padding-left: 18px; }
+ul li + li { margin-top: 6px; }
 
 .contact-box {
-    margin-top: 6px;
-    padding: 12px;
-    border: 1px solid rgba(181, 131, 93, 0.34);
-    border-radius: 10px;
-    background: linear-gradient(135deg, rgba(224, 192, 144, 0.16), rgba(255, 255, 255, 0.78));
+    margin-top: 6px; padding: 14px;
+    border: 1px solid rgba(230, 57, 70, 0.2);
+    border-radius: 12px;
+    background: rgba(230, 57, 70, 0.05);
 }
 
 .note {
-    margin-top: 14px;
-    padding: 10px 12px;
-    border-left: 3px solid var(--theme-brand-3, #b5835d);
-    background: rgba(224, 192, 144, 0.2);
-    color: rgba(36, 25, 20, 0.82);
-    font-size: 13px;
+    margin-top: 14px; padding: 12px 14px;
+    border-left: 3px solid var(--accent);
+    background: rgba(230, 57, 70, 0.06);
+    color: var(--muted); font-size: 13px;
+    border-radius: 0 8px 8px 0;
 }
 
 @media (max-width: 640px) {
-    .legal-page {
-        padding: 18px 14px 32px;
-    }
-
-    .legal-top {
-        margin-bottom: 12px;
-    }
-
+    .legal-page { padding: 18px 14px 32px; }
+    .legal-top { margin-bottom: 12px; }
     .legal-back {
-        display: inline-flex;
-        align-items: center;
-        min-height: 34px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: rgba(224, 192, 144, 0.2);
-        border: 1px solid rgba(181, 131, 93, 0.34);
+        display: inline-flex; align-items: center; min-height: 36px;
+        padding: 0 14px; border-radius: 999px;
+        background: rgba(230, 57, 70, 0.08); border: 1px solid rgba(230, 57, 70, 0.2);
     }
-
-    .legal-card {
-        padding: 16px 14px;
-        border-radius: 12px;
-    }
-
-    h1 {
-        font-size: 24px;
-        line-height: 1.1;
-    }
-
-    h2 {
-        font-size: 13px;
-    }
-
-    p,
-    li {
-        font-size: 13px;
-    }
-
-    section + section {
-        margin-top: 12px;
-        padding-top: 10px;
-    }
-
-    .contact-box {
-        padding: 10px;
-    }
-
-    .note {
-        margin-top: 12px;
-        font-size: 12px;
-    }
+    .legal-card { padding: 18px 16px; border-radius: 16px; }
+    h1 { font-size: 24px; line-height: 1.1; }
+    h2 { font-size: 13px; }
+    p, li { font-size: 13px; }
+    section + section { margin-top: 12px; padding-top: 10px; }
+    .contact-box { padding: 10px; }
+    .note { margin-top: 12px; font-size: 12px; }
 }
 
 @media (max-width: 480px) {
-    .legal-page {
-        padding: 14px 10px 28px;
-    }
-
-    .legal-card {
-        padding: 14px 12px;
-    }
+    .legal-page { padding: 14px 10px 28px; }
+    .legal-card { padding: 14px 12px; }
 }

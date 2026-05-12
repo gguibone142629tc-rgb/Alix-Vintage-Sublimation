@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     const STANDARD_FOOTER_HTML = `
         <div class="footer-wrap">
             <div class="footer-col footer-brand">
@@ -170,72 +170,7 @@
             }
         }
 
-        /* Keep footer presentation consistent across pages with different CSS files */
-        footer.site-footer {
-            background: radial-gradient(circle at 50% 50%, #4b220c 0%, #2b1308 65%, #1f0f08 100%) !important;
-            color: #f3ede6 !important;
-            padding: 20px 0 10px !important;
-            border-top: 2px solid rgba(216, 172, 126, 0.18) !important;
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-        }
-        footer.site-footer .footer-wrap {
-            width: min(1360px, 92%) !important;
-            margin: 0 auto !important;
-            display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 14px !important;
-            align-items: start !important;
-            text-align: center !important;
-        }
-        footer.site-footer .footer-col { min-width: 0 !important; }
-        footer.site-footer .footer-col h3,
-        footer.site-footer .footer-col h4 {
-            margin: 0 0 8px !important;
-            color: #f7c183 !important;
-            letter-spacing: 1px !important;
-            text-transform: uppercase !important;
-            font-weight: 800 !important;
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-        }
-        footer.site-footer .footer-col h3 { font-size: 20px !important; line-height: 1.05 !important; }
-        footer.site-footer .footer-col h4 { font-size: 18px !important; line-height: 1.05 !important; }
-        footer.site-footer .footer-col p,
-        footer.site-footer .footer-col a {
-            margin: 0 0 5px !important;
-            color: #f3ede6 !important;
-            font-size: 13px !important;
-            line-height: 1.4 !important;
-            text-decoration-thickness: 1.5px !important;
-            text-underline-offset: 2px !important;
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-        }
-        footer.site-footer .legal-summary-trigger {
-            font-weight: 700 !important;
-        }
-        footer.site-footer .footer-note { opacity: 0.96 !important; }
-        footer.site-footer .footer-bottom {
-            width: min(1360px, 92%) !important;
-            margin: 10px auto 0 !important;
-            padding-top: 8px !important;
-            border-top: 1px solid rgba(216, 172, 126, 0.22) !important;
-            display: flex !important;
-            justify-content: space-between !important;
-            gap: 16px !important;
-            color: #ead7c3 !important;
-            font-size: 11px !important;
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-        }
-        @media (max-width: 1100px) {
-            footer.site-footer .footer-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-        }
-        @media (max-width: 640px) {
-            footer.site-footer .footer-wrap { grid-template-columns: 1fr !important; }
-            footer.site-footer .footer-bottom { flex-direction: column !important; text-align: center !important; }
-            footer.site-footer .footer-col h3 { font-size: 18px !important; }
-            footer.site-footer .footer-col h4 { font-size: 16px !important; }
-            footer.site-footer .footer-col p,
-            footer.site-footer .footer-col a { font-size: 12px !important; }
-        }
+
 
         .legal-summary-modal {
             position: fixed;

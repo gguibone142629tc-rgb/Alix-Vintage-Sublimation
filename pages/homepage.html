@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Alix Vintage | Home</title>
-    <link rel="stylesheet" href="../css/homepage.css">
-    <link rel="stylesheet" href="../css/sublimation-theme.css">
+    <link rel="stylesheet" href="../css/homepage.css?v=3">
+    <link rel="stylesheet" href="../css/sublimation-theme.css?v=3">
 </head>
 <body>
     <header>
@@ -54,85 +54,102 @@
     </header>
 
     <main>
-        <section class="banner">
-            <img src="../assets/banner.jpg" alt="Alix Vintage banner">
-        </section>
-
-        <section class="action-row">
-            <a class="action-card" href="categories.html">
-                <div class="action-icon">&#128722;</div>
-                <div class="action-text">
-                    <h3>ORDER FROM CATALOG</h3>
-                    <p>Select designs below and turn an idea to product.</p>
+        <!-- HERO SECTION -->
+        <section class="hero">
+            <div class="hero-bg">
+                <img src="../assets/banner.jpg" alt="Alix Vintage sublimation banner">
+            </div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="hero-badge">CUSTOM SUBLIMATION</span>
+                <h1 class="hero-title">Premium Jersey<br>Printing Service</h1>
+                <p class="hero-subtitle">Design your team's identity with professional sublimation printing — jerseys, teamwear, and custom apparel made to order.</p>
+                <div class="hero-actions">
+                    <a href="categories.html" class="btn-primary">Shop Catalog</a>
+                    <a href="upload-custom-design.html" class="btn-outline">Upload Design</a>
                 </div>
-            </a>
-            <a class="action-card" href="upload-custom-design.html">
-                <div class="action-icon">&#11014;</div>
-                <div class="action-text">
-                    <h3>UPLOAD CUSTOM DESIGN</h3>
-                    <p>Upload your own design or reference image for custom order.</p>
+                <div class="hero-stats">
+                    <div class="stat-item"><span class="stat-num">500+</span><span class="stat-label">Orders Delivered</span></div>
+                    <div class="stat-item"><span class="stat-num">100+</span><span class="stat-label">Teams Served</span></div>
+                    <div class="stat-item"><span class="stat-num">5★</span><span class="stat-label">Customer Rating</span></div>
                 </div>
-            </a>
+            </div>
         </section>
 
-        <section class="service-strip" aria-label="Core services">
-            <article class="service-strip-item">
-                <div class="service-strip-line"></div>
-                <span class="service-strip-no">01</span>
-                <h3>TEAMWEAR AND<br>UNIFORM<br>PRINTING</h3>
-                <p>Built for schools, barangay leagues,<br>esports teams, and company events.</p>
-            </article>
-
-            <article class="service-strip-item">
-                <div class="service-strip-line"></div>
-                <span class="service-strip-no">02</span>
-                <h3>CUSTOM NAME<br>AND NUMBER<br>PERSONALIZATION</h3>
-                <p>Add player details, position labels, and<br>sponsor marks before final print.</p>
-            </article>
-
-            <article class="service-strip-item">
-                <div class="service-strip-line"></div>
-                <span class="service-strip-no">03</span>
-                <h3>ORDER<br>SUPPORT AND<br>STATUS<br>ASSISTANCE</h3>
-                <p>Coordinate sizing, batch updates, and<br>expected release timelines easily.</p>
-            </article>
+        <!-- SERVICES -->
+        <section class="services" aria-label="Core services">
+            <div class="services-header">
+                <span class="section-tag">What We Do</span>
+                <h2>Our Services</h2>
+            </div>
+            <div class="services-grid">
+                <article class="service-card">
+                    <div class="service-num">01</div>
+                    <h3>Teamwear &amp; Uniform Printing</h3>
+                    <p>Built for schools, barangay leagues, esports teams, and company events.</p>
+                </article>
+                <article class="service-card">
+                    <div class="service-num">02</div>
+                    <h3>Custom Name &amp; Number Personalization</h3>
+                    <p>Add player details, position labels, and sponsor marks before final print.</p>
+                </article>
+                <article class="service-card">
+                    <div class="service-num">03</div>
+                    <h3>Order Support &amp; Status Assistance</h3>
+                    <p>Coordinate sizing, batch updates, and expected release timelines easily.</p>
+                </article>
+            </div>
         </section>
 
-        <section>
+        <!-- PRODUCTS -->
+        <section class="products-section">
             <div class="section-header">
-                <h2>OUR PRODUCTS</h2>
-                <a class="see-all" href="categories.html">SEE ALL</a>
+                <div>
+                    <span class="section-tag">Browse</span>
+                    <h2>Our Products</h2>
+                </div>
+                <a class="see-all" href="categories.html">View All →</a>
             </div>
-            <div class="products">
-                <a class="product-link" href="categories.html?type=jersey">
-                    <div class="product-card">
+            <div class="products-grid">
+                <a class="product-card" href="categories.html?type=jersey">
+                    <div class="product-img-wrap">
                         <img src="../assets/jerseys.jpg" alt="Jerseys" class="product-image">
-                        <div class="product-label">JERSEYS</div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-name">Jerseys</span>
+                        <span class="product-cta">Shop Now →</span>
                     </div>
                 </a>
-                <a class="product-link" href="categories.html?type=tshirt">
-                    <div class="product-card">
+                <a class="product-card" href="categories.html?type=tshirt">
+                    <div class="product-img-wrap">
                         <img src="../assets/tshirt.jpg" alt="T-Shirts" class="product-image">
-                        <div class="product-label">T-SHIRTS</div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-name">T-Shirts</span>
+                        <span class="product-cta">Shop Now →</span>
                     </div>
                 </a>
-                <a class="product-link" href="categories.html?type=poloshirt">
-                    <div class="product-card">
+                <a class="product-card" href="categories.html?type=poloshirt">
+                    <div class="product-img-wrap">
                         <img src="../assets/poloshirt.jpg" alt="Polo Shirts" class="product-image">
-                        <div class="product-label">POLO-SHIRTS</div>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-name">Polo Shirts</span>
+                        <span class="product-cta">Shop Now →</span>
                     </div>
                 </a>
             </div>
         </section>
 
+        <!-- FEEDBACK -->
         <section class="feedback-showcase" aria-labelledby="feedback-showcase-title">
             <div class="section-header feedback-header">
                 <div>
-                    <h2 id="feedback-showcase-title">TEAMS WE'VE PRINTED FOR</h2>
+                    <span class="section-tag">Portfolio</span>
+                    <h2 id="feedback-showcase-title">Teams We've Printed For</h2>
                     <p class="feedback-intro">Real customers, real finished jerseys, and real team orders delivered with care.</p>
                 </div>
             </div>
-
             <div class="feedback-grid">
                 <article class="feedback-card">
                     <img src="../assets/feedback1.jpg" alt="Customer group wearing Alix Vintage custom jerseys">
@@ -141,7 +158,6 @@
                         <p class="feedback-desc">Premium quality with vibrant colors and durable print</p>
                     </div>
                 </article>
-
                 <article class="feedback-card">
                     <img src="../assets/feedback2.jpg" alt="Satisfied customer group in completed custom teamwear">
                     <div class="feedback-copy">
@@ -149,65 +165,58 @@
                         <p class="feedback-desc">Names, numbers, and custom designs perfectly applied</p>
                     </div>
                 </article>
-
                 <article class="feedback-card">
                     <img src="../assets/feedback3.jpg" alt="Customer feedback photo with completed custom jersey order">
                     <div class="feedback-copy">
-                        <span class="feedback-tag">Ready to Wear & Display</span>
+                        <span class="feedback-tag">Ready to Wear &amp; Display</span>
                         <p class="feedback-desc">Professional finish for teams, events, and organizations</p>
                     </div>
                 </article>
             </div>
-
         </section>
 
+        <!-- HOW TO ORDER -->
         <section class="process" aria-labelledby="ordering-process-title">
             <div class="process-header">
-                <span class="process-badge">Order Guide</span>
-                <h2 id="ordering-process-title">ORDERING PROCESS</h2>
+                <span class="section-tag">How It Works</span>
+                <h2 id="ordering-process-title">Ordering Process</h2>
                 <p>Follow these steps for faster approval and production.</p>
             </div>
-
             <div class="process-timeline" aria-label="Order timeline steps">
                 <article class="process-step">
-                    <div class="step-topline">
-                        <span class="step-dot" aria-hidden="true"></span>
-                        <span class="step-time">Step 1</span>
-                    </div>
+                    <div class="step-number">1</div>
                     <h4>Select or Upload Design</h4>
                     <p>Choose from our catalog or upload your custom layout and references.</p>
                 </article>
-
                 <article class="process-step">
-                    <div class="step-topline">
-                        <span class="step-dot" aria-hidden="true"></span>
-                        <span class="step-time">Step 2</span>
-                    </div>
+                    <div class="step-number">2</div>
                     <h4>Complete Team Details</h4>
                     <p>Submit names, numbers, sizes, quantity, and preferred delivery date.</p>
                 </article>
-
                 <article class="process-step">
-                    <div class="step-topline">
-                        <span class="step-dot" aria-hidden="true"></span>
-                        <span class="step-time">Step 3</span>
-                    </div>
-                    <h4>Approve Quote and Mockup</h4>
+                    <div class="step-number">3</div>
+                    <h4>Approve Quote &amp; Mockup</h4>
                     <p>We send your quote and design proof for confirmation before printing.</p>
                 </article>
-
                 <article class="process-step">
-                    <div class="step-topline">
-                        <span class="step-dot" aria-hidden="true"></span>
-                        <span class="step-time">Step 4</span>
-                    </div>
-                    <h4>Pay and Track Progress</h4>
+                    <div class="step-number">4</div>
+                    <h4>Pay &amp; Track Progress</h4>
                     <p>Pay downpayment to start production, then monitor updates until delivery.</p>
                 </article>
             </div>
+        </section>
 
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2>Ready to get started?</h2>
+            <p>Design your team's next look today. Browse our catalog or upload your custom design.</p>
+            <div class="cta-actions">
+                <a href="categories.html" class="btn-primary">Browse Catalog</a>
+                <a href="contact-us.html" class="btn-outline">Contact Us</a>
+            </div>
         </section>
     </main>
+
     <footer id="contact-us" class="site-footer">
         <div class="footer-wrap">
             <div class="footer-col footer-brand">
@@ -238,9 +247,6 @@
         </div>
     </footer>
 
-
-    <script src="../js/nav-auth.js"></script>
+    <script src="../js/nav-auth.js?v=2"></script>
 </body>
 </html>
-
-
