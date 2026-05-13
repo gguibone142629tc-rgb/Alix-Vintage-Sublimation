@@ -951,3 +951,348 @@ main > *:nth-child(4) {
         padding-right: 14px;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PAGE OVERRIDES — neutralise dark theme for admin pages
+   ═══════════════════════════════════════════════════════════════ */
+
+body.admin-page {
+    background: #f0f2f5 !important;
+    color: #1e293b !important;
+}
+
+body.admin-page .admin-sidebar {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.admin-page .admin-sidebar .nav-item:hover {
+    background: rgba(99, 102, 241, 0.15) !important;
+}
+
+body.admin-page .admin-sidebar .nav-item.active {
+    background: rgba(99, 102, 241, 0.2) !important;
+    border-left-color: #818cf8 !important;
+}
+
+body.admin-page .topbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+body.admin-page .topbar .topbar-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+body.admin-page .panel,
+body.admin-page .stat-card,
+body.admin-page .admin-catalog-card,
+body.admin-page .order-header-item,
+body.admin-page .comment-card,
+body.admin-page .receipt-panel,
+body.admin-page .summary-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    color: #1e293b !important;
+}
+
+body.admin-page .action-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    color: #1e293b !important;
+}
+
+body.admin-page .action-card::after {
+    display: none !important;
+}
+
+body.admin-page .action-card:hover {
+    background: #ffffff !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.12) !important;
+    color: #4338ca !important;
+}
+
+body.admin-page input,
+body.admin-page select,
+body.admin-page textarea,
+body.admin-page .search-input,
+body.admin-page .field-input,
+body.admin-page .comment-input,
+body.admin-page .message-reply-input {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.admin-page input:focus,
+body.admin-page select:focus,
+body.admin-page textarea:focus,
+body.admin-page .search-input:focus,
+body.admin-page .field-input:focus,
+body.admin-page .comment-input:focus,
+body.admin-page .message-reply-input:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+}
+
+body.admin-page .data-table thead th {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .data-table tbody td {
+    color: #334155 !important;
+    border-color: #f1f5f9 !important;
+}
+
+body.admin-page .data-table tbody tr:hover td {
+    background: #f8fafc !important;
+}
+
+body.admin-page tr:nth-child(even) {
+    background: rgba(248, 250, 252, 0.5) !important;
+}
+
+body.admin-page .table-btn {
+    background: #ffffff !important;
+    color: #4338ca !important;
+    border-color: #c7d2fe !important;
+}
+
+body.admin-page .table-btn:hover {
+    background: #eef2ff !important;
+    border-color: #6366f1 !important;
+}
+
+body.admin-page .table-btn.is-danger {
+    color: #dc2626 !important;
+    border-color: #fca5a5 !important;
+}
+
+body.admin-page .table-btn.is-danger:hover {
+    background: #fef2f2 !important;
+    border-color: #dc2626 !important;
+}
+
+body.admin-page .stat-icon {
+    background: #eef2ff !important;
+}
+
+body.admin-page .stat-icon svg {
+    stroke: #6366f1 !important;
+}
+
+body.admin-page .stat-label {
+    color: #64748b !important;
+}
+
+body.admin-page .stat-value {
+    color: #0f172a !important;
+}
+
+body.admin-page .stat-delta.is-up {
+    color: #16a34a !important;
+}
+
+body.admin-page .stat-delta.is-down {
+    color: #dc2626 !important;
+}
+
+body.admin-page .panel-title {
+    color: #0f172a !important;
+}
+
+body.admin-page .panel-head {
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .field-label,
+body.admin-page .order-meta-k,
+body.admin-page .order-header-k,
+body.admin-page .upload-card-title,
+body.admin-page .reference-tile-label,
+body.admin-page .pricing-title,
+body.admin-page .sidebar-section-title,
+body.admin-page .summary-k {
+    color: #64748b !important;
+}
+
+body.admin-page .order-header-v,
+body.admin-page .order-meta-v,
+body.admin-page .summary-v,
+body.admin-page .admin-catalog-name,
+body.admin-page .receipt-title,
+body.admin-page .comment-author {
+    color: #0f172a !important;
+}
+
+body.admin-page .mini-note,
+body.admin-page .comment-meta,
+body.admin-page .admin-catalog-meta,
+body.admin-page .receipt-meta {
+    color: #94a3b8 !important;
+}
+
+body.admin-page .icon-btn {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .icon-btn:hover {
+    border-color: #6366f1 !important;
+    background: #eef2ff !important;
+}
+
+body.admin-page .icon-svg {
+    stroke: #475569 !important;
+}
+
+body.admin-page .admin-menu {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .admin-avatar {
+    background: #eef2ff !important;
+    color: #4338ca !important;
+}
+
+body.admin-page .admin-name {
+    color: #1e293b !important;
+}
+
+body.admin-page .search-icon {
+    stroke: #94a3b8 !important;
+}
+
+body.admin-page .order-item-head,
+body.admin-page .reference-tile-label,
+body.admin-page .upload-card,
+body.admin-page .receipt-preview,
+body.admin-page .receipt-wait,
+body.admin-page .image-preview {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .order-item-block,
+body.admin-page .message-details-box {
+    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+}
+
+body.admin-page .upload-card-box {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.admin-page .order-stepper .dot {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.admin-page .order-stepper .step.is-done .dot {
+    background: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+
+body.admin-page .order-stepper .step.is-done::before {
+    background: #6366f1 !important;
+}
+
+body.admin-page .order-stepper .step.is-active .dot {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
+}
+
+body.admin-page .order-stepper .label {
+    color: #64748b !important;
+}
+
+body.admin-page .badge {
+    background: #ef4444 !important;
+}
+
+body.admin-page .checkline {
+    color: #1e293b !important;
+}
+
+body.admin-page .order-contents-notice {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .admin-login-shell {
+    background: #f0f2f5 !important;
+}
+
+body.admin-page .admin-login-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
+    color: #1e293b !important;
+}
+
+body.admin-page .admin-login-card input {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+body.admin-page .admin-login-card input:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+}
+
+body.admin-page .admin-login-btn {
+    background: #6366f1 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.3) !important;
+}
+
+body.admin-page .admin-login-btn:hover {
+    background: #4f46e5 !important;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.35) !important;
+    transform: translateY(-1px);
+}
+
+body.admin-page .admin-login-title {
+    color: #0f172a !important;
+}
+
+body.admin-page .admin-login-sub {
+    color: #64748b !important;
+}
+
+body.admin-page .admin-login-note {
+    color: #64748b !important;
+}
+
+body.admin-page .admin-login-note a {
+    color: #6366f1 !important;
+}
+
+body.admin-page .av-dialog {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.admin-page .av-dialog-title {
+    color: #0f172a !important;
+}
+
+body.admin-page .av-dialog-desc {
+    color: #475569 !important;
+}
