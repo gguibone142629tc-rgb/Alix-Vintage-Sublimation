@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Orders;
 
 use App\Application\Orders\AddOrderComment;
+use App\Application\Orders\CancelMyOrder;
 use App\Application\Orders\ListMyOrders;
 use App\Application\Orders\RespondOrderProof;
 use App\Application\Orders\UploadOrderReceipt;
@@ -18,11 +19,12 @@ final class OrderControllerFactory
     {
         $repo = new PdoOrderRepository($pdo);
         $useCase = new ListMyOrders($repo);
+        $cancelMyOrder = new CancelMyOrder($repo);
         $uploadReceipt = new UploadOrderReceipt($repo);
         $respondProof = new RespondOrderProof($repo);
         $addComment = new AddOrderComment($repo);
         $auth = new Auth(new JwtTokenVerifier());
 
-        return new OrderController($auth, $useCase, $uploadReceipt, $respondProof, $addComment);
+        return new OrderController($auth, $useCase, $cancelMyOrder, $uploadReceipt, $respondProof, $addComment);
     }
 }

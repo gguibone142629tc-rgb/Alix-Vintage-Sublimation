@@ -538,7 +538,7 @@ nav a.active {
 .site-footer { background: #06070b;
     color: #f1f1f1;
     padding: 28px 20px 18px;
-    border-top: 4px solid #e63946;
+    border-top: 0;
     margin-top: 24px;
 }
 

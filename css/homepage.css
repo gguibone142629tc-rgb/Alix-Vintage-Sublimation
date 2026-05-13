@@ -534,6 +534,17 @@ main { padding-top: 0; }
 
     main { padding-top: 0; }
     .hero { min-height: 100vh; }
+    .hero-bg img {
+        object-position: center 20%;
+        filter: brightness(0.42) contrast(1.05);
+    }
+    .hero-overlay {
+        background: linear-gradient(135deg,
+            rgba(11, 13, 17, 0.9) 0%,
+            rgba(11, 13, 17, 0.62) 55%,
+            rgba(11, 13, 17, 0.35) 100%
+        );
+    }
     .hero-content { padding: 100px 20px 40px; }
     .hero-title { font-size: 44px; }
     .hero-subtitle { font-size: 14px; }

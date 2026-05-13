@@ -57,7 +57,6 @@
 .field-group input:focus,
 .field-group textarea:focus {
     border-color: var(--accent);
-    background: #ffffff;
     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 

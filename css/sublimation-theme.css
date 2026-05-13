@@ -13,6 +13,17 @@
     --theme-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
     --theme-glass-border: rgba(255, 255, 255, 0.06);
     --theme-glow: 0 0 30px rgba(230, 57, 70, 0.15);
+
+    /* Compatibility variables used by older per-page styles */
+    --bg: var(--theme-bg-2);
+    --dark: var(--theme-bg-2);
+    --panel: var(--theme-panel);
+    --ink: var(--theme-text);
+    --ink-strong: #ffffff;
+    --muted: var(--theme-muted);
+    --line: var(--theme-line);
+    --accent: var(--theme-brand);
+    --accent-soft: var(--theme-brand-2);
 }
 
 html {
@@ -170,7 +181,7 @@ header .nav-shop-link:hover {
     opacity: 1;
     color: #ffedd5;
     transform: translateY(-2px);
-    text-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--theme-brand-2) 55%, transparent);
 }
 
 header .nav-shop-link:hover::after {
@@ -236,11 +247,11 @@ header,
 }
 
 .admin-sidebar .nav-item:hover {
-    background: rgba(245, 158, 11, 0.12);
+    background: color-mix(in srgb, var(--theme-brand) 18%, transparent);
 }
 
 .admin-sidebar .nav-item.active {
-    background: rgba(245, 158, 11, 0.16);
+    background: color-mix(in srgb, var(--theme-brand) 24%, transparent);
     border-left-color: var(--theme-brand-2);
 }
 
@@ -256,7 +267,7 @@ header,
     display: grid;
     place-items: center;
     padding: 22px;
-    background: rgba(32, 16, 0, 0.55);
+    background: rgba(0, 0, 0, 0.62);
     z-index: 9999;
 }
 
@@ -264,18 +275,21 @@ header,
     width: min(520px, 92vw);
     max-height: min(70vh, 560px);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid var(--theme-line);
+    background: rgba(16, 18, 26, 0.92);
+    border: 1px solid var(--theme-glass-border);
     box-shadow: var(--theme-shadow);
     display: grid;
     gap: 10px;
     padding: 22px 22px 18px;
     position: relative;
+    color: var(--theme-text);
+    backdrop-filter: saturate(150%) blur(14px);
+    -webkit-backdrop-filter: saturate(150%) blur(14px);
 }
 
 .av-dialog-title {
     text-align: center;
-    color: rgba(36, 25, 20, 0.92);
+    color: rgba(255, 255, 255, 0.96);
     font-weight: 900;
     letter-spacing: 0.8px;
     text-transform: none;
@@ -283,14 +297,19 @@ header,
 }
 
 .av-dialog-desc {
-    color: var(--theme-text);
+    color: var(--theme-muted);
     font-size: 14px;
     line-height: 1.55;
     white-space: normal;
     text-align: center;
-    opacity: 0.82;
+    opacity: 1;
     overflow: auto;
     max-height: min(36vh, 280px);
+}
+
+.av-dialog-desc a {
+    color: var(--theme-brand-2);
+    font-weight: 800;
 }
 
 .av-dialog-close {
@@ -300,9 +319,9 @@ header,
     width: 34px;
     height: 34px;
     border-radius: 999px;
-    border: 1px solid rgba(36, 25, 20, 0.12);
-    background: rgba(255, 255, 255, 0.9);
-    color: rgba(36, 25, 20, 0.75);
+    border: 1px solid var(--theme-glass-border);
+    background: rgba(0, 0, 0, 0.18);
+    color: rgba(255, 255, 255, 0.82);
     cursor: pointer;
     display: grid;
     place-items: center;
@@ -310,9 +329,13 @@ header,
     line-height: 1;
 }
 
+.av-dialog-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .av-dialog-close:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(224, 192, 144, 0.34);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.25);
 }
 
 .av-dialog-icon {
@@ -322,13 +345,13 @@ header,
     display: grid;
     place-items: center;
     margin: 4px auto 2px;
-    background: rgba(224, 192, 144, 0.22);
+    background: color-mix(in srgb, var(--theme-brand) 16%, rgba(0, 0, 0, 0.08));
 }
 
 .av-dialog-icon svg {
     width: 34px;
     height: 34px;
-    fill: rgba(36, 25, 20, 0.72);
+    fill: rgba(255, 255, 255, 0.84);
 }
 
 .av-dialog--success .av-dialog-icon {
@@ -367,7 +390,7 @@ header,
 }
 
 .av-dialog-btn {
-    border: 1px solid rgba(36, 25, 20, 0.16);
+    border: 1px solid var(--theme-line);
     border-radius: 12px;
     padding: 12px 16px;
     font-weight: 800;
@@ -378,8 +401,12 @@ header,
 }
 
 .av-dialog-btn--cancel {
-    background: rgba(255, 255, 255, 0.88);
-    color: rgba(36, 25, 20, 0.78);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.av-dialog-btn--cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .av-dialog-btn--primary {
@@ -581,12 +608,14 @@ main,
 .sidebar,
 .search-section,
 .table-wrap,
+.table-container,
 .cta,
 .hero,
 .section,
 .login-panel,
 .admin-login-card,
 .card,
+.settings-card,
 .panel {
     border-radius: 16px;
 }
@@ -669,7 +698,7 @@ a,
 nav a.active,
 .nav-item.active,
 .sidebar-item.active {
-    box-shadow: inset 0 -2px 0 #f0d9b5;
+    box-shadow: inset 0 -2px 0 var(--theme-brand-2);
 }
 
 input,
@@ -687,8 +716,12 @@ select:focus,
 textarea:focus,
 .search-input:focus {
     outline: none;
-    border-color: rgba(245, 158, 11, 0.55);
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.26);
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand) 24%, transparent);
+}
+
+::placeholder {
+    color: color-mix(in srgb, var(--theme-muted) 72%, transparent);
 }
 
 .product-card,
@@ -702,11 +735,113 @@ textarea:focus,
 .catalog,
 .sidebar,
 .search-section,
+.table-container,
+.settings-card,
 .panel,
 .card {
     border: 1px solid var(--theme-line);
     background: var(--theme-panel);
     box-shadow: var(--theme-shadow);
+}
+
+.table-container thead {
+    background: color-mix(in srgb, var(--theme-panel) 80%, rgba(0, 0, 0, 0.32));
+    border-bottom: 1px solid var(--theme-line);
+}
+
+.table-container th {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.table-container td {
+    color: rgba(228, 234, 242, 0.88);
+}
+
+.table-container tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-btn,
+.action-btn {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--theme-text);
+    border-color: var(--theme-line);
+}
+
+.tab-btn:hover,
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    color: var(--theme-text);
+}
+
+.tab-btn.active {
+    background: var(--theme-brand);
+    border-color: var(--theme-brand-3);
+    color: #ffffff;
+}
+
+.af-input {
+    background: rgba(15, 17, 23, 0.6);
+    color: var(--theme-text);
+    border-color: var(--theme-line);
+}
+
+.af-input:focus {
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand) 24%, transparent);
+}
+
+.settings-card {
+    color: var(--theme-text);
+}
+
+.field-group input,
+.field-group textarea {
+    background: rgba(15, 17, 23, 0.6);
+    border-color: var(--theme-line);
+    color: var(--theme-text);
+}
+
+.field-group input:focus,
+.field-group textarea:focus {
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand) 24%, transparent);
+}
+
+.nav-account-dropdown {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.nav-account-dropdown a:not(.nav-logout-btn-link) {
+    color: rgba(15, 23, 42, 0.92);
+}
+
+.nav-account-dropdown a:not(.nav-logout-btn-link) svg {
+    stroke: rgba(15, 23, 42, 0.7);
+}
+
+.nav-account-dropdown a:not(.nav-logout-btn-link):hover {
+    background: rgba(230, 57, 70, 0.1);
+    color: rgba(15, 23, 42, 0.92);
+}
+
+.address-suggestions {
+    background: color-mix(in srgb, var(--theme-panel) 88%, rgba(6, 7, 11, 0.75));
+    border-color: var(--theme-line);
+    box-shadow: var(--theme-shadow);
+}
+
+.address-suggestion {
+    color: var(--theme-text);
+}
+
+.address-suggestion:hover,
+.address-suggestion:focus {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .product-image,
@@ -719,8 +854,8 @@ textarea:focus,
 
 .hero {
     background:
-    radial-gradient(circle at 15% 12%, rgba(245, 158, 11, 0.15), transparent 28%),
-    radial-gradient(circle at 85% 8%, rgba(217, 119, 6, 0.1), transparent 24%),
+    radial-gradient(circle at 15% 12%, color-mix(in srgb, var(--theme-brand) 22%, transparent), transparent 28%),
+    radial-gradient(circle at 85% 8%, color-mix(in srgb, var(--theme-brand-3) 16%, transparent), transparent 24%),
     linear-gradient(145deg, rgba(20, 22, 28, 0.8), rgba(15, 17, 23, 0.9));
 }
 
@@ -746,7 +881,7 @@ textarea:focus,
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(120deg, transparent 55%, rgba(245, 158, 11, 0.15) 100%);
+    background: linear-gradient(120deg, transparent 55%, color-mix(in srgb, var(--theme-brand) 18%, transparent) 100%);
     pointer-events: none;
 }
 
@@ -952,169 +1087,157 @@ main > *:nth-child(4) {
     }
 }
 
+/* Admin pages intentionally use the same dark theme as customer pages. */
+
 /* ═══════════════════════════════════════════════════════════════
-   ADMIN PAGE OVERRIDES — neutralise dark theme for admin pages
+   ADMIN PAGES — dark/grey/red readability overrides
+   Fixes remaining hard-coded light surfaces from admin-homepage.css
    ═══════════════════════════════════════════════════════════════ */
 
 body.admin-page {
-    background: #f0f2f5 !important;
-    color: #1e293b !important;
-}
-
-body.admin-page .admin-sidebar {
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-
-body.admin-page .admin-sidebar .nav-item:hover {
-    background: rgba(99, 102, 241, 0.15) !important;
-}
-
-body.admin-page .admin-sidebar .nav-item.active {
-    background: rgba(99, 102, 241, 0.2) !important;
-    border-left-color: #818cf8 !important;
+    color: var(--theme-text);
 }
 
 body.admin-page .topbar {
-    background: #ffffff !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    background: rgba(9, 10, 15, 0.7);
+    border-bottom: 1px solid var(--theme-glass-border);
 }
 
-body.admin-page .topbar .topbar-title {
-    color: #0f172a !important;
-    text-shadow: none !important;
+body.admin-page .topbar-title {
+    color: rgba(255, 255, 255, 0.94);
 }
 
-body.admin-page .panel,
-body.admin-page .stat-card,
-body.admin-page .admin-catalog-card,
-body.admin-page .order-header-item,
-body.admin-page .comment-card,
-body.admin-page .receipt-panel,
-body.admin-page .summary-item {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-    color: #1e293b !important;
-}
-
-body.admin-page .action-card {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
-    color: #1e293b !important;
-}
-
-body.admin-page .action-card::after {
-    display: none !important;
-}
-
-body.admin-page .action-card:hover {
-    background: #ffffff !important;
-    border-color: #6366f1 !important;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.12) !important;
-    color: #4338ca !important;
-}
-
-body.admin-page input,
-body.admin-page select,
-body.admin-page textarea,
 body.admin-page .search-input,
 body.admin-page .field-input,
 body.admin-page .comment-input,
 body.admin-page .message-reply-input {
-    background: #ffffff !important;
-    color: #1e293b !important;
-    border-color: #cbd5e1 !important;
+    background: rgba(15, 17, 23, 0.65);
+    border-color: var(--theme-line);
+    color: var(--theme-text);
 }
 
-body.admin-page input:focus,
-body.admin-page select:focus,
-body.admin-page textarea:focus,
+body.admin-page .search-input::placeholder,
+body.admin-page .field-input::placeholder,
+body.admin-page .comment-input::placeholder,
+body.admin-page .message-reply-input::placeholder {
+    color: color-mix(in srgb, var(--theme-muted) 70%, transparent);
+}
+
 body.admin-page .search-input:focus,
 body.admin-page .field-input:focus,
 body.admin-page .comment-input:focus,
 body.admin-page .message-reply-input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand) 22%, transparent);
 }
 
-body.admin-page .data-table thead th {
-    background: #f8fafc !important;
-    color: #64748b !important;
-    border-color: #e2e8f0 !important;
+body.admin-page .search-icon {
+    stroke: color-mix(in srgb, var(--theme-muted) 80%, transparent);
 }
 
-body.admin-page .data-table tbody td {
-    color: #334155 !important;
-    border-color: #f1f5f9 !important;
+body.admin-page .icon-btn,
+body.admin-page .admin-menu {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--theme-line);
 }
 
-body.admin-page .data-table tbody tr:hover td {
-    background: #f8fafc !important;
+body.admin-page .icon-btn:hover,
+body.admin-page .admin-menu:hover {
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
+    background: rgba(255, 255, 255, 0.07);
 }
 
-body.admin-page tr:nth-child(even) {
-    background: rgba(248, 250, 252, 0.5) !important;
+body.admin-page .icon-svg {
+    stroke: rgba(228, 234, 242, 0.82);
 }
 
-body.admin-page .table-btn {
-    background: #ffffff !important;
-    color: #4338ca !important;
-    border-color: #c7d2fe !important;
+body.admin-page .admin-name {
+    color: rgba(255, 255, 255, 0.92);
 }
 
-body.admin-page .table-btn:hover {
-    background: #eef2ff !important;
-    border-color: #6366f1 !important;
+body.admin-page .panel,
+body.admin-page .admin-catalog-card,
+body.admin-page .message-details-box,
+body.admin-page .receipt-panel,
+body.admin-page .comment-card,
+body.admin-page .summary-item,
+body.admin-page .stat-card {
+    background: var(--theme-panel);
+    border-color: var(--theme-line);
+    box-shadow: var(--theme-shadow);
+    color: var(--theme-text);
 }
 
-body.admin-page .table-btn.is-danger {
-    color: #dc2626 !important;
-    border-color: #fca5a5 !important;
+body.admin-page .action-card {
+    border-color: var(--theme-line);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.9);
 }
 
-body.admin-page .table-btn.is-danger:hover {
-    background: #fef2f2 !important;
-    border-color: #dc2626 !important;
+body.admin-page .action-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: var(--theme-shadow);
 }
 
-body.admin-page .stat-icon {
-    background: #eef2ff !important;
+body.admin-page .order-stepper .dot {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--theme-line);
 }
 
-body.admin-page .stat-icon svg {
-    stroke: #6366f1 !important;
+body.admin-page .order-stepper .step.is-active .dot {
+    box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.16);
 }
 
-body.admin-page .stat-label {
-    color: #64748b !important;
+body.admin-page .upload-card-box,
+body.admin-page .reference-tile {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--theme-line);
 }
 
-body.admin-page .stat-value {
-    color: #0f172a !important;
+body.admin-page .message-details-row td {
+    background: rgba(255, 255, 255, 0.03);
 }
 
-body.admin-page .stat-delta.is-up {
-    color: #16a34a !important;
+body.admin-page .order-contents-notice-links a {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--theme-line);
+    color: rgba(255, 255, 255, 0.9);
 }
 
-body.admin-page .stat-delta.is-down {
-    color: #dc2626 !important;
+body.admin-page .order-contents-notice-links a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--theme-brand);
+    color: rgba(255, 255, 255, 0.95);
 }
 
-body.admin-page .panel-title {
-    color: #0f172a !important;
+body.admin-page .admin-catalog-empty {
+    background: rgba(15, 17, 23, 0.55);
+    border-color: color-mix(in srgb, var(--theme-line) 70%, transparent);
+    color: var(--theme-muted);
+}
+
+body.admin-page .admin-catalog-media {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--theme-line);
+}
+
+body.admin-page .admin-catalog-thumb {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.admin-page .admin-catalog-thumb--empty {
+    color: var(--theme-muted);
 }
 
 body.admin-page .panel-head {
-    border-color: #e2e8f0 !important;
+    border-color: var(--theme-line);
+}
+
+body.admin-page .panel-title,
+body.admin-page .admin-catalog-name,
+body.admin-page .receipt-title,
+body.admin-page .comment-author {
+    color: rgba(255, 255, 255, 0.94);
 }
 
 body.admin-page .field-label,
@@ -1124,175 +1247,66 @@ body.admin-page .upload-card-title,
 body.admin-page .reference-tile-label,
 body.admin-page .pricing-title,
 body.admin-page .sidebar-section-title,
-body.admin-page .summary-k {
-    color: #64748b !important;
+body.admin-page .summary-k,
+body.admin-page .stat-label {
+    color: color-mix(in srgb, var(--theme-muted) 85%, transparent);
 }
 
 body.admin-page .order-header-v,
 body.admin-page .order-meta-v,
 body.admin-page .summary-v,
-body.admin-page .admin-catalog-name,
-body.admin-page .receipt-title,
-body.admin-page .comment-author {
-    color: #0f172a !important;
-}
-
-body.admin-page .mini-note,
-body.admin-page .comment-meta,
-body.admin-page .admin-catalog-meta,
-body.admin-page .receipt-meta {
-    color: #94a3b8 !important;
-}
-
-body.admin-page .icon-btn {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
-}
-
-body.admin-page .icon-btn:hover {
-    border-color: #6366f1 !important;
-    background: #eef2ff !important;
-}
-
-body.admin-page .icon-svg {
-    stroke: #475569 !important;
-}
-
-body.admin-page .admin-menu {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
-}
-
-body.admin-page .admin-avatar {
-    background: #eef2ff !important;
-    color: #4338ca !important;
-}
-
-body.admin-page .admin-name {
-    color: #1e293b !important;
-}
-
-body.admin-page .search-icon {
-    stroke: #94a3b8 !important;
-}
-
-body.admin-page .order-item-head,
-body.admin-page .reference-tile-label,
-body.admin-page .upload-card,
-body.admin-page .receipt-preview,
-body.admin-page .receipt-wait,
-body.admin-page .image-preview {
-    background: #f8fafc !important;
-    border-color: #e2e8f0 !important;
-}
-
-body.admin-page .order-item-block,
-body.admin-page .message-details-box {
-    border-color: #e2e8f0 !important;
-    background: #ffffff !important;
-}
-
-body.admin-page .upload-card-box {
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-}
-
-body.admin-page .order-stepper .dot {
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-}
-
-body.admin-page .order-stepper .step.is-done .dot {
-    background: #6366f1 !important;
-    border-color: #6366f1 !important;
-}
-
-body.admin-page .order-stepper .step.is-done::before {
-    background: #6366f1 !important;
-}
-
-body.admin-page .order-stepper .step.is-active .dot {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
-}
-
-body.admin-page .order-stepper .label {
-    color: #64748b !important;
-}
-
-body.admin-page .badge {
-    background: #ef4444 !important;
-}
-
+body.admin-page .stat-value,
 body.admin-page .checkline {
-    color: #1e293b !important;
+    color: rgba(228, 234, 242, 0.9);
 }
 
-body.admin-page .order-contents-notice {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
+body.admin-page .data-table thead th {
+    background: rgba(255, 255, 255, 0.03);
+    color: color-mix(in srgb, var(--theme-muted) 85%, transparent);
+    border-color: var(--theme-line);
 }
 
-body.admin-page .admin-login-shell {
-    background: #f0f2f5 !important;
+body.admin-page .data-table tbody td {
+    color: rgba(228, 234, 242, 0.88);
+    border-color: var(--theme-line);
 }
 
-body.admin-page .admin-login-card {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
-    color: #1e293b !important;
+body.admin-page .data-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.04);
 }
 
-body.admin-page .admin-login-card input {
-    background: #f8fafc !important;
-    border-color: #cbd5e1 !important;
-    color: #1e293b !important;
+body.admin-page .table-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--theme-line);
+    color: rgba(228, 234, 242, 0.9);
 }
 
-body.admin-page .admin-login-card input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+body.admin-page .table-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: color-mix(in srgb, var(--theme-brand-2) 55%, rgba(255, 255, 255, 0.12));
 }
 
-body.admin-page .admin-login-btn {
-    background: #6366f1 !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.3) !important;
+body.admin-page .table-btn.is-danger {
+    border-color: color-mix(in srgb, var(--theme-danger) 70%, var(--theme-line));
+    color: var(--theme-danger);
 }
 
-body.admin-page .admin-login-btn:hover {
-    background: #4f46e5 !important;
-    box-shadow: 0 4px 16px rgba(99,102,241,0.35) !important;
-    transform: translateY(-1px);
+body.admin-page .table-btn.is-danger:hover {
+    border-color: var(--theme-danger);
+    background: color-mix(in srgb, var(--theme-danger) 12%, rgba(255, 255, 255, 0.06));
 }
 
-body.admin-page .admin-login-title {
-    color: #0f172a !important;
-}
-
-body.admin-page .admin-login-sub {
-    color: #64748b !important;
-}
-
-body.admin-page .admin-login-note {
-    color: #64748b !important;
-}
-
-body.admin-page .admin-login-note a {
-    color: #6366f1 !important;
-}
-
-body.admin-page .av-dialog {
-    background: #ffffff !important;
-    border-color: #e2e8f0 !important;
-}
-
-body.admin-page .av-dialog-title {
-    color: #0f172a !important;
-}
-
-body.admin-page .av-dialog-desc {
-    color: #475569 !important;
+body.admin-page .status-pill--pending,
+body.admin-page .status-pill--payment,
+body.admin-page .status-pill--final-payment,
+body.admin-page .status-pill--proofing,
+body.admin-page .status-pill--progress,
+body.admin-page .status-pill--ready,
+body.admin-page .status-pill--transit,
+body.admin-page .status-pill--completed,
+body.admin-page .status-pill--revision,
+body.admin-page .status-pill--rejected,
+body.admin-page .status-pill--cancelled {
+    background: color-mix(in srgb, var(--status-fg) 14%, rgba(15, 17, 23, 0.6));
+    border-color: color-mix(in srgb, var(--status-fg) 32%, var(--theme-line));
 }

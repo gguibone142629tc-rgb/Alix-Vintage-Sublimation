@@ -211,7 +211,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 12px;
-    background: #fafafa;
+    background: rgba(15, 17, 23, 0.6);
     font-size: 11px;
     color: var(--muted);
 }
@@ -226,11 +226,11 @@ main {
 }
 
 .upload-area {
-    border: 2px dashed #bdbdbd;
+    border: 2px dashed color-mix(in srgb, var(--line) 65%, rgba(255, 255, 255, 0.25));
     border-radius: 10px;
     padding: 36px 24px;
     text-align: center;
-    background: #fafafa;
+    background: rgba(15, 17, 23, 0.6);
 }
 
 .upload-area .selected-files {
@@ -247,7 +247,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 16px;
-    background: #ffffff;
+    background: rgba(15, 17, 23, 0.6);
     text-align: center;
 }
 
@@ -301,7 +301,7 @@ main {
     padding: 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: #fafafa;
+    background: rgba(15, 17, 23, 0.6);
 }
 
 .selected-file-thumb {
@@ -309,7 +309,7 @@ main {
     height: 38px;
     border-radius: 8px;
     border: 1px solid var(--line);
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -364,9 +364,9 @@ main {
 }
 
 .btn.secondary {
-    background: #f8f8f8;
-    border-color: #6a6a6a;
-    color: #333;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--line);
+    color: var(--ink);
 }
 
 .form-grid {
@@ -396,7 +396,7 @@ main {
     border-radius: 6px;
     padding: 10px 12px;
     font-size: 12px;
-    background: #ffffff;
+    background: rgba(15, 17, 23, 0.6);
     color: var(--ink);
 }
 
@@ -420,10 +420,11 @@ main {
 }
 
 .roster-table th {
-    background: #f4f4f4;
+    background: rgba(255, 255, 255, 0.04);
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 10px;
+    color: var(--muted);
 }
 
 .roster-table input,
@@ -516,7 +517,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 10px 12px;
-    background: #fafafa;
+    background: rgba(15, 17, 23, 0.6);
 }
 
 .cta-box {
@@ -695,7 +696,7 @@ footer span {
 .site-footer { background: #06070b;
     color: #f1f1f1;
     padding: 28px 20px 18px;
-    border-top: 4px solid #e63946;
+    border-top: 0;
     margin-top: 24px;
 }
 

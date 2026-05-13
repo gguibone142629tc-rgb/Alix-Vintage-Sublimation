@@ -12,6 +12,7 @@ final class OrderRoutes
     {
         $controller = OrderControllerFactory::create($pdo);
         $router->get('/api/orders', [$controller, 'listMine']);
+        $router->patch('/api/orders/cancel', [$controller, 'cancelMine']);
         $router->post('/api/orders/receipt', [$controller, 'uploadReceipt']);
         $router->patch('/api/orders/proof/respond', [$controller, 'respondProof']);
         $router->post('/api/orders/comments', [$controller, 'addComment']);

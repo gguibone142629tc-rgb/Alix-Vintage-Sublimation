@@ -89,7 +89,6 @@
                         <thead>
                             <tr>
                                 <th>ORDER ID</th>
-                                <th>DATE</th>
                                 <th>ITEMS</th>
                                 <th>STATUS</th>
                                 <th>AMOUNT</th>
@@ -98,7 +97,7 @@
                         </thead>
                         <tbody id="ordersTableBody">
                             <tr>
-                                <td colspan="6" class="empty-state">
+                                <td colspan="5" class="empty-state">
                                     <div class="empty-state-icon">&#128237;</div>
                                     <h3>No Orders</h3>
                                     <p>No in-process orders found.</p>
@@ -116,7 +115,10 @@
                         <div class="order-id" id="orderTitle">ORDER #</div>
                         <div class="order-sub" id="orderPlacedAt">Placed on -</div>
                     </div>
-                    <div class="order-pill" id="orderPill">-</div>
+                    <div class="order-header-right">
+                        <div class="order-pill" id="orderPill">-</div>
+                        <button class="btn btn-danger is-hidden" id="cancelOrderBtn" type="button">CANCEL ORDER</button>
+                    </div>
                 </div>
 
                 <div class="stepper" aria-label="Order progress">

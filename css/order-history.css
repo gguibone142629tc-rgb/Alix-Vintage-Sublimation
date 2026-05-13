@@ -144,8 +144,8 @@ nav a.active {
 
         .sidebar-item.active {
             background: var(--bg);
-            color: var(--accent);
-            border-left-color: var(--accent);
+            color: var(--ink-strong);
+            border-left-color: var(--theme-brand);
             font-weight: 600;
         }
 
@@ -277,14 +277,14 @@ nav a.active {
         }
 
         .btn.btn-danger {
-            background: #d32f2f;
-            border-color: #d32f2f;
+            background: var(--theme-danger);
+            border-color: color-mix(in srgb, var(--theme-danger) 55%, rgba(255, 255, 255, 0.12));
             color: #ffffff;
         }
 
         .btn.btn-danger:hover {
-            background: #b71c1c;
-            border-color: #b71c1c;
+            background: color-mix(in srgb, var(--theme-danger) 78%, var(--theme-brand-3));
+            border-color: color-mix(in srgb, var(--theme-danger) 65%, var(--theme-brand-3));
         }
 
         /* Filter Tabs */
@@ -293,6 +293,11 @@ nav a.active {
             gap: 12px;
             margin-top: 16px;
             flex-wrap: wrap;
+        }
+
+        .workflow-select {
+            display: none;
+            width: 100%;
         }
 
         .advanced-filters {
@@ -609,6 +614,20 @@ nav a.active {
             }
         }
 
+        @media (max-width: 640px) {
+            .filter-tabs {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-tabs .tab-btn {
+                display: none;
+            }
+
+            .filter-tabs .workflow-select {
+                display: block;
+            }
+        }
+
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -626,7 +645,7 @@ nav a.active {
 .site-footer { background: #06070b;
     color: #f1f1f1;
     padding: 28px 20px 18px;
-    border-top: 4px solid #e63946;
+    border-top: 0;
     margin-top: 24px;
 }
 

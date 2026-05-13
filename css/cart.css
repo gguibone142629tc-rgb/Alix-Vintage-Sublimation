@@ -49,9 +49,9 @@ body {
 
 .cart-edit {
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(15, 17, 23, 0.55);
     font: inherit;
-    color: var(--muted);
+    color: var(--theme-text);
     letter-spacing: 0.8px;
     text-transform: uppercase;
     font-weight: 700;
@@ -92,7 +92,7 @@ body {
     font-size: 14px;
     letter-spacing: 0.8px;
     text-transform: uppercase;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
 }
 
 .cart-payment-options {
@@ -107,8 +107,19 @@ body {
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(15, 17, 23, 0.55);
     cursor: pointer;
+}
+
+/* Opposite hover: unselected looks selected, selected looks unselected */
+.cart-radio:not(:has(input:checked)):hover {
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+    background: color-mix(in srgb, var(--primary) 12%, rgba(15, 17, 23, 0.6));
+}
+
+.cart-radio:has(input:checked):hover {
+    border-color: var(--border);
+    background: rgba(15, 17, 23, 0.55);
 }
 
 .cart-radio-body {
@@ -120,12 +131,12 @@ body {
 
 .cart-radio-title {
     font-weight: 900;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
 }
 
 .cart-radio-sub {
     font-size: 12px;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
 }
 
 .cart-radio-icon {
@@ -135,7 +146,7 @@ body {
     display: grid;
     place-items: center;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(15, 17, 23, 0.6);
     font-weight: 900;
     color: var(--primary);
 }
@@ -153,12 +164,12 @@ body {
 
 .cart-radio-label {
     font-weight: 800;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
 }
 
 .cart-radio:has(input:checked) {
     border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
-    background: color-mix(in srgb, var(--primary) 9%, rgba(255, 255, 255, 0.65));
+    background: color-mix(in srgb, var(--primary) 12%, rgba(15, 17, 23, 0.6));
 }
 
 .cart-payment-note {
@@ -180,7 +191,7 @@ body {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.4px;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
     margin-bottom: 6px;
     text-transform: uppercase;
 }
@@ -191,8 +202,8 @@ body {
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.75);
-    color: var(--theme-ink, #111);
+    background: rgba(15, 17, 23, 0.6);
+    color: var(--theme-text);
     font: inherit;
 }
 
@@ -201,6 +212,7 @@ body {
     border-color: rgba(0, 0, 0, 0.22);
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
     background: rgba(14, 16, 24, 0.8);
+    color: var(--theme-text);
 }
 
 @media (max-width: 680px) {
@@ -228,7 +240,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(15, 17, 23, 0.55);
 }
 
 .cart-item-thumb {
@@ -243,7 +255,7 @@ body {
     display: grid;
     place-items: center;
     font-size: 11px;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 65%, var(--theme-muted));
     text-transform: uppercase;
     letter-spacing: 0.8px;
 }
@@ -256,7 +268,7 @@ body {
 
 .cart-item-title {
     font-weight: 800;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -287,7 +299,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 9px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(15, 17, 23, 0.6);
 }
 
 .qty-control.is-disabled {
@@ -299,7 +311,7 @@ body {
     background: transparent;
     cursor: pointer;
     font-weight: 900;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
     font-size: 14px;
     line-height: 1;
 }
@@ -321,13 +333,14 @@ body {
     font: inherit;
     font-weight: 800;
     background: transparent;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
     padding: 6px 6px;
 }
 
 .qty-input:focus {
     outline: none;
     background: rgba(14, 16, 24, 0.8);
+    color: var(--theme-text);
 }
 
 .qty-sub {
@@ -341,7 +354,7 @@ body {
 
 .cart-item-total {
     font-weight: 900;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
     white-space: nowrap;
 }
 
@@ -353,8 +366,8 @@ body {
 
 .cart-remove {
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.55);
-    color: var(--muted);
+    background: rgba(15, 17, 23, 0.55);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
     cursor: pointer;
     font-weight: 700;
     text-transform: uppercase;
@@ -435,16 +448,16 @@ body {
 }
 
 .cart-totals-label {
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
 }
 
 .cart-totals-row--strong .cart-totals-label {
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
 }
 
 .cart-totals-value {
     font-weight: 800;
-    color: var(--theme-ink, #111);
+    color: var(--theme-text);
 }
 
 .cart-actions {
@@ -512,7 +525,7 @@ body {
 .cart-table {
     width: 100%;
     border-collapse: collapse;
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(15, 17, 23, 0.55);
     border-radius: 10px;
     overflow: hidden;
 }
@@ -527,9 +540,9 @@ body {
 
 .cart-table th {
     font-size: 13px;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
     font-weight: 600;
-    background: rgba(36, 25, 20, 0.06);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .cell-title {
@@ -547,7 +560,7 @@ body {
 }
 
 .muted {
-    color: var(--muted);
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
     font-size: 12px;
 }
 
@@ -584,6 +597,14 @@ body {
     border: 1px solid color-mix(in srgb, var(--primary) 65%, rgba(0, 0, 0, 0.18));
 }
 
+.cart-actions .btn-primary:hover {
+    background: transparent;
+    color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: none;
+    filter: none;
+}
+
 .btn-secondary {
     background: rgba(199, 155, 109, 0.18);
     color: var(--primary);
@@ -594,6 +615,14 @@ body {
     background: rgba(179, 53, 45, 0.12);
     color: var(--danger);
     border: 1px solid color-mix(in srgb, var(--danger) 18%, var(--border));
+}
+
+.cart-actions .btn-danger:hover {
+    background: var(--danger);
+    color: #ffffff;
+    border-color: var(--danger);
+    box-shadow: none;
+    filter: none;
 }
 
 .btn-link {

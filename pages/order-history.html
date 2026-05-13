@@ -107,6 +107,11 @@
 
                 <!-- Filter Tabs -->
                 <div class="filter-tabs">
+                    <select id="workflowSelect" class="workflow-select af-input" aria-label="Status filter">
+                        <option value="all">All</option>
+                        <option value="completed" selected>Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                     <button class="tab-btn" data-workflow="all">All</button>
                     <button class="tab-btn active" data-workflow="completed">Completed</button>
                     <button class="tab-btn" data-workflow="cancelled">Cancelled</button>
@@ -418,15 +423,30 @@
         };
 
         const setupEventListeners = () => {
+            const workflowSelect = document.getElementById('workflowSelect');
+
             document.querySelectorAll('.tab-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentStatusFilter = btn.dataset.workflow || 'all';
+                    if (workflowSelect) workflowSelect.value = currentStatusFilter;
                     renderRows();
                     updateStats();
                 });
             });
+
+            if (workflowSelect) {
+                workflowSelect.addEventListener('change', (e) => {
+                    currentStatusFilter = String(e.target.value || 'all');
+                    document.querySelectorAll('.tab-btn').forEach((b) => {
+                        const v = b.dataset.workflow || 'all';
+                        b.classList.toggle('active', v === currentStatusFilter);
+                    });
+                    renderRows();
+                    updateStats();
+                });
+            }
 
             document.getElementById('searchInput')?.addEventListener('input', (e) => {
                 currentSearchTerm = String(e.target.value || '').trim();

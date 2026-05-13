@@ -174,8 +174,8 @@ main {
 
 .sidebar-item.active {
     background: var(--bg);
-    color: var(--accent);
-    border-left-color: var(--accent);
+    color: var(--ink-strong);
+    border-left-color: var(--theme-brand);
     font-weight: 600;
 }
 
@@ -309,6 +309,17 @@ main {
     gap: 6px;
 }
 
+.order-id-strong {
+    font-weight: 900;
+    letter-spacing: 0.6px;
+}
+
+.order-date-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
 .order-item-line {
     font-size: 13px;
     color: var(--ink);
@@ -424,6 +435,12 @@ main {
     gap: 18px;
 }
 
+.order-header-right {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+
 .order-id {
     font-weight: 800;
     color: var(--ink-strong);
@@ -436,14 +453,9 @@ main {
 }
 
 .order-pill {
-    border: 1px solid var(--line);
-    --status-fg: var(--ink-strong);
-    background: #f8f8f8;
-    --status-bg: color-mix(in srgb, var(--status-fg) 14%, #ffffff);
-    --status-border: color-mix(in srgb, var(--status-fg) 34%, var(--line));
-    background: var(--status-bg, #f8f8f8);
-    border-color: var(--status-border, var(--line));
-    color: var(--status-fg);
+    border: 2px solid var(--theme-danger);
+    background: var(--theme-panel);
+    color: var(--status-fg, var(--theme-text));
     padding: 8px 10px;
     border-radius: 999px;
     font-size: 12px;
@@ -514,23 +526,24 @@ main {
 
 .status-card {
     margin-top: 16px;
-    border: 1px solid var(--line);
-    background: #fffdf8;
+    border: 1px solid var(--theme-line);
+    background: var(--theme-panel);
     border-radius: 10px;
     padding: 16px;
 }
 
 .status-card-title {
     font-weight: 800;
-    color: var(--ink-strong);
+    color: var(--theme-text);
     text-transform: uppercase;
     letter-spacing: 0.8px;
 }
 
 .status-card-body {
     font-size: 13px;
-    color: var(--muted);
+    color: var(--theme-muted);
     margin-top: 6px;
+    line-height: 1.5;
 }
 
 .summary-grid {
@@ -863,6 +876,16 @@ main {
     filter: brightness(0.95);
 }
 
+.btn-danger {
+    border-color: var(--theme-danger);
+    color: var(--theme-danger);
+}
+
+.btn-danger:hover {
+    background: var(--theme-danger);
+    color: #ffffff;
+}
+
 .shipping-details {
     margin-top: 14px;
     display: grid;
@@ -984,5 +1007,108 @@ main {
     .actions {
         flex-direction: column;
         align-items: stretch;
+    }
+}
+
+@media (max-width: 640px) {
+    .filter-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .table-container {
+        border: 0;
+        background: transparent;
+        overflow: visible;
+    }
+
+    .orders-table {
+        min-width: 0;
+    }
+
+    .orders-table thead {
+        display: none;
+    }
+
+    .orders-table,
+    .orders-table tbody,
+    .orders-table tr,
+    .orders-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .orders-table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .orders-table tbody tr.order-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "id action"
+            "items items"
+            "status amount";
+        gap: 10px 12px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(14, 16, 24, 0.8);
+    }
+
+    .orders-table tbody tr.order-row td {
+        padding: 0;
+        border: 0;
+    }
+
+    .orders-table tbody tr.order-row td.col-id {
+        grid-area: id;
+        min-width: 0;
+    }
+
+    .orders-table tbody tr.order-row td.col-action {
+        grid-area: action;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+    }
+
+    .orders-table tbody tr.order-row td.col-items {
+        grid-area: items;
+    }
+
+    .orders-table tbody tr.order-row td.col-status {
+        grid-area: status;
+    }
+
+    .orders-table tbody tr.order-row td.col-amount {
+        grid-area: amount;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        font-size: 16px;
+    }
+
+    .orders-table tbody tr.orders-empty-row {
+        display: block;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(14, 16, 24, 0.8);
+    }
+
+    .orders-table tbody tr.orders-empty-row td.empty-state {
+        border: 0;
+        padding: 28px 14px;
     }
 }

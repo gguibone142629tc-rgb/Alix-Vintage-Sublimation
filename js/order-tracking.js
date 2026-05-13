@@ -6,6 +6,7 @@
     const orderTitleEl = qs("#orderTitle");
     const orderPlacedAtEl = qs("#orderPlacedAt");
     const orderPillEl = qs("#orderPill");
+    const cancelOrderBtnEl = qs("#cancelOrderBtn");
 
     const statusTitleEl = qs("#statusTitle");
     const statusBodyEl = qs("#statusBody");
@@ -1125,8 +1126,8 @@
 
         if (filtered.length === 0) {
             ordersTableBodyEl.innerHTML = `
-                <tr>
-                    <td colspan="6" class="empty-state">
+                <tr class="orders-empty-row">
+                    <td colspan="5" class="empty-state">
                         <div class="empty-state-icon">&#128237;</div>
                         <h3>No Orders</h3>
                         <p>No in-process orders found.</p>
@@ -1146,13 +1147,15 @@
                     .join("");
                 const amount = computeTotals(order).total;
                 return `
-                    <tr>
-                        <td><strong>${escapeHtml(order.id || "-")}</strong></td>
-                        <td>${escapeHtml(formatDate(order.date))}</td>
-                        <td><div class="order-items-wrap">${itemsHtml}</div></td>
-                        <td><span class="status-badge ${escapeHtml(tone)}">${escapeHtml(wf)}</span></td>
-                        <td><strong>${escapeHtml(formatMoney(amount))}</strong></td>
-                        <td>
+                    <tr class="order-row">
+                        <td class="col-id">
+                            <div class="order-id-strong">${escapeHtml(order.id || "-")}</div>
+                            <div class="order-date-sub">${escapeHtml(formatDate(order.date))}</div>
+                        </td>
+                        <td class="col-items"><div class="order-items-wrap">${itemsHtml}</div></td>
+                        <td class="col-status"><span class="status-badge ${escapeHtml(tone)}">${escapeHtml(wf)}</span></td>
+                        <td class="col-amount"><strong>${escapeHtml(formatMoney(amount))}</strong></td>
+                        <td class="col-action">
                             <button class="action-btn" type="button" data-view-order="${escapeHtml(order.rawId ?? "")}">VIEW</button>
                         </td>
                     </tr>
@@ -1230,6 +1233,11 @@
         if (orderPillEl) {
             orderPillEl.textContent = workflowDisplay;
             applyToneClass(orderPillEl, workflowDisplay);
+        }
+
+        if (cancelOrderBtnEl) {
+            const canCancel = String(order?.status || "").toLowerCase() === "pending" && workflowDisplay === "Pending Review";
+            cancelOrderBtnEl.classList.toggle("is-hidden", !canCancel);
         }
 
         applyToneClass(document.querySelector(".stepper"), workflowDisplay);
@@ -1542,8 +1550,64 @@
         renderStagePanels(order);
     });
 
+    const wireCancelOrderButton = () => {
+        if (!cancelOrderBtnEl) return;
+
+        cancelOrderBtnEl.addEventListener("click", async () => {
+            const order = getCurrentOrder();
+            if (!order || !(order.rawId > 0)) {
+                uiAlert("No order selected.", { title: "Order", tone: "info" });
+                return;
+            }
+
+            const statusLower = String(order.status || "").toLowerCase();
+            const workflowDisplay = dbStatusToWorkflow(order.status);
+            const canCancel = statusLower === "pending" && workflowDisplay === "Pending Review";
+            if (!canCancel) {
+                uiAlert("Only Pending Review orders can be cancelled.", { title: "Order", tone: "info" });
+                return;
+            }
+
+            let confirmed = false;
+            if (window.AVDialog?.confirm) {
+                confirmed = await window.AVDialog.confirm("Cancel this order?", {
+                    title: "Cancel Order",
+                    tone: "warning",
+                    okText: "Yes, cancel",
+                    cancelText: "Keep order",
+                    destructive: true,
+                });
+            } else {
+                confirmed = window.confirm("Cancel this order?");
+            }
+
+            if (!confirmed) return;
+
+            const prevText = cancelOrderBtnEl.textContent;
+            cancelOrderBtnEl.disabled = true;
+            cancelOrderBtnEl.textContent = "CANCELLING...";
+
+            try {
+                if (!window.AlixCart?.cancelOrder) {
+                    throw new Error("Cancel API not available");
+                }
+                await window.AlixCart.cancelOrder(order.rawId);
+                uiAlert("Order cancelled.", { title: "Order", tone: "success" });
+                await loadOrders();
+                render();
+                renderOrdersList();
+            } catch (e) {
+                uiAlert(e?.message || "Failed to cancel order.", { title: "Order", tone: "danger" });
+            } finally {
+                cancelOrderBtnEl.disabled = false;
+                cancelOrderBtnEl.textContent = prevText;
+            }
+        });
+    };
+
     const start = async () => {
         wireOrdersListControls();
+        wireCancelOrderButton();
         await loadOrders();
         render();
     };

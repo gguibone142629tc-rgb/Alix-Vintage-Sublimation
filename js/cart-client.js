@@ -84,6 +84,9 @@
     const addOrderComment = (payload) =>
         requestJson("/api/orders/comments", { method: "POST", body: payload || {} });
 
+    const cancelOrder = (orderId) =>
+        requestJson("/api/orders/cancel", { method: "PATCH", body: { order_id: orderId } });
+
     window.AlixCart = {
         getCart,
         addItem,
@@ -95,5 +98,6 @@
         uploadOrderReceipt,
         respondOrderProof,
         addOrderComment,
+        cancelOrder,
     };
 })();

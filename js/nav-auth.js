@@ -276,11 +276,16 @@
                 padding: 0;
                 gap: 4px;
                 flex-direction: column;
-                border: 1px solid rgba(255, 255, 255, 0.24);
-                background: rgba(255, 255, 255, 0.1);
-                color: #ffffff;
+                border: 1px solid var(--theme-line, rgba(255, 255, 255, 0.24));
+                background: color-mix(in srgb, var(--theme-panel, rgba(15, 17, 23, 0.7)) 78%, rgba(6, 7, 11, 0.9));
+                color: var(--theme-text, #ffffff);
                 flex-shrink: 0;
                 cursor: pointer;
+            }
+
+            .nav-menu-toggle:hover {
+                border-color: color-mix(in srgb, var(--theme-brand-2, #ff6b6b) 55%, var(--theme-line, rgba(255, 255, 255, 0.24)));
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand, #e63946) 22%, transparent);
             }
             .nav-menu-toggle span {
                 display: block;
@@ -298,28 +303,28 @@
                 gap: 6px;
                 padding: 10px;
                 border-radius: 14px;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                background: rgba(39, 24, 17, 0.98);
-                box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+                border: 1px solid var(--theme-line, rgba(255, 255, 255, 0.2));
+                background: color-mix(in srgb, var(--theme-panel, rgba(16, 18, 26, 0.72)) 92%, rgba(6, 7, 11, 0.85));
+                box-shadow: var(--theme-shadow, 0 20px 50px rgba(0, 0, 0, 0.7));
                 z-index: 220;
             }
             .nav-menu-panel a {
                 display: block;
                 text-decoration: none;
-                color: #f2e7d8;
+                color: var(--theme-text, #e4eaf2);
                 font-size: 13px;
                 font-weight: 700;
                 letter-spacing: 0.5px;
                 text-transform: uppercase;
                 border-radius: 10px;
                 padding: 10px 12px;
-                border: 1px solid rgba(255, 255, 255, 0.14);
+                border: 1px solid var(--theme-line, rgba(255, 255, 255, 0.14));
                 background: rgba(255, 255, 255, 0.04);
             }
             .nav-menu-panel a:hover {
-                background: rgba(224, 192, 144, 0.2);
-                border-color: rgba(224, 192, 144, 0.4);
-                color: #fff7eb;
+                background: color-mix(in srgb, var(--theme-brand, #e63946) 18%, rgba(255, 255, 255, 0.04));
+                border-color: color-mix(in srgb, var(--theme-brand-2, #ff6b6b) 55%, var(--theme-line, rgba(255, 255, 255, 0.14)));
+                color: #ffffff;
             }
             .nav-menu-panel.is-hidden {
                 display: none !important;
@@ -707,13 +712,15 @@
         const entries = [
             { label: "Shop Now", href: "categories.html", className: "nav-mobile-shop-link" },
             { label: "Contact", href: "contact-us.html", className: "nav-mobile-contact-link" },
-            { label: "Track Order", href: isLoggedIn ? "order-history.html" : "login.html", className: "nav-mobile-orders-link" },
         ];
 
         if (isLoggedIn) {
+            entries.push({ label: "Orders", href: "order-tracking.html", className: "nav-mobile-orders-link" });
+            entries.push({ label: "Order History", href: "order-history.html", className: "nav-mobile-order-history-link" });
             entries.push({ label: "Account Settings", href: "account-settings.html", className: "nav-mobile-account-link" });
             entries.push({ label: "Log Out", href: "#", className: "nav-mobile-logout-link" });
         } else {
+            entries.push({ label: "Track Order", href: "login.html", className: "nav-mobile-orders-link" });
             entries.push({ label: "Log In", href: "login.html", className: "nav-mobile-login-link" });
         }
 
