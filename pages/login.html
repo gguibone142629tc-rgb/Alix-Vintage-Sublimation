@@ -283,8 +283,8 @@
 
                 try {
                     const result = await window.AlixAuth.postJson('/api/admin/login', { email, password });
-                    sessionStorage.setItem(ADMIN_TOKEN_KEY, String(result.token || ''));
-                    sessionStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user || null));
+                    localStorage.setItem(ADMIN_TOKEN_KEY, String(result.token || ''));
+                    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user || null));
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';

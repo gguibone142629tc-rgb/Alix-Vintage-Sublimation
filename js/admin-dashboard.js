@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -18,7 +18,7 @@
         if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
             return window.AlixAdminAuth.getToken();
         }
-        const token = sessionStorage.getItem("alix_admin_auth_token");
+        const token = localStorage.getItem("alix_admin_auth_token");
         return token && String(token).trim() ? String(token).trim() : null;
     };
 

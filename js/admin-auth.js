@@ -58,7 +58,7 @@
 
     const getToken = () => {
         try {
-            const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+            const token = localStorage.getItem(ADMIN_TOKEN_KEY);
             return token && String(token).trim() ? String(token).trim() : null;
         } catch {
             return null;
@@ -67,7 +67,7 @@
 
     const getUser = () => {
         try {
-            const raw = sessionStorage.getItem(ADMIN_USER_KEY);
+            const raw = localStorage.getItem(ADMIN_USER_KEY);
             if (!raw) return null;
             return JSON.parse(raw);
         } catch {
@@ -84,8 +84,8 @@
 
     const clearSession = () => {
         try {
-            sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-            sessionStorage.removeItem(ADMIN_USER_KEY);
+            localStorage.removeItem(ADMIN_TOKEN_KEY);
+            localStorage.removeItem(ADMIN_USER_KEY);
         } catch {
             // ignore
         }
@@ -94,10 +94,10 @@
     const setSession = (token, user) => {
         try {
             if (token) {
-                sessionStorage.setItem(ADMIN_TOKEN_KEY, String(token));
+                localStorage.setItem(ADMIN_TOKEN_KEY, String(token));
             }
             if (user) {
-                sessionStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
+                localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
             }
         } catch {
             // ignore

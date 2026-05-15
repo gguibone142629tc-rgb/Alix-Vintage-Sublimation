@@ -115,30 +115,8 @@
     }
 
     function setSession(token, user, options) {
-        const rememberOption = options && "remember" in options ? options.remember : undefined;
-
         let targetStorage = localStorage;
-        if (rememberOption === true) {
-            targetStorage = localStorage;
-        } else if (rememberOption === false) {
-            targetStorage = sessionStorage;
-        } else {
-            // No explicit preference: preserve the existing storage mode when possible
-            // (e.g. profile edits should not convert session-only to persistent).
-            const sessionToken = safeGet(sessionStorage, STORAGE_TOKEN_KEY);
-            const localToken = safeGet(localStorage, STORAGE_TOKEN_KEY);
-
-            if (sessionToken && token && sessionToken === token) {
-                targetStorage = sessionStorage;
-            } else if (localToken && token && localToken === token) {
-                targetStorage = localStorage;
-            } else {
-                // Backward-compatible default: persist.
-                targetStorage = localStorage;
-            }
-        }
-
-        const otherStorage = targetStorage === localStorage ? sessionStorage : localStorage;
+        const otherStorage = sessionStorage;
 
         if (token) {
             safeSet(targetStorage, STORAGE_TOKEN_KEY, token);

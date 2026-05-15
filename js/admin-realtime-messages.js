@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     "use strict";
 
     const STORAGE_LAST_SEEN_ID = "alix_admin_messages_last_seen_id";
@@ -19,7 +19,7 @@
         if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
             return window.AlixAdminAuth.getToken();
         }
-        const token = sessionStorage.getItem("alix_admin_auth_token");
+        const token = localStorage.getItem("alix_admin_auth_token");
         return token && String(token).trim() ? String(token).trim() : null;
     };
 
