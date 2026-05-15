@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Orders;
 
 use App\Domain\Orders\OrderRepository;
+use App\Infrastructure\Storage\AppStorage;
 
 final class SendOrderProof
 {
@@ -41,13 +42,28 @@ final class SendOrderProof
             throw new \InvalidArgumentException('Mockup image is too large (max 20MB)');
         }
 
+        $name = 'proof-' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $contentType = match ($ext) {
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            default => 'application/octet-stream',
+        };
+
+        $storageUrl = AppStorage::uploadPublic('uploads/proofs/' . $name, $binary, $contentType, false);
+        if (is_string($storageUrl) && trim($storageUrl) !== '') {
+            return [
+                'path' => $storageUrl,
+                'mime' => $mime,
+                'bytes' => strlen($binary),
+            ];
+        }
+
         $root = dirname(__DIR__, 4);
         $dir = $root . '/uploads/proofs';
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-
-        $name = 'proof-' . bin2hex(random_bytes(8)) . '.' . $ext;
         $full = $dir . '/' . $name;
 
         if (file_put_contents($full, $binary) === false) {

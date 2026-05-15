@@ -11,6 +11,7 @@ use App\Presentation\Http\Auth;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
 use App\Shared\Config\Env;
+use App\Infrastructure\Storage\AppStorage;
 
 final class ProductController
 {
@@ -202,13 +203,24 @@ final class ProductController
             throw new \InvalidArgumentException('Image is too large (max 8MB)');
         }
 
+        $name = 'product-' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $contentType = match ($ext) {
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            default => 'application/octet-stream',
+        };
+
+        $storageUrl = AppStorage::uploadPublic('uploads/products/' . $name, $binary, $contentType, false);
+        if (is_string($storageUrl) && trim($storageUrl) !== '') {
+            return $storageUrl;
+        }
+
         $root = dirname(__DIR__, 4);
         $dir = $root . '/uploads/products';
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-
-        $name = 'product-' . bin2hex(random_bytes(8)) . '.' . $ext;
         $full = $dir . '/' . $name;
 
         if (file_put_contents($full, $binary) === false) {

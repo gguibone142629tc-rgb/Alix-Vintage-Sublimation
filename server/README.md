@@ -28,6 +28,33 @@ This keeps SOLID boundaries:
 4. Initialize DB schema (from this `server/` folder):
 	 - `php tools/init-db.php`
 
+### Supabase Storage (optional)
+
+This backend can upload images/files to Supabase Storage **server-side** (recommended) and store the resulting **public URLs** in the database.
+
+Used by:
+- Product images (`uploads/products/...`)
+- Order proofs/mockups (`uploads/proofs/...`)
+- Custom design uploads (`uploads/custom-design/...`)
+- Payment receipts (`uploads/receipts/...`)
+
+1. In Supabase Dashboard, create a Storage bucket (example: `alix-uploads`).
+2. Make the bucket **public** (simplest), or keep it private and implement signed URLs later.
+3. Set env vars in `server/.env`:
+
+```env
+SUPABASE_STORAGE_ENABLED=true
+SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+
+# IMPORTANT: service role key must stay on the server only.
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+
+SUPABASE_STORAGE_BUCKET=alix-uploads
+SUPABASE_STORAGE_PUBLIC=true
+```
+
+If `SUPABASE_STORAGE_ENABLED` is false/missing, the app falls back to saving files under the local `uploads/` folder.
+
 ### PostgreSQL quick start (local)
 
 Your friend does **not** need your database. They should create their own local PostgreSQL database and then set the matching values in `server/.env`:

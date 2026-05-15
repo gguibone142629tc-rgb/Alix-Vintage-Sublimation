@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Orders;
 
 use App\Domain\Orders\OrderRepository;
+use App\Infrastructure\Storage\AppStorage;
 
 final class UploadOrderReceipt
 {
@@ -100,10 +101,36 @@ final class UploadOrderReceipt
 
         $now = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(DATE_ATOM);
 
+        // If Supabase Storage is configured, store receipts as objects and save a public URL.
+        $storedUrl = null;
+        if (AppStorage::enabled()) {
+            $ext = match (strtolower($mime)) {
+                'image/png' => 'png',
+                'image/jpeg', 'image/jpg' => 'jpg',
+                'image/webp' => 'webp',
+                default => null,
+            };
+
+            if ($ext !== null) {
+                $prefix = $stage === 'final' ? 'final' : 'initial';
+                $name = $prefix . '-receipt-' . bin2hex(random_bytes(8)) . '.' . $ext;
+                $objectPath = 'uploads/receipts/order-' . $orderId . '/' . $name;
+                try {
+                    $storedUrl = AppStorage::uploadPublic($objectPath, $binary, $mime !== '' ? $mime : 'application/octet-stream', false);
+                } catch (\Throwable) {
+                    // Fall back to inline data URL storage.
+                    $storedUrl = null;
+                }
+            }
+        }
+
+        // Store either the public URL (preferred) or the original data URL.
+        $storedReceiptValue = is_string($storedUrl) && trim($storedUrl) !== '' ? $storedUrl : $dataUrl;
+
         $payment = [];
         if ($stage === 'initial') {
             $payment = [
-                'receipt_data_url' => $dataUrl,
+                'receipt_data_url' => $storedReceiptValue,
                 'receipt_mime' => $mime,
                 'receipt_size' => $size,
                 'receipt_uploaded_at' => $now,
@@ -111,7 +138,7 @@ final class UploadOrderReceipt
             ];
         } else {
             $payment = [
-                'final_receipt_data_url' => $dataUrl,
+                'final_receipt_data_url' => $storedReceiptValue,
                 'final_receipt_mime' => $mime,
                 'final_receipt_size' => $size,
                 'final_receipt_uploaded_at' => $now,

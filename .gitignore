@@ -4,6 +4,9 @@ uploads/products/
 uploads/custom-design/
 tmp_roster.json
 
+# Python
+.venv/
+
 # OS / editor
 .DS_Store
 Thumbs.db

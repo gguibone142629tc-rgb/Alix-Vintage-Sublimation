@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\CustomDesign;
 
 use App\Infrastructure\Orders\PdoOrderRepository;
+use App\Infrastructure\Storage\AppStorage;
 use App\Presentation\Http\Auth;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
@@ -172,6 +173,16 @@ final class CustomDesignController
         }
     }
 
+    private function extToMime(string $ext): string
+    {
+        return match (strtolower(trim($ext))) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'svg' => 'image/svg+xml',
+            default => 'application/octet-stream',
+        };
+    }
+
     /** @return array<string,mixed> */
     private function moveOneFile(array $file, string $destDir, string $prefix): array
     {
@@ -199,16 +210,36 @@ final class CustomDesignController
         $this->assertAllowedExt($ext);
 
         $finalName = $prefix . '_' . bin2hex(random_bytes(6)) . ($ext !== '' ? '.' . $ext : '');
+
+        // Compute the relative path we would store, then optionally upload to Supabase.
         $destPath = rtrim($destDir, '/\\') . DIRECTORY_SEPARATOR . $finalName;
-
-        if (!@move_uploaded_file($tmp, $destPath)) {
-            Response::json(['error' => 'Failed to store uploaded file'], 500);
-        }
-
         $relative = str_replace('\\', '/', $destPath);
         $root = str_replace('\\', '/', $this->repoRoot());
         if (str_starts_with($relative, $root . '/')) {
             $relative = substr($relative, strlen($root) + 1);
+        }
+
+        if (AppStorage::enabled()) {
+            $binary = @file_get_contents($tmp);
+            if (!is_string($binary) || $binary === '') {
+                Response::json(['error' => 'Failed to read uploaded file'], 500);
+            }
+
+            $mime = $this->extToMime($ext);
+            $url = AppStorage::uploadPublic($relative, $binary, $mime, false);
+            if (!is_string($url) || trim($url) === '') {
+                Response::json(['error' => 'Failed to store uploaded file'], 500);
+            }
+
+            return [
+                'original_name' => $safeOrig,
+                'path' => $url,
+                'size' => $size,
+            ];
+        }
+
+        if (!@move_uploaded_file($tmp, $destPath)) {
+            Response::json(['error' => 'Failed to store uploaded file'], 500);
         }
 
         return [
@@ -517,7 +548,9 @@ final class CustomDesignController
 
         $root = $this->repoRoot();
         $uploadRoot = $root . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'custom-design' . DIRECTORY_SEPARATOR . 'req-' . $requestId;
-        $this->ensureDir($uploadRoot);
+        if (!AppStorage::enabled()) {
+            $this->ensureDir($uploadRoot);
+        }
 
         $filesMeta = [
             'main' => [],

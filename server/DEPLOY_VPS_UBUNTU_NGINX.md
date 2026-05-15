@@ -190,9 +190,32 @@ Notes:
 - For Gmail: use **App Password**, not your normal password.
 - Never commit `server/.env`.
 
+### Optional: enable Supabase Storage (recommended for uploads)
+
+If you want product images, order proofs, custom designs, and receipts to be stored in Supabase Storage (instead of writing into the VPS `uploads/` folder), do this:
+
+1. In Supabase Dashboard, create a Storage bucket (example: `alix-uploads`).
+2. Make the bucket **public** (simplest), or keep it private and implement signed URLs later.
+3. Add these env vars to `/var/www/alix/current/server/.env`:
+
+```env
+SUPABASE_STORAGE_ENABLED=true
+SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+
+# IMPORTANT: service role key must stay on the server only.
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+
+SUPABASE_STORAGE_BUCKET=alix-uploads
+SUPABASE_STORAGE_PUBLIC=true
+```
+
+If `SUPABASE_STORAGE_ENABLED` is false/missing, the app falls back to saving files under the local `uploads/` folder.
+
 ## 6) Ensure writable directories exist
 
 Uploads + logs must be writable by the web server.
+
+If you enabled Supabase Storage, local `uploads/` becomes a fallback only (still safe to keep).
 
 ```bash
 sudo mkdir -p /var/www/alix/current/server/storage/logs
