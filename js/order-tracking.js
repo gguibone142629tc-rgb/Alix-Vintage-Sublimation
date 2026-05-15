@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -193,7 +193,7 @@
     };
 
     const ensureProductsLoadedForImages = (orderRawId) => {
-        if (Array.isArray(productsCache) && productsCache.length) return;
+        if (Array.isArray(productsCache)) return;
         if (productsCachePromise) return;
 
         void loadProductsOnce().then(() => {
