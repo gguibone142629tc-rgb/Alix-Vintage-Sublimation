@@ -84,10 +84,11 @@
     };
 
     const isTokenValid = (token) => {
-        if (window.AlixAuth && typeof window.AlixAuth.isTokenValid === "function") {
-            return window.AlixAuth.isTokenValid(token);
-        }
-        return Boolean(token);
+        // Admin page access is guarded client-side only for UX.
+        // Relying on JWT `exp` in the browser can cause false logouts
+        // if the server clock is out of sync (clock skew).
+        // The API still enforces token validity server-side.
+        return Boolean(token && String(token).trim());
     };
 
     const clearSession = () => {
@@ -123,7 +124,12 @@
     const token = getToken();
     const tokenValid = Boolean(token) && isTokenValid(token);
     if (token && !tokenValid) {
-        clearSession();
+        // Keep the session data for troubleshooting; API will reject invalid tokens.
+        try {
+            console.warn("[AlixAdminAuth] Admin token present but treated invalid by client guard.");
+        } catch {
+            // ignore
+        }
     }
     const isLoggedIn = tokenValid;
 
