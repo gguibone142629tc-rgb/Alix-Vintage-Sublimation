@@ -168,6 +168,40 @@
         const LEGACY_ADMIN_TOKEN_KEY = 'alix_admin_api_key';
         const ADMIN_ASSET_VERSION = '5';
 
+        // If user is already logged in, redirect to the appropriate homepage.
+        (function redirectIfLoggedIn() {
+            const getModeFromHash = () => {
+                const raw = String(window.location.hash || '').toLowerCase();
+                return raw === '#admin' ? 'admin' : 'customer';
+            };
+
+            const mode = getModeFromHash();
+
+            if (mode === 'admin') {
+                // Check admin token
+                const adminToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+                if (adminToken && String(adminToken).trim()) {
+                    const isValid = window.AlixAuth && typeof window.AlixAuth.isTokenValid === 'function'
+                        ? window.AlixAuth.isTokenValid(adminToken)
+                        : true;
+                    if (isValid) {
+                        window.location.replace('admin-homepage.html');
+                        return;
+                    }
+                }
+            } else {
+                // Check customer token
+                const customerToken = window.AlixAuth ? window.AlixAuth.getToken() : null;
+                if (customerToken && String(customerToken).trim()) {
+                    const isValid = window.AlixAuth.isTokenValid(customerToken);
+                    if (isValid) {
+                        window.location.replace('homepage.html');
+                        return;
+                    }
+                }
+            }
+        })();
+
         const customerLoginFormElement = document.getElementById('customer-login-form');
         const adminLoginFormElement = document.getElementById('admin-login-form');
         const switchToAdminLink = document.getElementById('switch-to-admin');

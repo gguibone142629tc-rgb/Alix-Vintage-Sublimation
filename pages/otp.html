@@ -299,10 +299,12 @@
             });
         }
 
+        let isResending = false;
+
         if (resendLinkElement) {
             resendLinkElement.addEventListener('click', async (event) => {
                 event.preventDefault();
-                if (countdownSeconds > 0) {
+                if (countdownSeconds > 0 || isResending) {
                     return;
                 }
 
@@ -311,14 +313,20 @@
                     return;
                 }
 
+                isResending = true;
+                resendLinkElement.setAttribute('aria-disabled', 'true');
+                resendLinkElement.textContent = 'Sending...';
+
                 try {
-                    await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
-                    const message = 'OTP sent. Please check your email.';
+                    const result = await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
+                    const message = result?.message || 'OTP sent. Please check your email.';
                     window.AVDialog?.alert(message, { title: 'Success', tone: 'success' }) || alert(message);
                     startCountdown();
                 } catch (error) {
                     const message = error?.message || 'Failed to resend OTP';
                     setOtpError(message);
+                } finally {
+                    isResending = false;
                 }
             });
         }
