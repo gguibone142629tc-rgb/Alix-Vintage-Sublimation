@@ -165,6 +165,7 @@
     <script>
         const ADMIN_TOKEN_KEY = 'alix_admin_auth_token';
         const ADMIN_USER_KEY = 'alix_admin_auth_user';
+        const LEGACY_ADMIN_TOKEN_KEY = 'alix_admin_api_key';
 
         const customerLoginFormElement = document.getElementById('customer-login-form');
         const adminLoginFormElement = document.getElementById('admin-login-form');
@@ -272,8 +273,19 @@
 
                 try {
                     const result = await window.AlixAuth.postJson('/api/admin/login', { email, password });
-                    localStorage.setItem(ADMIN_TOKEN_KEY, String(result.token || ''));
-                    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user || null));
+                    const token =
+                        (result && (result.token || result.apiKey || result.api_key || result.access_token || result.accessToken)) ||
+                        '';
+                    const user = (result && (result.user || result.admin || result.account)) || null;
+
+                    if (!String(token).trim()) {
+                        throw new Error('Login failed');
+                    }
+
+                    localStorage.setItem(ADMIN_TOKEN_KEY, String(token));
+                    // Backward compatibility for older admin pages/scripts.
+                    localStorage.setItem(LEGACY_ADMIN_TOKEN_KEY, String(token));
+                    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';

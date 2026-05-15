@@ -1,6 +1,7 @@
 (function () {
     const ADMIN_TOKEN_KEY = "alix_admin_auth_token";
     const ADMIN_USER_KEY = "alix_admin_auth_user";
+    const LEGACY_ADMIN_TOKEN_KEY = "alix_admin_api_key";
 
     const path = String(window.location.pathname || "");
     const isAdminPage = /\/admin-[^/]+\.html$/i.test(path);
@@ -47,12 +48,29 @@
     // Persistent admin login enabled.
 
     const getToken = () => {
+        const read = (storage, key) => {
+            try {
+                const value = storage.getItem(key);
+                return value != null ? String(value).trim() : null;
+            } catch {
+                return null;
+            }
+        };
+
+        // Prefer current key, but accept legacy key for older deployments.
+        const token = read(localStorage, ADMIN_TOKEN_KEY) || read(sessionStorage, ADMIN_TOKEN_KEY);
+        if (token) return token;
+
+        const legacyToken = read(localStorage, LEGACY_ADMIN_TOKEN_KEY) || read(sessionStorage, LEGACY_ADMIN_TOKEN_KEY);
+        if (!legacyToken) return null;
+
+        // Migrate legacy token forward so the rest of the admin scripts work.
         try {
-            const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-            return token && String(token).trim() ? String(token).trim() : null;
+            localStorage.setItem(ADMIN_TOKEN_KEY, legacyToken);
         } catch {
-            return null;
+            // ignore
         }
+        return legacyToken;
     };
 
     const getUser = () => {
