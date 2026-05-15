@@ -1,4 +1,5 @@
 (function () {
+    const ADMIN_ASSET_VERSION = "5";
     const ADMIN_TOKEN_KEY = "alix_admin_auth_token";
     const ADMIN_USER_KEY = "alix_admin_auth_user";
     const LEGACY_ADMIN_TOKEN_KEY = "alix_admin_api_key";
@@ -121,6 +122,13 @@
         setSession,
     };
 
+    // Helpful for debugging what version is loaded in production.
+    try {
+        window.__ALIX_ADMIN_ASSET_VERSION__ = ADMIN_ASSET_VERSION;
+    } catch {
+        // ignore
+    }
+
     const token = getToken();
     const tokenValid = Boolean(token) && isTokenValid(token);
     if (token && !tokenValid) {
@@ -145,6 +153,29 @@
 
     if (!isAdminPage) {
         return;
+    }
+
+    // Avoid stale cached admin HTML/JS by cache-busting internal admin links.
+    // This makes navigation deterministic even if some pages were cached earlier.
+    const rewriteAdminLinks = () => {
+        const anchors = Array.from(document.querySelectorAll('a[href]'));
+        for (const a of anchors) {
+            const href = String(a.getAttribute('href') || '').trim();
+            if (!/^admin-[^/?#]+\.html([?#].*)?$/i.test(href)) continue;
+
+            // Preserve hash if present.
+            const [beforeHash, hash = ''] = href.split('#');
+            const hasQuery = beforeHash.includes('?');
+            const base = beforeHash;
+            const next = hasQuery ? `${base}&v=${encodeURIComponent(ADMIN_ASSET_VERSION)}` : `${base}?v=${encodeURIComponent(ADMIN_ASSET_VERSION)}`;
+            a.setAttribute('href', hash ? `${next}#${hash}` : next);
+        }
+    };
+
+    try {
+        rewriteAdminLinks();
+    } catch {
+        // ignore
     }
 
     const setupMobileSidebarDrawer = () => {
