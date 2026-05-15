@@ -106,7 +106,15 @@
         };
 
         if (window.AlixAuth?.setSession) {
-            const token = localStorage.getItem(TOKEN_KEY);
+            const token = window.AlixAuth?.getToken
+                ? window.AlixAuth.getToken()
+                : (() => {
+                      try {
+                          return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+                      } catch {
+                          return localStorage.getItem(TOKEN_KEY);
+                      }
+                  })();
             window.AlixAuth.setSession(token || "", merged);
         } else {
             localStorage.setItem(USER_KEY, JSON.stringify(merged));
@@ -116,7 +124,15 @@
     };
 
     const saveServerProfile = async (payload) => {
-        const token = localStorage.getItem(TOKEN_KEY);
+        const token = window.AlixAuth?.getToken
+            ? window.AlixAuth.getToken()
+            : (() => {
+                  try {
+                      return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+                  } catch {
+                      return localStorage.getItem(TOKEN_KEY);
+                  }
+              })();
         if (!token) {
             throw new Error("Unauthorized");
         }
@@ -141,7 +157,15 @@
     };
 
     const requireLogin = () => {
-        const token = localStorage.getItem(TOKEN_KEY);
+        const token = window.AlixAuth?.getToken
+            ? window.AlixAuth.getToken()
+            : (() => {
+                  try {
+                      return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+                  } catch {
+                      return localStorage.getItem(TOKEN_KEY);
+                  }
+              })();
         if (!token) {
             uiAlert("Please log in first to edit your account settings.", { title: "Notice", tone: "info" })
                 .finally(() => {

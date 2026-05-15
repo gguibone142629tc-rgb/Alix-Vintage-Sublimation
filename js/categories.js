@@ -7,6 +7,7 @@
     const showSelect = qs("#catalogShow");
     const sortSelect = qs("#catalogSort");
     const shirtTypeSelect = qs("#shirt-type");
+    const activeFiltersLabel = qs("#activeFilters");
     const checkRows = Array.from(document.querySelectorAll(".filter-box .check"));
     const mobileFilterTrigger = qs("#mobileFilterTrigger");
     const mobileSortTrigger = qs("#mobileSortTrigger");
@@ -48,7 +49,22 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
 
-    const formatMoney = (value) => `\u20B1${Number(value || 0).toLocaleString("en-PH")}`;
+    const parsePrice = (value) => {
+        if (typeof value === "number") {
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        const raw = String(value ?? "").trim();
+        if (!raw) return 0;
+
+        // Handles values like: "650", "650.00", "1,200", "₱650"
+        const normalized = raw.replaceAll(",", "");
+        const match = normalized.match(/-?\d+(?:\.\d+)?/);
+        const num = match ? Number(match[0]) : Number(normalized);
+        return Number.isFinite(num) ? num : 0;
+    };
+
+    const formatMoney = (value) => `\u20B1${parsePrice(value).toLocaleString("en-PH")}`;
 
     const normalizeTypeLabel = (value) => {
         const v = String(value || "").trim().toLowerCase();
@@ -86,6 +102,48 @@
 
         const key = map[normalized] || normalized;
         return allowedCollections.has(key) ? key : null;
+    };
+
+    const describeActiveFilters = () => {
+        const collectionLabelByKey = {
+            basketball: "Basketball Apparel",
+            volleyball: "Volleyball Uniforms",
+            "football-soccer": "Football & Soccer Kits",
+            "corporate-event": "Corporate & Event Wear",
+        };
+
+        const typeLabelByKey = {
+            poloshirt: "Polo Shirt",
+            tshirt: "T-shirt",
+            hoodie: "Hoodie",
+            jersey: "Jersey",
+            shorts: "Shorts",
+        };
+
+        const parts = [];
+
+        if (activeCollection) {
+            parts.push(collectionLabelByKey[activeCollection] || activeCollection);
+        }
+
+        const typeKeys = new Set();
+        const dropdownKey = normalizeTypeLabel(shirtTypeSelect?.value || "all");
+        if (dropdownKey !== "all") typeKeys.add(dropdownKey);
+        getCheckboxFilters().forEach((key) => typeKeys.add(key));
+
+        if (typeKeys.size > 0) {
+            const label = Array.from(typeKeys)
+                .map((k) => typeLabelByKey[k] || k)
+                .join(", ");
+            parts.push(label);
+        }
+
+        return parts.length > 0 ? `Showing: ${parts.join(" \u2022 ")}` : "Showing: All Products";
+    };
+
+    const syncActiveFiltersLabel = () => {
+        if (!activeFiltersLabel) return;
+        activeFiltersLabel.textContent = describeActiveFilters();
     };
 
     const inferProductTypeKeys = (product) => {
@@ -265,7 +323,7 @@
             name: String(p?.product_name || "").trim(),
             apparelType: String(p?.apparel_type || "").trim(),
             collection: normalizeCollectionKey(p?.collection) || null,
-            basePrice: Number(p?.base_price || 0),
+            basePrice: parsePrice(p?.base_price ?? p?.basePrice ?? p?.price),
             imagePath: p?.image_path || null,
             images: Array.isArray(p?.images) ? p.images : [],
             createdAt: String(p?.created_at || ""),
@@ -278,12 +336,18 @@
 
         const list = allProducts.filter(matchesTypeFilters).filter(matchesCollectionFilter);
 
-        if (sort.includes("high")) {
-            list.sort((a, b) => b.basePrice - a.basePrice);
-        } else if (sort.includes("new")) {
+        const isNewest = /\bnew\b|newest/.test(sort);
+        const isLowToHigh = /low\s*to\s*high/.test(sort);
+        const isHighToLow = /high\s*to\s*low/.test(sort);
+
+        if (isNewest) {
             list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+        } else if (isLowToHigh) {
+            list.sort((a, b) => parsePrice(a.basePrice) - parsePrice(b.basePrice));
+        } else if (isHighToLow) {
+            list.sort((a, b) => parsePrice(b.basePrice) - parsePrice(a.basePrice));
         } else {
-            list.sort((a, b) => a.basePrice - b.basePrice);
+            list.sort((a, b) => parsePrice(a.basePrice) - parsePrice(b.basePrice));
         }
 
         return list.slice(0, Math.max(1, showCount));
@@ -291,6 +355,8 @@
 
     const render = () => {
         if (!grid) return;
+
+        syncActiveFiltersLabel();
 
         const products = getVisibleProducts();
         if (products.length === 0) {

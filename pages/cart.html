@@ -316,7 +316,16 @@
             });
 
             document.getElementById('checkoutBtn').addEventListener('click', async () => {
-                if (!localStorage.getItem('alix_auth_token')) {
+                const token = window.AlixAuth?.getToken
+                    ? window.AlixAuth.getToken()
+                    : (() => {
+                          try {
+                              return sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                          } catch {
+                              return localStorage.getItem('alix_auth_token');
+                          }
+                      })();
+                if (!token) {
                     await uiAlert('Please log in to place an order.', { title: 'Login required', tone: 'info' });
                     window.location.href = 'login.html';
                     return;

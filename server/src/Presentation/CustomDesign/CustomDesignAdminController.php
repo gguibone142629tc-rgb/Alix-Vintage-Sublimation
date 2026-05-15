@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Presentation\CustomDesign;
 
+use App\Presentation\Http\Auth;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
 use App\Shared\Config\Env;
 
 final class CustomDesignAdminController
 {
-    public function __construct(private readonly \PDO $pdo)
+    public function __construct(
+        private readonly \PDO $pdo,
+        private readonly Auth $auth,
+        private readonly int $adminRoleId,
+    )
     {
     }
 
@@ -21,16 +26,10 @@ final class CustomDesignAdminController
             return;
         }
 
-        $expected = Env::get('ADMIN_API_KEY') ?? Env::get('ADMIN_SETUP_KEY');
-        if ($expected === null || trim($expected) === '') {
-            if (!Env::bool('APP_DEBUG', false)) {
-                Response::json(['error' => 'Server not configured for admin access'], 500);
-            }
-            return;
-        }
-
-        $provided = $request->header('x-admin-api-key');
-        if ($provided === null || !hash_equals($expected, $provided)) {
+        $claims = $this->auth->requireClaims($request);
+        $roleId = $claims['role_id'] ?? null;
+        $roleId = (is_int($roleId) || is_numeric($roleId)) ? (int) $roleId : 0;
+        if ($roleId !== $this->adminRoleId) {
             Response::json(['error' => 'Forbidden'], 403);
         }
     }

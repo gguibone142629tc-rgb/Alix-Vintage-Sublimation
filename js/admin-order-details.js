@@ -102,7 +102,7 @@
     };
 
     const getLoggedInUserSummary = () => {
-        const raw = localStorage.getItem("alix_auth_user");
+        const raw = window.AlixAuth?.getUser ? JSON.stringify(window.AlixAuth.getUser() || null) : localStorage.getItem("alix_auth_user");
         const user = safeJsonParse(raw || "null", null);
         if (!user || typeof user !== "object") return { name: null, mobile: null };
 
@@ -222,6 +222,7 @@
                     next.set(id, {
                         id,
                         name: String(p?.product_name || p?.name || "").trim() || null,
+                        basePrice: Number(p?.base_price ?? p?.basePrice ?? p?.price ?? 0) || 0,
                         imagePath: p?.image_path || null,
                         images: Array.isArray(p?.images) ? p.images : [],
                     });
@@ -279,15 +280,18 @@
         return out;
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const requestJson = async (method, path, body) => {
         const headers = { Accept: "application/json" };
-        const key = getAdminApiKey();
-        if (key) headers["X-Admin-Api-Key"] = key;
+        const token = getAdminToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
         if (method !== "GET") headers["Content-Type"] = "application/json";
 
         const res = await fetch(getApiBaseUrl() + path, {
@@ -445,13 +449,18 @@
 
     const getOrderIdFromQuery = () => getQueryParam("id");
 
-    // DB orders use numeric ids (or "ORD-<id>"). Demo/local orders use string ids (e.g., "DEMO-001").
+    const isDbOrderRequest = () => String(getQueryParam("db") || "").trim() === "1";
 
-    const extractNumericOrderId = (id) => {
+    // DB orders use numeric ids (or "ORD-<id>" when explicitly flagged with ?db=1).
+    // Local/demo orders may also use "ORD-<timestamp>" ids, so we must NOT treat them as DB by default.
+
+    const extractNumericOrderId = (id, { allowOrdPrefix = false } = {}) => {
         const raw = String(id || "").trim();
         if (/^\d+$/.test(raw)) return Number(raw);
-        const m = raw.match(/^ORD-(\d+)$/i);
-        if (m) return Number(m[1]);
+        if (allowOrdPrefix) {
+            const m = raw.match(/^ORD-(\d+)$/i);
+            if (m) return Number(m[1]);
+        }
         return null;
     };
 
@@ -468,23 +477,96 @@
         return "Pending";
     };
 
+    const computeTotalQuantity = (order) => {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        const qtyFromItems = items.reduce((sum, it) => sum + Math.max(0, Number(it?.quantity ?? 0)), 0);
+
+        const isCustom = String(order?.admin?.orderType || "").toLowerCase() === "custom";
+        if (!isCustom) return Number.isFinite(qtyFromItems) ? qtyFromItems : 0;
+
+        // Custom Design uploads can be a single order item with a roster.
+        // Prefer explicit quantities from DB items, otherwise fall back to roster length.
+        if (Number.isFinite(qtyFromItems) && qtyFromItems > 0) return qtyFromItems;
+
+        const roster = order?.details?.roster ?? order?.customRequest?.roster;
+        if (Array.isArray(roster) && roster.length) return roster.length;
+
+        let rosterCount = 0;
+        for (const it of items) {
+            const meta = it?.meta && typeof it.meta === "object" ? it.meta : tryParseJsonObject(it?.meta);
+            const r = meta && typeof meta === "object" ? meta.roster : null;
+            if (Array.isArray(r) && r.length) rosterCount += r.length;
+        }
+        if (rosterCount > 0) return rosterCount;
+
+        // Last-resort fallback for custom orders.
+        return 1;
+    };
+
     const computeOrderTotal = (order) => {
         const items = Array.isArray(order?.items) ? order.items : [];
         const itemsTotal = items.reduce((sum, it) => sum + Number(it?.totalAmount ?? it?.total_amount ?? 0), 0);
         const base = Number(order?.admin?.quote?.basePrice ?? 0);
         const shipping = Number(order?.admin?.quote?.shippingFee ?? 0);
 
-        // Match backend computed total: prefer explicit item totals when present,
-        // otherwise fall back to the base price.
-        const subtotal = itemsTotal > 0 ? itemsTotal : base;
+        const isCustom = String(order?.admin?.orderType || "").toLowerCase() === "custom";
+        const qty = computeTotalQuantity(order);
+        // NOTE: For custom design requests, DB `order_item.total_amount` may represent per-unit pricing.
+        // To match admin list + pricing expectations, always compute custom subtotal as base * qty.
+        const subtotal = isCustom ? base * Math.max(1, qty) : itemsTotal > 0 ? itemsTotal : base;
+
         const total = Math.round((subtotal + shipping) * 100) / 100;
         return total >= 0 ? total : 0;
     };
 
-    const computeTotalQuantity = (order) => {
+    const computeFixedUnitPrice = (order) => {
         const items = Array.isArray(order?.items) ? order.items : [];
-        const total = items.reduce((sum, it) => sum + Math.max(0, Number(it?.quantity ?? 0)), 0);
-        return Number.isFinite(total) ? total : 0;
+        if (items.length === 0) return null;
+
+        const candidates = [];
+        for (const it of items) {
+            const qty = Number(it?.quantity ?? 0);
+            const lineTotal = Number(it?.totalAmount ?? it?.total_amount ?? 0);
+
+            if (Number.isFinite(qty) && qty > 0 && Number.isFinite(lineTotal) && lineTotal >= 0) {
+                candidates.push(lineTotal / qty);
+                continue;
+            }
+
+            const meta = it?.meta && typeof it.meta === 'object' ? it.meta : tryParseJsonObject(it?.meta);
+            const metaPrice = meta && typeof meta === 'object' ? Number(meta.base_price ?? meta.basePrice ?? meta.price ?? NaN) : NaN;
+            if (Number.isFinite(metaPrice) && metaPrice >= 0) {
+                candidates.push(metaPrice);
+                continue;
+            }
+
+            const productId = Number(it?.productId ?? it?.product_id ?? meta?.product_id ?? meta?.productId ?? 0);
+            if (Number.isFinite(productId) && productId > 0) {
+                const product = productsById.get(productId);
+                const p = product ? Number(product.basePrice ?? 0) : NaN;
+                if (Number.isFinite(p) && p >= 0) {
+                    candidates.push(p);
+                }
+            }
+        }
+
+        if (candidates.length === 0) return null;
+
+        const rounded = candidates
+            .map((v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : NaN))
+            .filter((v) => Number.isFinite(v));
+        if (rounded.length === 0) return null;
+
+        const distinct = Array.from(new Set(rounded));
+        if (distinct.length === 1) return distinct[0];
+        if (items.length === 1) return rounded[0];
+        return null;
+    };
+
+    const getDisplayBasePrice = (order) => {
+        const isCustom = String(order?.admin?.orderType || '').toLowerCase() === 'custom';
+        if (isCustom) return order?.admin?.quote?.basePrice ?? null;
+        return computeFixedUnitPrice(order) ?? (order?.admin?.quote?.basePrice ?? null);
     };
 
     const computePaymentAmounts = (order) => {
@@ -497,12 +579,10 @@
         let amountPaid = Number(payment?.amountPaid ?? 0);
         if (!Number.isFinite(amountPaid) || amountPaid < 0) amountPaid = 0;
 
-        if (amountPaid === 0) {
-            if (verifiedType === "full") amountPaid = total;
-            if (verifiedType === "downpayment") amountPaid = Math.round(total * 0.5 * 100) / 100;
-        }
-
-        if (isFinalVerified) amountPaid = total;
+        const requiredDown = Math.round(total * 0.5 * 100) / 100;
+        if (verifiedType === "full") amountPaid = Math.max(amountPaid, total);
+        if (verifiedType === "downpayment") amountPaid = Math.max(amountPaid, requiredDown);
+        if (isFinalVerified) amountPaid = Math.max(amountPaid, total);
 
         const remaining = Math.max(0, Math.round((total - amountPaid) * 100) / 100);
         return { total, amountPaid, remaining };
@@ -932,7 +1012,8 @@
                 if (stageHint) stageHint.textContent = "Approving moves the order to Awaiting Payment.";
                 const btn = qs("#approveDbBtn");
 
-                if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";
+                const displayBasePrice = getDisplayBasePrice(order);
+                if (basePriceInput) basePriceInput.value = displayBasePrice != null ? String(displayBasePrice) : "";
                 if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
                 wireDbPricing(numericId, order);
 
@@ -974,7 +1055,8 @@
                     }
                 });
             } else if (status === "paid") {
-                if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";
+                const displayBasePrice = getDisplayBasePrice(order);
+                if (basePriceInput) basePriceInput.value = displayBasePrice != null ? String(displayBasePrice) : "";
                 if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
                 wireDbPricing(numericId, order);
 
@@ -2612,7 +2694,8 @@
         if (paymentMethodEl) paymentMethodEl.textContent = String(order?.admin?.payment?.method || "-");
 
         if (stockConfirmedInput) stockConfirmedInput.checked = Boolean(order.admin.stockConfirmed);
-        if (basePriceInput) basePriceInput.value = order.admin.quote.basePrice != null ? String(order.admin.quote.basePrice) : "";
+        const displayBasePrice = getDisplayBasePrice(order);
+        if (basePriceInput) basePriceInput.value = displayBasePrice != null ? String(displayBasePrice) : "";
         if (shippingFeeInput) shippingFeeInput.value = order.admin.quote.shippingFee != null ? String(order.admin.quote.shippingFee) : "";
 
         renderStepper(order);
@@ -2634,9 +2717,10 @@
             return;
         }
 
-        const numeric = extractNumericOrderId(id);
-        if (Number.isFinite(numeric)) {
-            // Always treat numeric ids as DB-backed orders.
+        const numeric = extractNumericOrderId(id, { allowOrdPrefix: isDbOrderRequest() });
+        const isPureNumericId = /^\d+$/.test(String(id || "").trim());
+        if (Number.isFinite(numeric) && (isPureNumericId || isDbOrderRequest())) {
+            // Treat numeric ids as DB-backed orders. Treat ORD-<id> as DB only when db=1.
             setReadOnlyUi();
             loadDbOrderById(numeric)
                 .then((order) => {
@@ -2672,8 +2756,9 @@
         }
 
         // DB-backed orders: do not wire localStorage-based interactions.
-        const numeric = extractNumericOrderId(id);
-        if (Number.isFinite(numeric)) {
+        const numeric = extractNumericOrderId(id, { allowOrdPrefix: isDbOrderRequest() });
+        const isPureNumericId = /^\d+$/.test(String(id || "").trim());
+        if (Number.isFinite(numeric) && (isPureNumericId || isDbOrderRequest())) {
             loadAndRender();
             return;
         }

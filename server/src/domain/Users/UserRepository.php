@@ -10,6 +10,8 @@ interface UserRepository
 
     public function findByEmail(string $email): ?User;
 
+    public function countByRoleId(int $roleId): int;
+
     public function create(User $user): User;
 
     public function setOtp(int $userId, string $otpCode, \DateTimeImmutable $expiry): void;

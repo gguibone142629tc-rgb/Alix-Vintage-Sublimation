@@ -121,6 +121,13 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 48px; }
 .catalog-controls .group { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 .catalog-controls select { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 11px; background: rgba(14,16,24,0.8); color: var(--ink); }
 
+.active-filters {
+    margin: -6px 0 14px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.6px;
+}
+
 .product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 
 .product-card {

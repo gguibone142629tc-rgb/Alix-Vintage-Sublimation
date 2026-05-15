@@ -36,6 +36,18 @@ final class PdoUserRepository implements UserRepository
         return User::fromRow($row);
     }
 
+    public function countByRoleId(int $roleId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) AS c FROM users WHERE role_id = :role_id');
+        $stmt->execute(['role_id' => $roleId]);
+        $row = $stmt->fetch();
+        if (!is_array($row)) {
+            return 0;
+        }
+        $count = $row['c'] ?? $row['count'] ?? null;
+        return is_numeric($count) ? (int) $count : 0;
+    }
+
     public function create(User $user): User
     {
         $stmt = $this->pdo->prepare(

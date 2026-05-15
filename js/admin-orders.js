@@ -33,15 +33,18 @@
         return "";
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const fetchJson = async (path) => {
         const headers = { Accept: "application/json" };
-        const key = getAdminApiKey();
-        if (key) headers["X-Admin-Api-Key"] = key;
+        const token = getAdminToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(getApiBaseUrl() + path, { method: "GET", headers });
         const data = await res.json().catch(() => ({}));
@@ -58,7 +61,7 @@
     const dbStatusToWorkflow = (status) => {
         const s = String(status || "pending").toLowerCase();
         if (s === "completed") return "Completed";
-        if (s === "cancelled") return "Rejected";
+        if (s === "cancelled") return "Cancelled";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
         if (s === "awaiting_final_payment") return "Awaiting Final Payment";
@@ -66,6 +69,14 @@
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";
         return "Pending";
+    };
+
+    const isCustomerCancelledOrder = (order) => {
+        const rawStatus = String(order?.status || "").trim().toLowerCase();
+        if (rawStatus === "cancelled" || rawStatus === "canceled") return true;
+
+        const workflow = String(order?.admin?.workflowStatus || "").trim().toLowerCase();
+        return workflow === "cancelled" || workflow === "canceled";
     };
 
     const normalizeDbOrders = (apiOrders) => {
@@ -77,23 +88,23 @@
             const idNum = o.order_id;
             const typeRaw = String(o.order_type || "").toLowerCase();
 
+            const orderMeta = (() => {
+                const raw = o?.meta;
+                if (!raw) return {};
+                if (typeof raw === "object") return raw;
+                if (typeof raw === "string") {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        return parsed && typeof parsed === "object" ? parsed : {};
+                    } catch {
+                        return {};
+                    }
+                }
+                return {};
+            })();
+
             const isCustomDesign = (() => {
                 if (typeRaw === "custom") return true;
-                const orderMeta = (() => {
-                    const raw = o?.meta;
-                    if (!raw) return {};
-                    if (typeof raw === "object") return raw;
-                    if (typeof raw === "string") {
-                        try {
-                            const parsed = JSON.parse(raw);
-                            return parsed && typeof parsed === "object" ? parsed : {};
-                        } catch {
-                            return {};
-                        }
-                    }
-                    return {};
-                })();
-
                 const src = String(orderMeta?.source || "").toLowerCase();
                 if (src === "custom_design") return true;
 
@@ -115,12 +126,22 @@
 
             const orderType = isCustomDesign ? "custom" : "fixed";
             const name = user ? `${String(user.firstname || "").trim()} ${String(user.lastname || "").trim()}`.trim() : "";
-            const fallbackCustomer = String(o?.meta?.customerName || o?.meta?.customer_fullname || "").trim();
+            const fallbackCustomer = String(orderMeta?.customerName || orderMeta?.customer_fullname || "").trim();
+
+            const base = Number(o.base_price || 0);
+            const shipping = Number(o.shipping_fee || 0);
+            const qtyFromItems = Array.isArray(items)
+                ? items.reduce((sum, it) => sum + Math.max(0, Number(it?.quantity ?? 0)), 0)
+                : 0;
+            const roster = orderMeta?.roster;
+            const qtyFromRoster = Array.isArray(roster) ? roster.length : 0;
+            const effectiveQty = Math.max(1, qtyFromItems || qtyFromRoster || 0);
+            const subtotal = isCustomDesign ? base * effectiveQty : base;
             return {
                 id: idNum != null ? `ORD-${idNum}` : "ORD-?",
                 rawId: idNum,
                 date: o.created_at || new Date().toISOString(),
-                total: Number(o.base_price || 0) + Number(o.shipping_fee || 0),
+                total: subtotal + shipping,
                 details: {
                     customerName: name || user?.email || fallbackCustomer || "-",
                 },
@@ -128,7 +149,7 @@
                     orderType,
                     workflowStatus: dbStatusToWorkflow(o.status),
                 },
-                meta: o.meta || {},
+                meta: orderMeta,
                 status: String(o.status || "pending"),
                 order_type: String(o.order_type || ""),
             };
@@ -245,6 +266,17 @@
             return;
         } catch {
             // Fallback demo mode
+            if (window.location && window.location.origin === "null") {
+                window.AVDialog?.alert(
+                    "Admin API is unavailable because this page is opened via file://. Open the site via the PHP router/web server so /api/admin/orders can load. Showing local orders only.",
+                    { title: "Admin", tone: "warning" }
+                );
+            } else {
+                window.AVDialog?.alert(
+                    "Failed to load orders from the server API (/api/admin/orders). Showing local orders only.",
+                    { title: "Admin", tone: "warning" }
+                );
+            }
             ordersCache = window.AdminStore ? window.AdminStore.getOrders() : [];
         }
     };

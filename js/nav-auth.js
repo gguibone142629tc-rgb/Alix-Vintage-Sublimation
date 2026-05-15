@@ -383,7 +383,36 @@
     const TOKEN_KEY = "alix_auth_token";
     const USER_KEY = "alix_auth_user";
 
-    const token = localStorage.getItem(TOKEN_KEY);
+    const safeGet = (storage, key) => {
+        try {
+            return storage.getItem(key);
+        } catch {
+            return null;
+        }
+    };
+
+    const safeRemove = (storage, key) => {
+        try {
+            storage.removeItem(key);
+        } catch {
+            // ignore
+        }
+    };
+
+    const getFromAnyStorage = (key) => {
+        const sessionValue = safeGet(sessionStorage, key);
+        if (sessionValue != null) {
+            return sessionValue;
+        }
+        return safeGet(localStorage, key);
+    };
+
+    const removeFromAllStorages = (key) => {
+        safeRemove(sessionStorage, key);
+        safeRemove(localStorage, key);
+    };
+
+    const token = getFromAnyStorage(TOKEN_KEY);
 
     const base64UrlDecode = (value) => {
         const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((value.length + 3) % 4);
@@ -417,8 +446,8 @@
 
     const isLoggedInByToken = Boolean(token) && isTokenValid(token);
 
-    const loginFlag = localStorage.getItem(LOGIN_KEY) === "true";
-    const loginAt = Number(localStorage.getItem(LOGIN_AT_KEY));
+    const loginFlag = getFromAnyStorage(LOGIN_KEY) === "true";
+    const loginAt = Number(getFromAnyStorage(LOGIN_AT_KEY));
     const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
     const isFreshLogin = hasValidTimestamp && Date.now() - loginAt <= LOGIN_MAX_AGE_MS;
     const isLoggedInByFlag = loginFlag && isFreshLogin;
@@ -426,12 +455,15 @@
     const isLoggedIn = isLoggedInByToken || isLoggedInByFlag;
 
     if (loginFlag && !isFreshLogin) {
-        localStorage.removeItem(LOGIN_KEY);
-        localStorage.removeItem(LOGIN_AT_KEY);
+        removeFromAllStorages(LOGIN_KEY);
+        removeFromAllStorages(LOGIN_AT_KEY);
     }
 
     if (token && !isLoggedInByToken) {
-        localStorage.removeItem(TOKEN_KEY);
+        removeFromAllStorages(TOKEN_KEY);
+        removeFromAllStorages(USER_KEY);
+        removeFromAllStorages(LOGIN_KEY);
+        removeFromAllStorages(LOGIN_AT_KEY);
     }
 
     const isProtectedPage = /(cart|order-history|order-tracking|account-settings|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
@@ -443,7 +475,7 @@
     const orderLinks = document.querySelectorAll(".nav-order-link");
 
     const getUserIdentity = () => {
-        const raw = localStorage.getItem(USER_KEY);
+        const raw = getFromAnyStorage(USER_KEY);
         if (!raw) {
             return { name: "My Account", email: "" };
         }
@@ -493,12 +525,18 @@
     const performLogout = (event) => {
         event.stopPropagation();
         event.preventDefault();
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        localStorage.removeItem(LOGIN_KEY);
-        localStorage.removeItem(LOGIN_AT_KEY);
-        localStorage.removeItem("alix_pending_email");
-        localStorage.removeItem("alix_pending_phone");
+
+        if (window.AlixAuth?.clearSession) {
+            window.AlixAuth.clearSession();
+        } else {
+            removeFromAllStorages(TOKEN_KEY);
+            removeFromAllStorages(USER_KEY);
+            removeFromAllStorages(LOGIN_KEY);
+            removeFromAllStorages(LOGIN_AT_KEY);
+        }
+
+        removeFromAllStorages("alix_pending_email");
+        removeFromAllStorages("alix_pending_phone");
         window.location.href = "login.html";
     };
 

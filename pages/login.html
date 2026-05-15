@@ -105,8 +105,8 @@
 
             <form class="form-card is-hidden" id="admin-login-form" action="admin-homepage.html" novalidate autocomplete="off">
                 <div class="field-group">
-                    <label for="admin-username">Admin username</label>
-                    <input id="admin-username" type="text" placeholder="Enter admin username" autocomplete="off" required>
+                    <label for="admin-email">Admin email</label>
+                    <input id="admin-email" type="email" placeholder="Enter admin email" autocomplete="off" required>
                 </div>
 
                 <div class="field-group">
@@ -162,9 +162,8 @@
     <script src="../js/auth-client.js"></script>
     <script src="../js/ui-dialog.js"></script>
     <script>
-        const ADMIN_SESSION_KEY = 'alix_admin_logged_in';
-        const ADMIN_LOGIN_AT_KEY = 'alix_admin_logged_in_at';
-        const ADMIN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+        const ADMIN_TOKEN_KEY = 'alix_admin_auth_token';
+        const ADMIN_USER_KEY = 'alix_admin_auth_user';
 
         const customerLoginFormElement = document.getElementById('customer-login-form');
         const adminLoginFormElement = document.getElementById('admin-login-form');
@@ -203,28 +202,16 @@
         });
 
         // Admin login should NOT persist across browser restarts.
-        // Use sessionStorage (tab session) instead of localStorage.
-        // Also clear any legacy persistent flags.
+        // Use sessionStorage and clear any legacy persistent flags/keys.
         try {
-            localStorage.removeItem(ADMIN_SESSION_KEY);
-            localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+            localStorage.removeItem('alix_admin_logged_in');
+            localStorage.removeItem('alix_admin_logged_in_at');
+            localStorage.removeItem('alix_admin_api_key');
+            localStorage.removeItem(ADMIN_TOKEN_KEY);
+            localStorage.removeItem(ADMIN_USER_KEY);
         } catch {
             // ignore
         }
-
-        const isAdminSessionFresh = () => {
-            const flag = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
-            const loginAt = Number(sessionStorage.getItem(ADMIN_LOGIN_AT_KEY));
-            const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
-            const isFresh = hasValidTimestamp && Date.now() - loginAt <= ADMIN_MAX_AGE_MS;
-
-            if (flag && !isFresh) {
-                sessionStorage.removeItem(ADMIN_SESSION_KEY);
-                sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
-            }
-
-            return flag && isFresh;
-        };
 
         const setLoginMode = (mode) => {
             const isAdminMode = mode === 'admin';
@@ -263,10 +250,11 @@
 
                 const email = String(document.getElementById('email')?.value || '').trim();
                 const password = String(document.getElementById('password')?.value || '');
+                const rememberMe = Boolean(document.getElementById('remember-me')?.checked);
 
                 try {
                     const result = await window.AlixAuth.postJson('/api/auth/login', { email, password });
-                    window.AlixAuth.setSession(result.token, result.user);
+                    window.AlixAuth.setSession(result.token, result.user, { remember: rememberMe });
                     window.location.href = 'homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Login failed';
@@ -289,18 +277,18 @@
 
                 clearLoginInlineErrors();
 
-                const username = String(document.getElementById('admin-username')?.value || '').trim();
+                const email = String(document.getElementById('admin-email')?.value || '').trim();
                 const password = String(document.getElementById('admin-password')?.value || '');
 
                 try {
-                    await window.AlixAuth.postJson('/api/admin/login', { username, password });
-                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
-                    sessionStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
+                    const result = await window.AlixAuth.postJson('/api/admin/login', { email, password });
+                    sessionStorage.setItem(ADMIN_TOKEN_KEY, String(result.token || ''));
+                    sessionStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.user || null));
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
                     const message = error?.message || 'Invalid admin credentials';
 
-                    const inlineMessage = error?.status === 401 ? 'Incorrect username or password.' : message;
+                    const inlineMessage = error?.status === 401 ? 'Incorrect email or password.' : message;
                     setInlineErrorState(adminPasswordInputElement, adminPasswordErrorElement, inlineMessage);
                     adminPasswordInputElement?.focus();
                 }

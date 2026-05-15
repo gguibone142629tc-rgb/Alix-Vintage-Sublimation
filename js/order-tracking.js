@@ -53,6 +53,8 @@
     const shippingPanelEl = qs("#shippingPanel");
     const trackingNumberEl = qs("#trackingNumber");
     const copyBtn = qs("#copyTrackingBtn");
+    const shippingDestinationEl = qs("#shippingDestination");
+    const shippingEtaEl = qs("#shippingEta");
 
     const getQueryParam = (key) => {
         try {
@@ -84,6 +86,29 @@
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return "-";
         return d.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "2-digit" });
+    };
+
+    const formatAddress = (address) => {
+        const s = String(address ?? "").trim();
+        return s || "-";
+    };
+
+    const getDestinationAddress = (order) => {
+        const meta = order?.meta && typeof order.meta === "object" ? order.meta : {};
+        const delivery = meta?.delivery_address && typeof meta.delivery_address === "object" ? meta.delivery_address : null;
+        const legacyDelivery = meta?.deliveryAddress && typeof meta.deliveryAddress === "object" ? meta.deliveryAddress : null;
+
+        const street =
+            (delivery ? delivery.street : null) ??
+            (delivery ? delivery.address : null) ??
+            (legacyDelivery ? legacyDelivery.street : null) ??
+            (legacyDelivery ? legacyDelivery.address : null) ??
+            meta?.address ??
+            meta?.shipping_address ??
+            meta?.shippingAddress ??
+            null;
+
+        return formatAddress(street);
     };
 
     const escapeHtml = (s) =>
@@ -436,7 +461,16 @@
         return wf;
     };
 
-    const isAuthed = () => Boolean(localStorage.getItem("alix_auth_token"));
+    const isAuthed = () => {
+        if (window.AlixAuth?.getToken) {
+            return Boolean(window.AlixAuth.getToken());
+        }
+        try {
+            return Boolean(sessionStorage.getItem("alix_auth_token") || localStorage.getItem("alix_auth_token"));
+        } catch {
+            return Boolean(localStorage.getItem("alix_auth_token"));
+        }
+    };
 
     const dbStatusToWorkflow = (status) => {
         const s = String(status || "pending").toLowerCase();
@@ -931,9 +965,54 @@
         const base = Number(order?.base_price ?? order?.basePrice ?? 0);
         const shipping = Number(order?.shipping_fee ?? order?.shippingFee ?? 0);
 
-        // Match backend computed total: use item totals when available,
-        // otherwise fall back to base_price.
-        const subtotal = itemsTotal > 0 ? itemsTotal : base;
+        const isCustomDesign = (() => {
+            const src = String(order?.meta?.source || "").toLowerCase();
+            if (src === "custom_design") return true;
+            for (const it of items) {
+                const meta = it?.meta && typeof it.meta === "object" ? it.meta : (() => {
+                    if (typeof it?.meta === "string") {
+                        try {
+                            const parsed = JSON.parse(it.meta);
+                            return parsed && typeof parsed === "object" ? parsed : null;
+                        } catch {
+                            return null;
+                        }
+                    }
+                    return null;
+                })();
+                if (meta && typeof meta === "object" && meta.custom_design) return true;
+            }
+            return false;
+        })();
+
+        const qtyFromItems = items.reduce((sum, it) => sum + Math.max(0, Number(it?.quantity ?? 0)), 0);
+        const qtyFromRoster = (() => {
+            const r1 = order?.meta?.roster;
+            if (Array.isArray(r1) && r1.length) return r1.length;
+            let count = 0;
+            for (const it of items) {
+                const meta = it?.meta && typeof it.meta === "object" ? it.meta : (() => {
+                    if (typeof it?.meta === "string") {
+                        try {
+                            const parsed = JSON.parse(it.meta);
+                            return parsed && typeof parsed === "object" ? parsed : null;
+                        } catch {
+                            return null;
+                        }
+                    }
+                    return null;
+                })();
+                const r = meta && typeof meta === "object" ? meta.roster : null;
+                if (Array.isArray(r) && r.length) count += r.length;
+            }
+            return count;
+        })();
+        const effectiveQty = Math.max(1, qtyFromItems || qtyFromRoster || 0);
+
+        // For Custom Design uploads (manual base price), treat base_price as per-unit.
+        // NOTE: For custom design requests, DB `order_item.total_amount` may represent per-unit pricing,
+        // so do NOT prefer itemsTotal for custom orders.
+        const subtotal = isCustomDesign ? base * effectiveQty : itemsTotal > 0 ? itemsTotal : base;
         const total = Math.round((subtotal + shipping) * 100) / 100;
         const downpayment = Math.round(total * 0.5 * 100) / 100;
         return { total, downpayment };
@@ -949,13 +1028,10 @@
         let amountPaid = Number(paymentMeta.amount_paid);
         if (!Number.isFinite(amountPaid) || amountPaid < 0) amountPaid = 0;
 
-        // Fallback if older records didn't store amount_paid.
-        if (amountPaid === 0) {
-            if (verifiedType === "full") amountPaid = totals.total;
-            if (verifiedType === "downpayment") amountPaid = totals.downpayment;
-        }
-
-        if (isFinalVerified) amountPaid = totals.total;
+        // If verification exists, treat it as at least the required amount.
+        if (verifiedType === "full") amountPaid = Math.max(amountPaid, totals.total);
+        if (verifiedType === "downpayment") amountPaid = Math.max(amountPaid, totals.downpayment);
+        if (isFinalVerified) amountPaid = Math.max(amountPaid, totals.total);
 
         const remaining = Math.max(0, Math.round((totals.total - amountPaid) * 100) / 100);
         return { total: totals.total, downpayment: totals.downpayment, amountPaid, remaining, verifiedType, isFinalVerified };
@@ -1215,6 +1291,8 @@
             if (summaryQtyEl) summaryQtyEl.textContent = "-";
             if (summaryPaymentEl) summaryPaymentEl.textContent = "-";
             if (trackingNumberEl) trackingNumberEl.value = "";
+            if (shippingDestinationEl) shippingDestinationEl.textContent = "-";
+            if (shippingEtaEl) shippingEtaEl.textContent = "-";
             if (paymentPanelEl) paymentPanelEl.style.display = "none";
             if (proofPanelEl) proofPanelEl.style.display = "none";
             if (shippingPanelEl) shippingPanelEl.style.display = "none";
@@ -1285,6 +1363,10 @@
 
         const trackingNumber = String(order?.tracking_number || order?.meta?.tracking_number || order?.meta?.trackingNumber || "").trim();
         if (trackingNumberEl) trackingNumberEl.value = trackingNumber;
+
+        if (shippingDestinationEl) {
+            shippingDestinationEl.textContent = getDestinationAddress(order);
+        }
 
         renderStepper(workflowDisplay);
         renderStagePanels(order);

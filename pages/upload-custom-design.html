@@ -330,7 +330,18 @@
         const logoPreviewUrls = new Map();
         const referencePreviewUrls = new Map();
 
-        const isLoggedIn = () => Boolean(localStorage.getItem('alix_auth_token'));
+        const isLoggedIn = () => {
+            const token = window.AlixAuth?.getToken
+                ? window.AlixAuth.getToken()
+                : (() => {
+                      try {
+                          return sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                      } catch {
+                          return localStorage.getItem('alix_auth_token');
+                      }
+                  })();
+            return Boolean(token);
+        };
 
         const showToast = (message) => window.AVToast?.success(message) || (() => {
             const notif = document.createElement("div");
@@ -342,7 +353,15 @@
         const getApiBaseUrl = () => (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function" ? window.AlixAuth.apiBaseUrl() : "");
 
         const authHeaders = () => {
-            const token = localStorage.getItem('alix_auth_token');
+            const token = window.AlixAuth?.getToken
+                ? window.AlixAuth.getToken()
+                : (() => {
+                      try {
+                          return sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                      } catch {
+                          return localStorage.getItem('alix_auth_token');
+                      }
+                  })();
             return token ? { Authorization: `Bearer ${token}` } : {};
         };
 
@@ -865,7 +884,15 @@
         });
 
         const submitCustomRequest = async () => {
-            const token = localStorage.getItem('alix_auth_token');
+            const token = window.AlixAuth?.getToken
+                ? window.AlixAuth.getToken()
+                : (() => {
+                      try {
+                          return sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                      } catch {
+                          return localStorage.getItem('alix_auth_token');
+                      }
+                  })();
             if (!token) {
                 const message = "Please log in first before submitting a custom request.";
                 window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);

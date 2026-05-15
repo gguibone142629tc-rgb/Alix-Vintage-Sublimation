@@ -50,6 +50,10 @@ final class RegisterUser
             return ['ok' => false, 'status' => 422, 'error' => 'Invalid role'];
         }
 
+        if (strtolower($roleName) === 'admin' && $this->users->countByRoleId($roleId) > 0) {
+            return ['ok' => false, 'status' => 409, 'error' => 'Admin already exists'];
+        }
+
         $user = User::new(
             firstname: $firstname,
             lastname: $lastname,

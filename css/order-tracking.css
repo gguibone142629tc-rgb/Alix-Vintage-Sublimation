@@ -96,7 +96,7 @@ nav a:hover {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    background: #ffffff;
+    background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 10px;
     min-width: 160px;
@@ -111,11 +111,11 @@ nav a:hover {
     font-size: 13px;
     font-weight: 700;
     text-decoration: none;
-    color: var(--ink-strong);
+    color: var(--ink);
 }
 
 .nav-account-dropdown a:hover {
-    background: var(--bg);
+    background: color-mix(in srgb, var(--panel) 70%, var(--bg));
 }
 
 .nav-icon {
@@ -709,8 +709,24 @@ main {
     padding: 8px 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: #f8f8f8;
+    background: var(--panel);
+    color: var(--ink);
     font-size: 12px;
+}
+
+.upload-input::file-selector-button {
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--panel) 65%, var(--bg));
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-right: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.upload-input::file-selector-button:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
 }
 
 .upload-preview {
@@ -718,7 +734,8 @@ main {
     border: 1px solid var(--line);
     border-radius: 10px;
     overflow: hidden;
-    background: #ffffff;
+    background: var(--panel);
+    color: var(--muted);
     min-height: 48px;
     max-height: 260px;
     display: grid;
@@ -798,11 +815,11 @@ main {
     width: 100%;
     border-radius: 8px;
     border: 1px solid var(--line);
-    background: #f8f8f8;
+    background: var(--panel);
     padding: 12px 14px;
     font-size: 13px;
     outline: none;
-    color: var(--ink-strong);
+    color: var(--ink);
     resize: vertical;
 }
 
@@ -835,7 +852,8 @@ main {
     padding: 12px 14px;
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: #f8f8f8;
+    background: var(--panel);
+    color: var(--ink);
     font-size: 13px;
 }
 

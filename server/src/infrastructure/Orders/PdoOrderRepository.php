@@ -418,7 +418,7 @@ final class PdoOrderRepository implements OrderRepository
     public function getOrderComputedTotal(int $orderId): ?float
     {
         $stmt = $this->pdo->prepare(
-            'SELECT o.base_price, o.shipping_fee, COALESCE(SUM(oi.total_amount), 0) AS items_total '
+            'SELECT o.base_price, o.shipping_fee, COALESCE(SUM(oi.total_amount), 0) AS items_total, COALESCE(SUM(oi.quantity), 0) AS items_qty '
             . 'FROM orders o '
             . 'LEFT JOIN order_items oi ON oi.order_id = o.order_id '
             . 'WHERE o.order_id = :order_id AND o.status <> :draft::order_status '
@@ -436,9 +436,13 @@ final class PdoOrderRepository implements OrderRepository
         $basePrice = (float) ($row['base_price'] ?? 0);
         $shippingFee = (float) ($row['shipping_fee'] ?? 0);
         $itemsTotal = (float) ($row['items_total'] ?? 0);
+        $itemsQty = (int) ($row['items_qty'] ?? 0);
 
-        // Prefer explicit item totals when present, fallback to base price.
-        $subtotal = $itemsTotal > 0 ? $itemsTotal : $basePrice;
+        // Prefer explicit item totals when present.
+        // For manual-priced orders (e.g., custom design uploads), total_amount can be 0;
+        // in that case, treat base_price as per-unit and multiply by quantity.
+        $effectiveQty = max(1, $itemsQty);
+        $subtotal = $itemsTotal > 0 ? $itemsTotal : ($basePrice * $effectiveQty);
         $total = $subtotal + $shippingFee;
         return $total >= 0 ? $total : 0.0;
     }

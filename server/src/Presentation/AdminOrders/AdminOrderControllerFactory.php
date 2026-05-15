@@ -13,7 +13,10 @@ use App\Application\Orders\SetOrderOnTransit;
 use App\Application\Orders\UpdateOrderPricing;
 use App\Application\Orders\UpdateOrderStatus;
 use App\Application\Orders\VerifyOrderPayment;
+use App\Infrastructure\Auth\JwtTokenVerifier;
 use App\Infrastructure\Orders\PdoOrderRepository;
+use App\Infrastructure\Users\PdoRoleRepository;
+use App\Presentation\Http\Auth;
 
 final class AdminOrderControllerFactory
 {
@@ -29,6 +32,14 @@ final class AdminOrderControllerFactory
         $sendProof = new SendOrderProof($repo);
         $listProofs = new ListOrderDesignProofs($repo);
         $listTransactions = new ListPaymentTransactions($repo);
-        return new AdminOrderController($pdo, $list, $update, $updatePricing, $verifyPayment, $markCodFinal, $setOnTransit, $sendProof, $listProofs, $listTransactions);
+
+        $roleRepo = new PdoRoleRepository($pdo);
+        $adminRoleId = $roleRepo->getRoleIdByName('admin');
+        if ($adminRoleId === null) {
+            throw new \RuntimeException('Admin role not configured');
+        }
+        $auth = new Auth(new JwtTokenVerifier());
+
+        return new AdminOrderController($pdo, $auth, (int) $adminRoleId, $list, $update, $updatePricing, $verifyPayment, $markCodFinal, $setOnTransit, $sendProof, $listProofs, $listTransactions);
     }
 }

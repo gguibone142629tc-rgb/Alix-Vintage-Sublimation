@@ -15,9 +15,12 @@
         return "";
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const isMessagesPage = () => /\/admin-messages\.html$/i.test(window.location.pathname);
@@ -43,8 +46,8 @@
 
     const fetchJson = async (path) => {
         const headers = { Accept: "application/json" };
-        const key = getAdminApiKey();
-        if (key) headers["X-Admin-Api-Key"] = key;
+        const token = getAdminToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(getApiBaseUrl() + path, { method: "GET", headers });
         const data = await res.json().catch(() => ({}));

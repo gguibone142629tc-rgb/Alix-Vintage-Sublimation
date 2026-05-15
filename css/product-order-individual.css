@@ -143,7 +143,7 @@ nav a.active {
             padding: 6px 12px;
             border: 1px solid var(--line);
             border-radius: 999px;
-            background: #ffffff;
+            background: rgba(14, 16, 24, 0.8);
             color: var(--ink-strong);
             font-size: 10px;
             letter-spacing: 1px;
@@ -206,13 +206,13 @@ nav a.active {
             text-align: center;
             padding: 6px 10px;
             border-radius: 999px;
-            border: 1px solid #3f3f3f;
+            border: 1px solid var(--line);
             font-size: 10px;
             letter-spacing: 1px;
             text-transform: uppercase;
             font-weight: 600;
             text-decoration: none;
-            color: #3f3f3f;
+            color: var(--ink);
             background: rgba(14, 16, 24, 0.8);
         }
 
@@ -421,7 +421,7 @@ nav a.active {
     text-transform: uppercase;
 }
 
-.nav-login-btn-link:hover { background: #06070b; color: #000; border-color: transparent; box-shadow: 0 6px 20px rgba(230, 57, 70,0.3);
+.nav-login-btn-link:hover { background: #06070b; color: #ffffff; border-color: transparent; box-shadow: 0 6px 20px rgba(230, 57, 70,0.3);
 }
 
 .is-hidden {

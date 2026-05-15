@@ -7,6 +7,7 @@ namespace App\Presentation\Products;
 use App\Application\Products\ListProducts;
 use App\Domain\Products\Product;
 use App\Domain\Products\ProductRepository;
+use App\Presentation\Http\Auth;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
 use App\Shared\Config\Env;
@@ -24,26 +25,23 @@ final class ProductController
     public function __construct(
         private readonly ListProducts $listProducts,
         private readonly ProductRepository $products,
+        private readonly Auth $auth,
+        private readonly int $adminRoleId,
     )
     {
     }
 
     private function assertAdmin(Request $request): void
     {
+        // Local dev convenience: allow without auth in debug mode.
         if (Env::bool('APP_DEBUG', false) && Env::get('APP_ENV') === 'local') {
             return;
         }
 
-        $expected = Env::get('ADMIN_API_KEY') ?? Env::get('ADMIN_SETUP_KEY');
-        if ($expected === null || trim($expected) === '') {
-            if (!Env::bool('APP_DEBUG', false)) {
-                Response::json(['error' => 'Server not configured for admin products'], 500);
-            }
-            return;
-        }
-
-        $provided = $request->header('x-admin-api-key');
-        if ($provided === null || !hash_equals($expected, $provided)) {
+        $claims = $this->auth->requireClaims($request);
+        $roleId = $claims['role_id'] ?? null;
+        $roleId = (is_int($roleId) || is_numeric($roleId)) ? (int) $roleId : 0;
+        if ($roleId !== $this->adminRoleId) {
             Response::json(['error' => 'Forbidden'], 403);
         }
     }

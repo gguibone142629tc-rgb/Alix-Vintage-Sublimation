@@ -13,6 +13,8 @@ use App\Application\Auth\VerifyOtp;
 use App\Presentation\Http\Request;
 use App\Presentation\Http\Response;
 use App\Shared\Config\Env;
+use App\Domain\Users\RoleRepository;
+use App\Domain\Users\UserRepository;
 
 final class AuthController
 {
@@ -23,7 +25,18 @@ final class AuthController
         private readonly VerifyOtp $verifyOtp,
         private readonly RequestPasswordReset $requestPasswordReset,
         private readonly ResetPassword $resetPassword,
+        private readonly RoleRepository $roles,
+        private readonly UserRepository $users,
     ) {
+    }
+
+    private function requireAdminRoleId(): int
+    {
+        $roleId = $this->roles->getRoleIdByName('admin');
+        if ($roleId === null) {
+            Response::json(['error' => 'Server roles not configured'], 500);
+        }
+        return (int) $roleId;
     }
 
     public function registerCustomer(Request $request): void
@@ -79,6 +92,13 @@ final class AuthController
             Response::json(['error' => $result['error']], $result['status']);
         }
 
+        // Admin accounts should be usable immediately (no OTP flow).
+        $userId = (int) ($result['user']['user_id'] ?? 0);
+        if ($userId > 0) {
+            $this->users->markVerified($userId);
+            $result['user']['is_verified'] = true;
+        }
+
         Response::json(['ok' => true, 'user' => $result['user']], 201);
     }
 
@@ -106,24 +126,30 @@ final class AuthController
     {
         $data = $request->json();
 
-        $username = trim((string) ($data['username'] ?? ''));
+        $email = strtolower(trim((string) ($data['email'] ?? '')));
         $password = (string) ($data['password'] ?? '');
 
-        if ($username === '' || $password === '') {
-            Response::json(['error' => 'Missing credentials'], 422);
+        $result = $this->loginUser->handle([
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        if (!$result['ok']) {
+            Response::json(['error' => $result['error']], $result['status']);
         }
 
-        $expectedUsername = Env::require('ADMIN_LOGIN_USERNAME');
-        $expectedPassword = Env::require('ADMIN_LOGIN_PASSWORD');
-
-        $usernameOk = hash_equals($expectedUsername, $username);
-        $passwordOk = hash_equals($expectedPassword, $password);
-
-        if (!$usernameOk || !$passwordOk) {
-            Response::json(['error' => 'Invalid admin credentials'], 401);
+        $adminRoleId = $this->requireAdminRoleId();
+        $roleId = $result['user']['role_id'] ?? null;
+        $roleId = (is_int($roleId) || is_numeric($roleId)) ? (int) $roleId : 0;
+        if ($roleId !== $adminRoleId) {
+            Response::json(['error' => 'Forbidden'], 403);
         }
 
-        Response::json(['ok' => true], 200);
+        Response::json([
+            'ok' => true,
+            'token' => $result['token'],
+            'user' => $result['user'],
+        ], 200);
     }
 
     public function requestOtp(Request $request): void

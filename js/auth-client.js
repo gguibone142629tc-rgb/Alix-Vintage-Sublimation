@@ -1,6 +1,45 @@
 (function () {
     const STORAGE_TOKEN_KEY = "alix_auth_token";
     const STORAGE_USER_KEY = "alix_auth_user";
+    const STORAGE_LOGIN_KEY = "alix_is_logged_in";
+    const STORAGE_LOGIN_AT_KEY = "alix_logged_in_at";
+
+    function safeGet(storage, key) {
+        try {
+            return storage.getItem(key);
+        } catch {
+            return null;
+        }
+    }
+
+    function safeSet(storage, key, value) {
+        try {
+            storage.setItem(key, value);
+        } catch {
+            // ignore
+        }
+    }
+
+    function safeRemove(storage, key) {
+        try {
+            storage.removeItem(key);
+        } catch {
+            // ignore
+        }
+    }
+
+    function getFromAnyStorage(key) {
+        const sessionValue = safeGet(sessionStorage, key);
+        if (sessionValue != null) {
+            return sessionValue;
+        }
+        return safeGet(localStorage, key);
+    }
+
+    function removeFromAllStorages(key) {
+        safeRemove(sessionStorage, key);
+        safeRemove(localStorage, key);
+    }
 
     function getApiBaseUrl() {
         if (window.ALIX_API_BASE_URL) {
@@ -64,35 +103,66 @@
     }
 
     function getToken() {
-        return localStorage.getItem(STORAGE_TOKEN_KEY);
+        return getFromAnyStorage(STORAGE_TOKEN_KEY);
     }
 
     function getUser() {
-        const raw = localStorage.getItem(STORAGE_USER_KEY);
+        const raw = getFromAnyStorage(STORAGE_USER_KEY);
         if (!raw) {
             return null;
         }
         return safeJsonParse(raw);
     }
 
-    function setSession(token, user) {
+    function setSession(token, user, options) {
+        const rememberOption = options && "remember" in options ? options.remember : undefined;
+
+        let targetStorage = localStorage;
+        if (rememberOption === true) {
+            targetStorage = localStorage;
+        } else if (rememberOption === false) {
+            targetStorage = sessionStorage;
+        } else {
+            // No explicit preference: preserve the existing storage mode when possible
+            // (e.g. profile edits should not convert session-only to persistent).
+            const sessionToken = safeGet(sessionStorage, STORAGE_TOKEN_KEY);
+            const localToken = safeGet(localStorage, STORAGE_TOKEN_KEY);
+
+            if (sessionToken && token && sessionToken === token) {
+                targetStorage = sessionStorage;
+            } else if (localToken && token && localToken === token) {
+                targetStorage = localStorage;
+            } else {
+                // Backward-compatible default: persist.
+                targetStorage = localStorage;
+            }
+        }
+
+        const otherStorage = targetStorage === localStorage ? sessionStorage : localStorage;
+
         if (token) {
-            localStorage.setItem(STORAGE_TOKEN_KEY, token);
+            safeSet(targetStorage, STORAGE_TOKEN_KEY, token);
+            safeRemove(otherStorage, STORAGE_TOKEN_KEY);
         }
         if (user) {
-            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user));
+            safeSet(targetStorage, STORAGE_USER_KEY, JSON.stringify(user));
+            safeRemove(otherStorage, STORAGE_USER_KEY);
         }
 
         // Backward compatibility with older nav logic.
-        localStorage.setItem("alix_is_logged_in", "true");
-        localStorage.setItem("alix_logged_in_at", String(Date.now()));
+        if (token) {
+            safeSet(targetStorage, STORAGE_LOGIN_KEY, "true");
+            safeSet(targetStorage, STORAGE_LOGIN_AT_KEY, String(Date.now()));
+            safeRemove(otherStorage, STORAGE_LOGIN_KEY);
+            safeRemove(otherStorage, STORAGE_LOGIN_AT_KEY);
+        }
     }
 
     function clearSession() {
-        localStorage.removeItem(STORAGE_TOKEN_KEY);
-        localStorage.removeItem(STORAGE_USER_KEY);
-        localStorage.removeItem("alix_is_logged_in");
-        localStorage.removeItem("alix_logged_in_at");
+        removeFromAllStorages(STORAGE_TOKEN_KEY);
+        removeFromAllStorages(STORAGE_USER_KEY);
+        removeFromAllStorages(STORAGE_LOGIN_KEY);
+        removeFromAllStorages(STORAGE_LOGIN_AT_KEY);
     }
 
     async function postJson(path, body) {

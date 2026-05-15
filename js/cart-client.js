@@ -18,7 +18,11 @@
         if (window.AlixAuth && typeof window.AlixAuth.getToken === "function") {
             return window.AlixAuth.getToken();
         }
-        return localStorage.getItem("alix_auth_token");
+        try {
+            return sessionStorage.getItem("alix_auth_token") || localStorage.getItem("alix_auth_token");
+        } catch {
+            return localStorage.getItem("alix_auth_token");
+        }
     }
 
     async function requestJson(path, options) {

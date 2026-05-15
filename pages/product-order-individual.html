@@ -261,7 +261,15 @@
 
         // Add to cart functionality
         async function addOrderToHistory() {
-            const token = localStorage.getItem('alix_auth_token');
+            const token = window.AlixAuth?.getToken
+                ? window.AlixAuth.getToken()
+                : (() => {
+                      try {
+                          return sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                      } catch {
+                          return localStorage.getItem('alix_auth_token');
+                      }
+                  })();
             if (!token) {
                 const message = 'Please log in first before adding items to cart/order history.';
                 window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
@@ -307,7 +315,15 @@
             let profilePhone = '';
             let profileEmail = '';
             try {
-                const u = JSON.parse(localStorage.getItem('alix_auth_user') || 'null');
+                const u = window.AlixAuth?.getUser
+                    ? window.AlixAuth.getUser()
+                    : (() => {
+                          try {
+                              return JSON.parse(sessionStorage.getItem('alix_auth_user') || localStorage.getItem('alix_auth_user') || 'null');
+                          } catch {
+                              return null;
+                          }
+                      })();
                 if (u && typeof u === 'object') {
                     profilePhone = String(u.phone_number || '').trim();
                     profileEmail = String(u.email || '').trim();

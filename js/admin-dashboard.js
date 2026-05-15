@@ -14,15 +14,18 @@
         return "";
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const fetchJson = async (path) => {
         const headers = { Accept: "application/json" };
-        const key = getAdminApiKey();
-        if (key) headers["X-Admin-Api-Key"] = key;
+        const token = getAdminToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(getApiBaseUrl() + path, { method: "GET", headers });
         const data = await res.json().catch(() => ({}));
@@ -81,7 +84,7 @@
     const dbStatusToWorkflow = (status) => {
         const s = String(status || "pending").toLowerCase();
         if (s === "completed") return "Completed";
-        if (s === "cancelled") return "Rejected";
+        if (s === "cancelled") return "Cancelled";
         if (s === "shipped") return "On Transit";
         if (s === "ready_to_ship") return "Ready to Ship";
         if (s === "awaiting_final_payment") return "Awaiting Final Payment";
@@ -89,6 +92,14 @@
         if (s === "processing") return "In Progress";
         if (s === "paid") return "Awaiting Payment";
         return "Pending";
+    };
+
+    const isCustomerCancelledOrder = (order) => {
+        const rawStatus = String(order?.status || "").trim().toLowerCase();
+        if (rawStatus === "cancelled" || rawStatus === "canceled") return true;
+
+        const workflow = String(order?.admin?.workflowStatus || "").trim().toLowerCase();
+        return workflow === "cancelled" || workflow === "canceled";
     };
 
     const normalizeDbOrders = (apiOrders) => {
@@ -215,8 +226,9 @@
     const start = async () => {
         try {
             const orders = await loadOrders();
-            renderStats(orders);
-            renderRecent(orders);
+            const visibleOrders = orders.filter((o) => !isCustomerCancelledOrder(o));
+            renderStats(visibleOrders);
+            renderRecent(visibleOrders);
         } catch {
             renderStats([]);
             renderRecent([]);

@@ -234,7 +234,20 @@
             return s === 'completed' || s === 'cancelled' || s === 'canceled';
         };
 
-        const isAuthed = () => Boolean(localStorage.getItem('alix_auth_token'));
+        const isAuthed = () => {
+            if (window.AlixAuth?.getToken) {
+                const token = window.AlixAuth.getToken();
+                if (!token) return false;
+                return window.AlixAuth.isTokenValid ? window.AlixAuth.isTokenValid(token) : true;
+            }
+
+            try {
+                const token = sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                return Boolean(token);
+            } catch {
+                return Boolean(localStorage.getItem('alix_auth_token'));
+            }
+        };
 
         const normalizeOrders = (apiOrders) => {
             const list = Array.isArray(apiOrders) ? apiOrders : [];

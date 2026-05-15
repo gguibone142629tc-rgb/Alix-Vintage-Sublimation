@@ -23,15 +23,18 @@
         return "";
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const fetchTransactions = async () => {
         const headers = { Accept: "application/json" };
-        const key = getAdminApiKey();
-        if (key) headers["X-Admin-Api-Key"] = key;
+        const token = getAdminToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(getApiBaseUrl() + "/api/admin/transactions?limit=200&offset=0", {
             method: "GET",

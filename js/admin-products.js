@@ -27,6 +27,70 @@
 
     const tbody = qs("#productsTbody");
 
+    const CATEGORY_PRESETS = [
+        { value: "jersey", label: "Jersey" },
+        { value: "shirt", label: "Shirt" },
+        { value: "hoodie", label: "Hoodie" },
+        { value: "shorts", label: "Shorts" },
+        { value: "other", label: "Other" },
+    ];
+
+    const normalizeCategoryKey = (value) => String(value || "").trim().toLowerCase();
+
+    const syncCategoryOptions = (preferValue = null) => {
+        if (!productCategoryInput) return;
+
+        const current = preferValue != null ? String(preferValue) : String(productCategoryInput.value || "");
+        const seen = new Set();
+
+        const options = [];
+        options.push({ value: "", label: "Select category", disabled: true });
+
+        CATEGORY_PRESETS.forEach((p) => {
+            const key = normalizeCategoryKey(p.value);
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            options.push({ value: p.value, label: p.label });
+        });
+
+        const extras = new Map();
+        productsCache.forEach((prod) => {
+            const raw = String(prod?.category || "").trim();
+            const key = normalizeCategoryKey(raw);
+            if (!key || seen.has(key)) return;
+            if (!extras.has(key)) extras.set(key, raw);
+        });
+
+        Array.from(extras.entries())
+            .sort((a, b) => String(a[1]).localeCompare(String(b[1])))
+            .forEach(([key, raw]) => {
+                seen.add(key);
+                options.push({ value: raw, label: raw });
+            });
+
+        const currentKey = normalizeCategoryKey(current);
+        if (currentKey && !seen.has(currentKey)) {
+            options.push({ value: current, label: current });
+        }
+
+        productCategoryInput.innerHTML = options
+            .map((opt) => {
+                const attrs = [
+                    `value="${escapeAttr(opt.value)}"`,
+                    opt.disabled ? "disabled" : "",
+                    current && opt.value === current ? "selected" : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+                return `<option ${attrs}>${escapeHtml(opt.label)}</option>`;
+            })
+            .join("");
+
+        if (current && Array.from(productCategoryInput.options).some((o) => o.value === current)) {
+            productCategoryInput.value = current;
+        }
+    };
+
     const formatDateTime = (iso) => {
         if (!iso) return "-";
         const dt = new Date(iso);
@@ -46,9 +110,12 @@
         return "";
     };
 
-    const getAdminApiKey = () => {
-        const key = localStorage.getItem("alix_admin_api_key");
-        return key && String(key).trim() ? String(key).trim() : null;
+    const getAdminToken = () => {
+        if (window.AlixAdminAuth && typeof window.AlixAdminAuth.getToken === "function") {
+            return window.AlixAdminAuth.getToken();
+        }
+        const token = sessionStorage.getItem("alix_admin_auth_token");
+        return token && String(token).trim() ? String(token).trim() : null;
     };
 
     const resolveImageUrl = (imagePath) => {
@@ -124,6 +191,7 @@
     const setForm = (product) => {
         productIdInput.value = product?.id || "";
         productNameInput.value = product?.name || "";
+        syncCategoryOptions(product?.category || "");
         productCategoryInput.value = product?.category || "";
         if (productCollectionInput) {
             productCollectionInput.value = String(product?.collection || "");
@@ -155,8 +223,8 @@
         }
 
         if (admin) {
-            const key = getAdminApiKey();
-            if (key) headers["X-Admin-Api-Key"] = key;
+            const token = getAdminToken();
+            if (token) headers["Authorization"] = `Bearer ${token}`;
         }
 
         const res = await fetch(getApiBaseUrl() + path, {
@@ -183,6 +251,7 @@
         const data = await fetchJson("/api/products", { method: "GET" });
         const rows = Array.isArray(data?.products) ? data.products : [];
         productsCache = rows.map(normalizeProduct);
+        syncCategoryOptions();
     };
 
     const getFilteredProducts = () => {
@@ -358,6 +427,7 @@
         } catch (error) {
             await showError(error instanceof Error ? error.message : "Failed to load products");
             productsCache = [];
+            syncCategoryOptions();
         }
         renderTable();
     };

@@ -34,6 +34,6 @@ final class AuthControllerFactory
         $requestPasswordReset = new RequestPasswordReset($userRepo, $emailSender);
         $resetPassword = new ResetPassword($userRepo, $passwordHasher);
 
-        return new AuthController($register, $login, $requestOtp, $verifyOtp, $requestPasswordReset, $resetPassword);
+        return new AuthController($register, $login, $requestOtp, $verifyOtp, $requestPasswordReset, $resetPassword, $roleRepo, $userRepo);
     }
 }

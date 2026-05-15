@@ -1,8 +1,6 @@
 (function () {
-    const ADMIN_SESSION_KEY = "alix_admin_logged_in";
-    const ADMIN_LOGIN_AT_KEY = "alix_admin_logged_in_at";
-    const ADMIN_API_KEY_STORAGE = "alix_admin_api_key";
-    const ADMIN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+    const ADMIN_TOKEN_KEY = "alix_admin_auth_token";
+    const ADMIN_USER_KEY = "alix_admin_auth_user";
 
     const path = String(window.location.pathname || "");
     const isAdminPage = /\/admin-[^/]+\.html$/i.test(path);
@@ -47,29 +45,79 @@
     }
 
     // Admin login should not persist across browser restarts.
-    // Clear any legacy persistent flags.
+    // Clear any legacy persistent flags/keys.
     try {
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+        localStorage.removeItem("alix_admin_logged_in");
+        localStorage.removeItem("alix_admin_logged_in_at");
+        localStorage.removeItem("alix_admin_api_key");
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(ADMIN_USER_KEY);
     } catch {
         // ignore
     }
 
-    const isAdminSessionFresh = () => {
-        const flag = sessionStorage.getItem(ADMIN_SESSION_KEY) === "true";
-        const loginAt = Number(sessionStorage.getItem(ADMIN_LOGIN_AT_KEY));
-        const hasValidTimestamp = Number.isFinite(loginAt) && loginAt > 0;
-        const isFresh = hasValidTimestamp && Date.now() - loginAt <= ADMIN_MAX_AGE_MS;
-
-        if (flag && !isFresh) {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+    const getToken = () => {
+        try {
+            const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+            return token && String(token).trim() ? String(token).trim() : null;
+        } catch {
+            return null;
         }
-
-        return flag && isFresh;
     };
 
-    const isLoggedIn = isAdminSessionFresh();
+    const getUser = () => {
+        try {
+            const raw = sessionStorage.getItem(ADMIN_USER_KEY);
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    };
+
+    const isTokenValid = (token) => {
+        if (window.AlixAuth && typeof window.AlixAuth.isTokenValid === "function") {
+            return window.AlixAuth.isTokenValid(token);
+        }
+        return Boolean(token);
+    };
+
+    const clearSession = () => {
+        try {
+            sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+            sessionStorage.removeItem(ADMIN_USER_KEY);
+        } catch {
+            // ignore
+        }
+    };
+
+    const setSession = (token, user) => {
+        try {
+            if (token) {
+                sessionStorage.setItem(ADMIN_TOKEN_KEY, String(token));
+            }
+            if (user) {
+                sessionStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
+            }
+        } catch {
+            // ignore
+        }
+    };
+
+    window.AlixAdminAuth = {
+        getToken,
+        getUser,
+        isTokenValid,
+        clearSession,
+        setSession,
+    };
+
+    const token = getToken();
+    const tokenValid = Boolean(token) && isTokenValid(token);
+    if (token && !tokenValid) {
+        clearSession();
+    }
+    const isLoggedIn = tokenValid;
 
     if (isLegacyAdminLoginPage) {
         window.location.replace(loginUrl);
@@ -255,12 +303,13 @@
     logoutButton.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        sessionStorage.removeItem(ADMIN_SESSION_KEY);
-        sessionStorage.removeItem(ADMIN_LOGIN_AT_KEY);
+        clearSession();
         try {
-            localStorage.removeItem(ADMIN_SESSION_KEY);
-            localStorage.removeItem(ADMIN_LOGIN_AT_KEY);
-            localStorage.removeItem(ADMIN_API_KEY_STORAGE);
+            localStorage.removeItem("alix_admin_logged_in");
+            localStorage.removeItem("alix_admin_logged_in_at");
+            localStorage.removeItem("alix_admin_api_key");
+            localStorage.removeItem(ADMIN_TOKEN_KEY);
+            localStorage.removeItem(ADMIN_USER_KEY);
         } catch {
             // ignore
         }
