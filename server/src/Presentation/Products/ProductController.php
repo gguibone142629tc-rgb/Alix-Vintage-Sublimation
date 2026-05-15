@@ -15,7 +15,7 @@ use App\Infrastructure\Storage\AppStorage;
 
 final class ProductController
 {
-    private const MAX_PRODUCT_IMAGE_BYTES = 8_000_000; // 8MB
+    private const MAX_PRODUCT_IMAGE_BYTES = 25_000_000; // 25MB
     private const ALLOWED_COLLECTIONS = [
         'basketball',
         'volleyball',
@@ -200,7 +200,7 @@ final class ProductController
         }
 
         if (strlen($binary) > self::MAX_PRODUCT_IMAGE_BYTES) {
-            throw new \InvalidArgumentException('Image is too large (max 8MB)');
+            throw new \InvalidArgumentException('Image is too large (max 25MB)');
         }
 
         $name = 'product-' . bin2hex(random_bytes(8)) . '.' . $ext;
