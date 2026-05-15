@@ -202,18 +202,7 @@
             setInlineErrorState(adminPasswordInputElement, adminPasswordErrorElement, '');
         });
 
-        // Admin login should NOT persist across browser restarts.
-        // Use sessionStorage and clear any legacy persistent flags/keys.
-        try {
-            localStorage.removeItem('alix_admin_logged_in');
-            localStorage.removeItem('alix_admin_logged_in_at');
-            localStorage.removeItem('alix_admin_api_key');
-            localStorage.removeItem(ADMIN_TOKEN_KEY);
-            localStorage.removeItem(ADMIN_USER_KEY);
-        } catch {
-            // ignore
-        }
-
+        // Persistent admin login enabled.
         const setLoginMode = (mode) => {
             const isAdminMode = mode === 'admin';
             if (customerLoginFormElement) {

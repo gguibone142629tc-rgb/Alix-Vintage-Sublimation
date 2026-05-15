@@ -44,17 +44,7 @@
         document.head.appendChild(style);
     }
 
-    // Admin login should not persist across browser restarts.
-    // Clear any legacy persistent flags/keys.
-    try {
-        localStorage.removeItem("alix_admin_logged_in");
-        localStorage.removeItem("alix_admin_logged_in_at");
-        localStorage.removeItem("alix_admin_api_key");
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
-        localStorage.removeItem(ADMIN_USER_KEY);
-    } catch {
-        // ignore
-    }
+    // Persistent admin login enabled.
 
     const getToken = () => {
         try {
