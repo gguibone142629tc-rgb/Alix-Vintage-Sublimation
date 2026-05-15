@@ -152,16 +152,42 @@
             body: JSON.stringify(body),
         });
 
-        const data = await response.json().catch(() => ({}));
+        const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+        let data = null;
+        let rawText = null;
+        try {
+            data = await response.json();
+        } catch {
+            // If the server returns HTML or empty response, surface it.
+            rawText = await response.text().catch(() => null);
+            data = null;
+        }
+
+        if (response.ok && data == null) {
+            const err = new Error("Server returned invalid response");
+            err.status = response.status;
+            err.data = {
+                contentType,
+                snippet: rawText ? String(rawText).slice(0, 180) : "",
+            };
+            throw err;
+        }
+
+        const payload = data && typeof data === "object" ? data : {};
         if (!response.ok) {
-            const errorMessage = typeof data.error === "string" ? data.error : "Request failed";
+            const errorMessage =
+                typeof payload.error === "string"
+                    ? payload.error
+                    : rawText && rawText.trim()
+                      ? rawText.trim().slice(0, 180)
+                      : "Request failed";
             const error = new Error(errorMessage);
             error.status = response.status;
-            error.data = data;
+            error.data = payload;
             throw error;
         }
 
-        return data;
+        return payload;
     }
 
     window.AlixAuth = {
