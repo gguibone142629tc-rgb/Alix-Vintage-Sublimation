@@ -17,6 +17,8 @@ final class User
         public readonly int $roleId,
         public readonly bool $isVerified,
         public readonly ?\DateTimeImmutable $createdAt,
+        public readonly ?string $otpCode = null,
+        public readonly ?\DateTimeImmutable $otpExpiry = null,
     ) {
     }
 
@@ -40,6 +42,8 @@ final class User
             roleId: $roleId,
             isVerified: false,
             createdAt: null,
+            otpCode: null,
+            otpExpiry: null,
         );
     }
 
@@ -49,6 +53,11 @@ final class User
         $createdAt = null;
         if (!empty($row['created_at'])) {
             $createdAt = new \DateTimeImmutable((string) $row['created_at']);
+        }
+
+        $otpExpiry = null;
+        if (!empty($row['otp_expiry'])) {
+            $otpExpiry = new \DateTimeImmutable((string) $row['otp_expiry']);
         }
 
         return new self(
@@ -62,6 +71,8 @@ final class User
             roleId: (int) $row['role_id'],
             isVerified: (bool) $row['is_verified'],
             createdAt: $createdAt,
+            otpCode: isset($row['otp_code']) ? (string) $row['otp_code'] : null,
+            otpExpiry: $otpExpiry,
         );
     }
 
@@ -78,6 +89,8 @@ final class User
             roleId: $this->roleId,
             isVerified: $this->isVerified,
             createdAt: $createdAt,
+            otpCode: $this->otpCode,
+            otpExpiry: $this->otpExpiry,
         );
     }
 }

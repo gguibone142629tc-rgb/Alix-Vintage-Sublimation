@@ -29,8 +29,22 @@ final class RequestOtp
             return ['ok' => false, 'status' => 404, 'error' => 'Account not found'];
         }
 
+        // If a valid (unexpired) OTP already exists, do NOT send a new one.
+        $now = new \DateTimeImmutable('now');
+        if (
+            $user->otpCode !== null
+            && $user->otpExpiry !== null
+            && $user->otpExpiry > $now
+        ) {
+            return [
+                'ok' => true,
+                'status' => 200,
+                'message' => 'A verification code has already been sent. Please wait for it to expire before requesting a new one.',
+            ];
+        }
+
         $otpCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $expiry = (new \DateTimeImmutable('now'))->modify('+5 minutes');
+        $expiry = $now->modify('+5 minutes');
 
         $this->users->setOtp((int) $user->id, $otpCode, $expiry);
 
