@@ -278,6 +278,16 @@
                         '';
                     const user = (result && (result.user || result.admin || result.account)) || null;
 
+                    try {
+                        console.log('[AdminLogin] response received', {
+                            ok: Boolean(result?.ok),
+                            tokenLen: String(token || '').length,
+                            hasUser: Boolean(user),
+                        });
+                    } catch {
+                        // ignore
+                    }
+
                     if (!String(token).trim()) {
                         throw new Error('Login failed');
                     }
@@ -288,6 +298,15 @@
                     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
                     window.location.href = 'admin-homepage.html';
                 } catch (error) {
+                    try {
+                        console.error('[AdminLogin] failed', {
+                            message: error?.message,
+                            status: error?.status,
+                            data: error?.data,
+                        });
+                    } catch {
+                        // ignore
+                    }
                     const message = error?.message || 'Invalid admin credentials';
 
                     const inlineMessage = error?.status === 401 ? 'Incorrect email or password.' : message;
