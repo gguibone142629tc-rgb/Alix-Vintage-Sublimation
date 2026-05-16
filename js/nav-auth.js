@@ -753,6 +753,7 @@
         ];
 
         if (isLoggedIn) {
+            entries.push({ label: "Cart", href: "cart.html", className: "nav-mobile-cart-link" });
             entries.push({ label: "Orders", href: "order-tracking.html", className: "nav-mobile-orders-link" });
             entries.push({ label: "Order History", href: "order-history.html", className: "nav-mobile-order-history-link" });
             entries.push({ label: "Account Settings", href: "account-settings.html", className: "nav-mobile-account-link" });
