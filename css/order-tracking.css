@@ -1029,6 +1029,10 @@ main {
 }
 
 @media (max-width: 640px) {
+    body {
+        overflow-x: hidden;
+    }
+
     .filter-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -1140,13 +1144,15 @@ main {
         overflow-x: auto;
         overflow-y: hidden;
         background: rgba(14, 16, 24, 0.8);
+        max-width: 100%;
     }
 
     .order-content-roster .orders-table {
         display: table;
         width: 100%;
-        min-width: 520px;
+        min-width: 0;
         border-collapse: collapse;
+        table-layout: fixed;
     }
 
     .order-content-roster .orders-table thead {
@@ -1164,8 +1170,21 @@ main {
     .order-content-roster .orders-table th,
     .order-content-roster .orders-table td {
         display: table-cell;
+        padding: 10px 10px;
+        font-size: 12px;
+        line-height: 1.35;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Keep numeric columns compact; allow NAME to wrap. */
+    .order-content-roster .orders-table th:nth-child(1),
+    .order-content-roster .orders-table td:nth-child(1),
+    .order-content-roster .orders-table th:nth-child(3),
+    .order-content-roster .orders-table td:nth-child(3),
+    .order-content-roster .orders-table th:nth-child(4),
+    .order-content-roster .orders-table td:nth-child(4) {
         white-space: nowrap;
-        padding: 12px 12px;
     }
 }
 
