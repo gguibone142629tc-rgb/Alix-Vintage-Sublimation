@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     "use strict";
 
     const qs = (sel) => document.querySelector(sel);
@@ -50,6 +50,7 @@
         price: Number(p?.base_price || 0),
         imagePath: p?.image_path || null,
         images: Array.isArray(p?.images) ? p.images : [],
+        collection: String(p?.collection || "").trim().toLowerCase(),
     });
 
     const buildViewMap = (product) => {
@@ -141,6 +142,44 @@
         return rows.map(normalizeProduct);
     };
 
+    const getProductDescriptionHtml = (collection) => {
+        const c = String(collection || "").trim().toLowerCase();
+        if (c.includes("basket")) {
+            return `
+                <h3>Description</h3>
+                <p>Product: Custom Sublimation Basketball Uniform Set (Jersey + Shorts)</p>
+                <p>Design: All-over sublimation with customizable team name, logo, and numbers.</p>
+                <p>Material: Lightweight, breathable, and sweat-wicking fabric designed for the court.</p>
+                <p>Print: High-quality sublimation, no peeling or fading.</p>
+            `;
+        } else if (c.includes("volley")) {
+            return `
+                <h3>Description</h3>
+                <p>Product: Custom Sublimation Volleyball Uniform Set</p>
+                <p>Design: All-over sublimation with customizable team name, logo, and numbers.</p>
+                <p>Material: Flexible, breathable, and quick-dry fabric for maximum agility.</p>
+                <p>Print: High-quality sublimation, no peeling or fading.</p>
+            `;
+        } else if (c.includes("corporate") || c.includes("event")) {
+            return `
+                <h3>Description</h3>
+                <p>Product: Custom Sublimation Corporate/Event Wear</p>
+                <p>Design: All-over sublimation with customizable company logo, event details, and branding.</p>
+                <p>Material: Comfortable, durable, and premium fabric suitable for all-day wear.</p>
+                <p>Print: High-quality sublimation, crisp and professional look.</p>
+            `;
+        } else {
+            // Default to Football/Soccer
+            return `
+                <h3>Description</h3>
+                <p>Product: Custom Sublimation Football/Soccer Uniform Set (Jersey + Shorts)</p>
+                <p>Design: All-over sublimation with customizable team name, sponsor, and numbers.</p>
+                <p>Material: Soft, breathable, and quick-dry fabric.</p>
+                <p>Print: High-quality sublimation, no peeling or fading.</p>
+            `;
+        }
+    };
+
     const init = async () => {
         try {
             const products = await fetchProducts();
@@ -152,6 +191,11 @@
 
             if (nameEl) nameEl.textContent = product.name || "Product";
             if (priceEl) priceEl.textContent = formatMoney(product.price);
+
+            const descEl = qs(".description");
+            if (descEl) {
+                descEl.innerHTML = getProductDescriptionHtml(product.collection);
+            }
 
             setIndividualLink(product.id);
 
