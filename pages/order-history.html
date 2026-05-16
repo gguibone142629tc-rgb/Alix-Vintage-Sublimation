@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Order History | Alix Vintage</title>
-    <link rel="stylesheet" href="../css/order-history.css?v=3">
+    <link rel="stylesheet" href="../css/order-history.css?v=4">
     <link rel="stylesheet" href="../css/sublimation-theme.css?v=3">
 </head>
 <body>
@@ -391,13 +391,13 @@
                                         : 'active';
 
                         return `
-                            <tr>
-                                <td><strong>${escapeHtml(o.id)}</strong></td>
-                                <td>${escapeHtml(formatDate(o.date))}</td>
-                                <td><div class="order-items-wrap">${itemsHtml}</div></td>
-                                <td><span class="status-badge ${escapeHtml(badgeClass)}">${escapeHtml(o.status)}</span></td>
-                                <td><strong>${escapeHtml(formatMoney(o.total))}</strong></td>
-                                <td>
+                            <tr class="order-row">
+                                <td data-label="Order ID"><strong>${escapeHtml(o.id)}</strong></td>
+                                <td data-label="Date">${escapeHtml(formatDate(o.date))}</td>
+                                <td data-label="Items"><div class="order-items-wrap">${itemsHtml}</div></td>
+                                <td data-label="Status"><span class="status-badge ${escapeHtml(badgeClass)}">${escapeHtml(o.status)}</span></td>
+                                <td data-label="Amount"><strong>${escapeHtml(formatMoney(o.total))}</strong></td>
+                                <td data-label="Action">
                                     <button class="action-btn" data-view-order="${escapeHtml(o.rawId)}">VIEW</button>
                                 </td>
                             </tr>

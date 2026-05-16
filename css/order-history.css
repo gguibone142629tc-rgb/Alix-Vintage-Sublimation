@@ -619,6 +619,76 @@ nav a.active {
                 grid-template-columns: 1fr;
             }
 
+            /* Make order history rows readable on mobile (stacked card layout). */
+            table {
+                min-width: 0;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+            }
+
+            tbody {
+                display: grid;
+                gap: 12px;
+            }
+
+            tbody tr.order-row {
+                padding: 14px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: var(--panel);
+            }
+
+            tbody tr.order-row td {
+                padding: 0;
+                border: 0;
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            tbody tr.order-row td + td {
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--line);
+            }
+
+            tbody tr.order-row td::before {
+                content: attr(data-label);
+                font-size: 11px;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                color: var(--muted);
+                font-weight: 700;
+                flex: 0 0 auto;
+            }
+
+            tbody tr.order-row td[data-label="Items"] {
+                display: block;
+            }
+
+            tbody tr.order-row td[data-label="Items"]::before {
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .order-items-wrap {
+                max-width: none;
+            }
+
+            tbody tr.order-row td[data-label="Action"] {
+                justify-content: flex-end;
+            }
+
             .filter-tabs .tab-btn {
                 display: none;
             }

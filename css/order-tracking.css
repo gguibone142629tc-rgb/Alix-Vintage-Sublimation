@@ -1044,34 +1044,37 @@ main {
         font-size: 12px;
     }
 
-    .table-container {
+    /* Orders list: switch table into card layout on small screens.
+       IMPORTANT: scope to the orders list only so roster tables in Order Contents
+       remain readable and horizontally scrollable. */
+    #ordersListPanel .table-container {
         border: 0;
         background: transparent;
         overflow: visible;
     }
 
-    .orders-table {
+    #ordersListPanel .orders-table {
         min-width: 0;
     }
 
-    .orders-table thead {
+    #ordersListPanel .orders-table thead {
         display: none;
     }
 
-    .orders-table,
-    .orders-table tbody,
-    .orders-table tr,
-    .orders-table td {
+    #ordersListPanel .orders-table,
+    #ordersListPanel .orders-table tbody,
+    #ordersListPanel .orders-table tr,
+    #ordersListPanel .orders-table td {
         display: block;
         width: 100%;
     }
 
-    .orders-table tbody {
+    #ordersListPanel .orders-table tbody {
         display: grid;
         gap: 12px;
     }
 
-    .orders-table tbody tr.order-row {
+    #ordersListPanel .orders-table tbody tr.order-row {
         display: grid;
         grid-template-columns: 1fr auto;
         grid-template-areas:
@@ -1085,32 +1088,32 @@ main {
         background: rgba(14, 16, 24, 0.8);
     }
 
-    .orders-table tbody tr.order-row td {
+    #ordersListPanel .orders-table tbody tr.order-row td {
         padding: 0;
         border: 0;
     }
 
-    .orders-table tbody tr.order-row td.col-id {
+    #ordersListPanel .orders-table tbody tr.order-row td.col-id {
         grid-area: id;
         min-width: 0;
     }
 
-    .orders-table tbody tr.order-row td.col-action {
+    #ordersListPanel .orders-table tbody tr.order-row td.col-action {
         grid-area: action;
         display: flex;
         justify-content: flex-end;
         align-items: flex-start;
     }
 
-    .orders-table tbody tr.order-row td.col-items {
+    #ordersListPanel .orders-table tbody tr.order-row td.col-items {
         grid-area: items;
     }
 
-    .orders-table tbody tr.order-row td.col-status {
+    #ordersListPanel .orders-table tbody tr.order-row td.col-status {
         grid-area: status;
     }
 
-    .orders-table tbody tr.order-row td.col-amount {
+    #ordersListPanel .orders-table tbody tr.order-row td.col-amount {
         grid-area: amount;
         display: flex;
         justify-content: flex-end;
@@ -1118,15 +1121,68 @@ main {
         font-size: 16px;
     }
 
-    .orders-table tbody tr.orders-empty-row {
+    #ordersListPanel .orders-table tbody tr.orders-empty-row {
         display: block;
         border: 1px solid var(--line);
         border-radius: 12px;
         background: rgba(14, 16, 24, 0.8);
     }
 
-    .orders-table tbody tr.orders-empty-row td.empty-state {
+    #ordersListPanel .orders-table tbody tr.orders-empty-row td.empty-state {
         border: 0;
         padding: 28px 14px;
+    }
+
+    /* Order Contents roster: keep a real table + enable horizontal scroll. */
+    .order-content-roster .table-container {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        background: rgba(14, 16, 24, 0.8);
+    }
+
+    .order-content-roster .orders-table {
+        display: table;
+        width: 100%;
+        min-width: 520px;
+        border-collapse: collapse;
+    }
+
+    .order-content-roster .orders-table thead {
+        display: table-header-group;
+    }
+
+    .order-content-roster .orders-table tbody {
+        display: table-row-group;
+    }
+
+    .order-content-roster .orders-table tr {
+        display: table-row;
+    }
+
+    .order-content-roster .orders-table th,
+    .order-content-roster .orders-table td {
+        display: table-cell;
+        white-space: nowrap;
+        padding: 12px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-content-top {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .order-content-media img {
+        width: 100%;
+        height: auto;
+        max-width: 320px;
+    }
+
+    .order-content-head {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
