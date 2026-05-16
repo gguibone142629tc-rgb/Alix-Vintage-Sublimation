@@ -71,8 +71,13 @@
 
             <form class="form-card" action="otp.html" novalidate>
                 <div class="field-group">
-                    <label for="full-name">Full name</label>
-                    <input id="full-name" type="text" placeholder="Juan Dela Cruz" required>
+                    <label for="first-name">First name</label>
+                    <input id="first-name" type="text" placeholder="Juan" required autocomplete="given-name">
+                </div>
+
+                <div class="field-group">
+                    <label for="last-name">Last name</label>
+                    <input id="last-name" type="text" placeholder="Dela Cruz" required autocomplete="family-name">
                 </div>
 
                 <div class="field-group">
@@ -411,16 +416,7 @@
             }
         });
 
-        const splitName = (fullName) => {
-            const cleaned = String(fullName || '').trim().replace(/\s+/g, ' ');
-            if (!cleaned) {
-                return { firstname: '', lastname: '' };
-            }
-            const parts = cleaned.split(' ');
-            const firstname = parts.shift() || '';
-            const lastname = parts.join(' ').trim();
-            return { firstname, lastname: lastname || 'N/A' };
-        };
+        const normalizeNamePart = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 
         if (registerFormElement) {
             registerFormElement.addEventListener('submit', async (event) => {
@@ -430,11 +426,24 @@
                 setTermsError('');
                 setRegisterFormError('');
 
-                const fullName = String(document.getElementById('full-name')?.value || '');
+                const firstname = normalizeNamePart(document.getElementById('first-name')?.value);
+                const lastname = normalizeNamePart(document.getElementById('last-name')?.value);
                 const email = String(document.getElementById('email')?.value || '').trim();
                 const phone_number = String(document.getElementById('mobile')?.value || '').trim();
                 const password = String(document.getElementById('password')?.value || '');
                 const confirmPassword = String(document.getElementById('confirm-password')?.value || '');
+
+                if (!firstname) {
+                    setRegisterFormError('Please enter your first name.');
+                    document.getElementById('first-name')?.focus();
+                    return;
+                }
+
+                if (!lastname) {
+                    setRegisterFormError('Please enter your last name.');
+                    document.getElementById('last-name')?.focus();
+                    return;
+                }
 
                 if (!termsCheckboxElement?.checked) {
                     setTermsError('Please read and accept the Terms and Conditions before registering.');
@@ -448,8 +457,6 @@
                     confirmPasswordInputElement?.focus();
                     return;
                 }
-
-                const { firstname, lastname } = splitName(fullName);
 
                 try {
                     await window.AlixAuth.postJson('/api/auth/register/customer', {
