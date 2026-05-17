@@ -8,6 +8,7 @@ use App\Application\Orders\ListAllOrders;
 use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
 use App\Application\Orders\MarkCodFinalPaymentReceived;
+use App\Application\Orders\RejectOrderReceipt;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
 use App\Application\Orders\UpdateOrderPricing;
@@ -27,6 +28,7 @@ final class AdminOrderControllerFactory
         $update = new UpdateOrderStatus($repo);
         $updatePricing = new UpdateOrderPricing($repo);
         $verifyPayment = new VerifyOrderPayment($repo);
+        $rejectReceipt = new RejectOrderReceipt($repo);
         $markCodFinal = new MarkCodFinalPaymentReceived($repo);
         $setOnTransit = new SetOrderOnTransit($repo);
         $sendProof = new SendOrderProof($repo);
@@ -40,6 +42,6 @@ final class AdminOrderControllerFactory
         }
         $auth = new Auth(new JwtTokenVerifier());
 
-        return new AdminOrderController($pdo, $auth, (int) $adminRoleId, $list, $update, $updatePricing, $verifyPayment, $markCodFinal, $setOnTransit, $sendProof, $listProofs, $listTransactions);
+        return new AdminOrderController($pdo, $auth, (int) $adminRoleId, $list, $update, $updatePricing, $verifyPayment, $rejectReceipt, $markCodFinal, $setOnTransit, $sendProof, $listProofs, $listTransactions);
     }
 }

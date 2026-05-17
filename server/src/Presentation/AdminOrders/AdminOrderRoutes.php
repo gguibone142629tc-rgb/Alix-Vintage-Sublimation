@@ -17,6 +17,7 @@ final class AdminOrderRoutes
         $router->patch('/api/admin/orders/status', [$controller, 'updateStatus']);
         $router->patch('/api/admin/orders/pricing', [$controller, 'updatePricing']);
         $router->patch('/api/admin/orders/payment/verify', [$controller, 'verifyPayment']);
+        $router->patch('/api/admin/orders/payment/reject', [$controller, 'rejectReceipt']);
         $router->patch('/api/admin/orders/payment/cod-final-received', [$controller, 'markCodFinalReceived']);
         $router->patch('/api/admin/orders/shipping', [$controller, 'setOnTransit']);
         $router->patch('/api/admin/orders/proof', [$controller, 'sendProof']);

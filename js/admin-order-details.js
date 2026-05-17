@@ -685,6 +685,15 @@
                 : (typeof paymentMeta.receiptSize === "number" ? paymentMeta.receiptSize : null);
 
         const verified = paymentMeta.verified === true || String(paymentMeta.receipt_status || paymentMeta.receiptStatus || "").toLowerCase() === "verified";
+        const receiptStatus = typeof paymentMeta.receipt_status === "string"
+            ? paymentMeta.receipt_status
+            : (typeof paymentMeta.receiptStatus === "string" ? paymentMeta.receiptStatus : null);
+        const receiptRejectedAt = typeof paymentMeta.receipt_rejected_at === "string"
+            ? paymentMeta.receipt_rejected_at
+            : (typeof paymentMeta.receiptRejectedAt === "string" ? paymentMeta.receiptRejectedAt : null);
+        const receiptRejectionReason = typeof paymentMeta.receipt_rejection_reason === "string"
+            ? paymentMeta.receipt_rejection_reason
+            : (typeof paymentMeta.receiptRejectionReason === "string" ? paymentMeta.receiptRejectionReason : null);
         const verifiedType =
             typeof paymentMeta.verified_type === "string"
                 ? paymentMeta.verified_type
@@ -707,6 +716,15 @@
                 ? paymentMeta.final_receipt_size
                 : (typeof paymentMeta.finalReceiptSize === "number" ? paymentMeta.finalReceiptSize : null);
         const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || paymentMeta.finalReceiptStatus || "").toLowerCase() === "verified";
+        const finalReceiptStatus = typeof paymentMeta.final_receipt_status === "string"
+            ? paymentMeta.final_receipt_status
+            : (typeof paymentMeta.finalReceiptStatus === "string" ? paymentMeta.finalReceiptStatus : null);
+        const finalReceiptRejectedAt = typeof paymentMeta.final_receipt_rejected_at === "string"
+            ? paymentMeta.final_receipt_rejected_at
+            : (typeof paymentMeta.finalReceiptRejectedAt === "string" ? paymentMeta.finalReceiptRejectedAt : null);
+        const finalReceiptRejectionReason = typeof paymentMeta.final_receipt_rejection_reason === "string"
+            ? paymentMeta.final_receipt_rejection_reason
+            : (typeof paymentMeta.finalReceiptRejectionReason === "string" ? paymentMeta.finalReceiptRejectionReason : null);
 
         const rawComments = metaFromOrder?.comments;
         const mappedComments = Array.isArray(rawComments)
@@ -757,12 +775,18 @@
                     verifiedType,
                     amountPaid,
                     receiptDataUrl,
+                    receiptStatus,
+                    receiptRejectedAt,
+                    receiptRejectionReason,
                     receiptMeta: {
                         uploadedAt: receiptUploadedAt,
                         fileName: null,
                         size: receiptSize,
                     },
                     finalReceiptDataUrl,
+                    finalReceiptStatus,
+                    finalReceiptRejectedAt,
+                    finalReceiptRejectionReason,
                     finalReceiptMeta: {
                         uploadedAt: finalReceiptUploadedAt,
                         fileName: null,
@@ -857,6 +881,13 @@
         await requestJson("PATCH", "/api/admin/orders/payment/verify", {
             order_id: numericId,
             verify_type: verifyType,
+        });
+    };
+
+    const rejectDbReceipt = async (numericId, receiptStage) => {
+        await requestJson("PATCH", "/api/admin/orders/payment/reject", {
+            order_id: numericId,
+            receipt_stage: receiptStage,
         });
     };
 
@@ -1061,6 +1092,8 @@
                 wireDbPricing(numericId, order);
 
                 const hasReceipt = Boolean(order?.admin?.payment?.receiptDataUrl);
+                const receiptStatus = String(order?.admin?.payment?.receiptStatus || "").toLowerCase();
+                const isRejected = receiptStatus === "rejected";
                 const meta = order?.admin?.payment?.receiptMeta || {};
                 const uploadedAt = meta.uploadedAt ? formatDate(meta.uploadedAt) : null;
                 const receiptLine = uploadedAt ? uploadedAt : "";
@@ -1094,14 +1127,24 @@
 
                 stageButtons.innerHTML = `
                     <button class="table-btn" type="button" id="verifyDownBtn">Verify 50% Downpayment</button>
+                    <button class="table-btn is-danger" type="button" id="requestNewReceiptBtn">Request New Receipt</button>
                 `;
 
-                if (stageHint) stageHint.textContent = hasReceipt
-                    ? "Verify payment after reviewing the uploaded receipt."
-                    : "Waiting for customer to upload a receipt.";
+                if (stageHint) {
+                    if (!hasReceipt) {
+                        stageHint.textContent = "Waiting for customer to upload a receipt.";
+                    } else if (isRejected) {
+                        stageHint.textContent = "Receipt was rejected. Waiting for customer to upload a new receipt.";
+                    } else {
+                        stageHint.textContent = "Verify payment after reviewing the uploaded receipt.";
+                    }
+                }
 
                 const downBtn = qs("#verifyDownBtn");
-                if (downBtn) downBtn.disabled = !hasReceipt;
+                if (downBtn) downBtn.disabled = !hasReceipt || isRejected;
+
+                const reqBtn = qs("#requestNewReceiptBtn");
+                if (reqBtn) reqBtn.disabled = !hasReceipt;
 
                 downBtn?.addEventListener("click", async () => {
                     const ok = await uiConfirm("Verify 50% downpayment for this order?", {
@@ -1117,6 +1160,23 @@
                         if (refreshed) renderReadOnly(numericId, refreshed);
                     } catch (e) {
                         uiAlert(e?.message || "Failed to verify downpayment.", { title: "Payment", tone: "danger" });
+                    }
+                });
+
+                reqBtn?.addEventListener("click", async () => {
+                    const ok = await uiConfirm("Request the customer to upload a new receipt?", {
+                        title: "Request New Receipt",
+                        tone: "danger",
+                        okText: "Request",
+                        cancelText: "Cancel",
+                    });
+                    if (!ok) return;
+                    try {
+                        await rejectDbReceipt(numericId, "initial");
+                        const refreshed = await loadDbOrderById(numericId);
+                        if (refreshed) renderReadOnly(numericId, refreshed);
+                    } catch (e) {
+                        uiAlert(e?.message || "Failed to request new receipt.", { title: "Payment", tone: "danger" });
                     }
                 });
             } else if (status === "proofing") {
@@ -1446,11 +1506,28 @@
                     });
 
                     const hasReceipt = Boolean(order?.admin?.payment?.finalReceiptDataUrl);
+                    const finalReceiptStatus = String(order?.admin?.payment?.finalReceiptStatus || "").toLowerCase();
+                    const isRejected = finalReceiptStatus === "rejected";
 
-                    stageButtons.innerHTML = `<button class="table-btn" type="button" id="verifyFinalBtn">Verify Final Payment</button>`;
+                    stageButtons.innerHTML = `
+                        <button class="table-btn" type="button" id="verifyFinalBtn">Verify Final Payment</button>
+                        <button class="table-btn is-danger" type="button" id="requestNewFinalReceiptBtn">Request New Receipt</button>
+                    `;
                     const btn = qs("#verifyFinalBtn");
-                    if (btn) btn.disabled = !hasReceipt;
-                    if (stageHint) stageHint.textContent = hasReceipt ? "Verify final payment after reviewing the uploaded receipt." : "Waiting for customer to upload the final payment receipt.";
+                    if (btn) btn.disabled = !hasReceipt || isRejected;
+
+                    const reqBtn = qs("#requestNewFinalReceiptBtn");
+                    if (reqBtn) reqBtn.disabled = !hasReceipt;
+
+                    if (stageHint) {
+                        if (!hasReceipt) {
+                            stageHint.textContent = "Waiting for customer to upload the final payment receipt.";
+                        } else if (isRejected) {
+                            stageHint.textContent = "Final receipt was rejected. Waiting for customer to upload a new receipt.";
+                        } else {
+                            stageHint.textContent = "Verify final payment after reviewing the uploaded receipt.";
+                        }
+                    }
 
                     btn?.addEventListener("click", async () => {
                         const ok = await uiConfirm("Verify final payment for this order?", {
@@ -1466,6 +1543,23 @@
                             if (refreshed) renderReadOnly(numericId, refreshed);
                         } catch (e) {
                             uiAlert(e?.message || "Failed to verify final payment.", { title: "Payment", tone: "danger" });
+                        }
+                    });
+
+                    reqBtn?.addEventListener("click", async () => {
+                        const ok = await uiConfirm("Request the customer to upload a new final receipt?", {
+                            title: "Request New Receipt",
+                            tone: "danger",
+                            okText: "Request",
+                            cancelText: "Cancel",
+                        });
+                        if (!ok) return;
+                        try {
+                            await rejectDbReceipt(numericId, "final");
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        } catch (e) {
+                            uiAlert(e?.message || "Failed to request new receipt.", { title: "Payment", tone: "danger" });
                         }
                     });
                 }

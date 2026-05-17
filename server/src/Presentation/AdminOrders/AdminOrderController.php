@@ -8,6 +8,7 @@ use App\Application\Orders\ListAllOrders;
 use App\Application\Orders\ListOrderDesignProofs;
 use App\Application\Orders\ListPaymentTransactions;
 use App\Application\Orders\MarkCodFinalPaymentReceived;
+use App\Application\Orders\RejectOrderReceipt;
 use App\Application\Orders\SendOrderProof;
 use App\Application\Orders\SetOrderOnTransit;
 use App\Application\Orders\UpdateOrderPricing;
@@ -28,6 +29,7 @@ final class AdminOrderController
         private readonly UpdateOrderStatus $updateOrderStatus,
         private readonly UpdateOrderPricing $updateOrderPricing,
         private readonly VerifyOrderPayment $verifyOrderPayment,
+        private readonly RejectOrderReceipt $rejectOrderReceipt,
         private readonly MarkCodFinalPaymentReceived $markCodFinalPaymentReceived,
         private readonly SetOrderOnTransit $setOrderOnTransit,
         private readonly SendOrderProof $sendOrderProof,
@@ -194,6 +196,19 @@ final class AdminOrderController
 
         $body = $request->json();
         $result = $this->verifyOrderPayment->handle(is_array($body) ? $body : []);
+        if (!($result['ok'] ?? false)) {
+            Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
+        }
+
+        Response::json(['ok' => true], 200);
+    }
+
+    public function rejectReceipt(Request $request): void
+    {
+        $this->assertAdmin($request);
+
+        $body = $request->json();
+        $result = $this->rejectOrderReceipt->handle(is_array($body) ? $body : []);
         if (!($result['ok'] ?? false)) {
             Response::json(['error' => $result['error'] ?? 'Request failed'], (int) ($result['status'] ?? 400));
         }

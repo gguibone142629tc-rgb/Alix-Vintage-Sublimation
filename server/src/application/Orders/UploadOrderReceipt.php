@@ -135,6 +135,8 @@ final class UploadOrderReceipt
                 'receipt_size' => $size,
                 'receipt_uploaded_at' => $now,
                 'receipt_status' => 'submitted',
+                'receipt_rejected_at' => null,
+                'receipt_rejection_reason' => null,
             ];
         } else {
             $payment = [
@@ -143,6 +145,8 @@ final class UploadOrderReceipt
                 'final_receipt_size' => $size,
                 'final_receipt_uploaded_at' => $now,
                 'final_receipt_status' => 'submitted',
+                'final_receipt_rejected_at' => null,
+                'final_receipt_rejection_reason' => null,
             ];
         }
 

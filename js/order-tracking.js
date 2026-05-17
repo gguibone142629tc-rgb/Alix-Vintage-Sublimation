@@ -1087,17 +1087,37 @@
                 const uploadedAt = isFinal
                     ? (typeof paymentMeta.final_receipt_uploaded_at === "string" ? paymentMeta.final_receipt_uploaded_at : "")
                     : (typeof paymentMeta.receipt_uploaded_at === "string" ? paymentMeta.receipt_uploaded_at : "");
+
+                const receiptStatus = isFinal
+                    ? String(paymentMeta.final_receipt_status || "").toLowerCase()
+                    : String(paymentMeta.receipt_status || "").toLowerCase();
+                const rejectedReason = isFinal
+                    ? (typeof paymentMeta.final_receipt_rejection_reason === "string" ? paymentMeta.final_receipt_rejection_reason.trim() : "")
+                    : (typeof paymentMeta.receipt_rejection_reason === "string" ? paymentMeta.receipt_rejection_reason.trim() : "");
+                const isRejected = receiptStatus === "rejected";
+
+                if (paymentNoteEl && isRejected) {
+                    paymentNoteEl.textContent = isFinal
+                        ? "Your final receipt was rejected. Please upload a new final payment receipt screenshot."
+                        : "Your receipt was rejected. Please upload a new downpayment receipt screenshot.";
+                }
                 const verified = isFinal
                     ? (paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified")
                     : (paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified");
                 if (paymentStateEl) {
                     if (!receiptUrl) {
                         paymentStateEl.textContent = "No receipt uploaded yet.";
+                    } else if (isRejected) {
+                        paymentStateEl.textContent = `Receipt rejected${uploadedAt ? ` (uploaded ${formatDate(uploadedAt)})` : ""}. Please upload a new receipt.${rejectedReason ? ` Reason: ${rejectedReason}` : ""}`;
                     } else if (verified) {
                         paymentStateEl.textContent = `Payment verified${uploadedAt ? ` (uploaded ${formatDate(uploadedAt)})` : ""}.`;
                     } else {
                         paymentStateEl.textContent = `Receipt uploaded${uploadedAt ? ` (${formatDate(uploadedAt)})` : ""}. Awaiting admin verification.`;
                     }
+                }
+
+                if (uploadReceiptBtnEl) {
+                    uploadReceiptBtnEl.textContent = isRejected ? "UPLOAD NEW RECEIPT" : "UPLOAD RECEIPT";
                 }
             }
         }
@@ -1345,14 +1365,20 @@
             const partiallyPaid = amounts.amountPaid > 0 && !fullyPaid;
 
             if (status === "paid") {
-                summaryPaymentEl.textContent = verified ? "Verified" : (hasReceipt ? "Pending Verification" : "Awaiting Receipt");
+                const receiptStatus = String(paymentMeta.receipt_status || "").toLowerCase();
+                summaryPaymentEl.textContent = verified
+                    ? "Verified"
+                    : (receiptStatus === "rejected" ? "Receipt Rejected" : (hasReceipt ? "Pending Verification" : "Awaiting Receipt"));
             } else if (status === "awaiting_final_payment") {
                 if (method === "COD") {
                     summaryPaymentEl.textContent = "COD - Balance due on delivery";
                 } else {
                     const finalHas = typeof paymentMeta.final_receipt_data_url === "string" && String(paymentMeta.final_receipt_data_url).trim() !== "";
                     const finalVerified = paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified";
-                    summaryPaymentEl.textContent = finalVerified ? "Fully Paid" : (finalHas ? "Final Payment Pending Verification" : "Awaiting Final Receipt");
+                    const finalStatus = String(paymentMeta.final_receipt_status || "").toLowerCase();
+                    summaryPaymentEl.textContent = finalVerified
+                        ? "Fully Paid"
+                        : (finalStatus === "rejected" ? "Final Receipt Rejected" : (finalHas ? "Final Payment Pending Verification" : "Awaiting Final Receipt"));
                 }
             } else if (status === "proofing" || status === "processing" || status === "ready_to_ship" || status === "shipped" || status === "completed") {
                 summaryPaymentEl.textContent = fullyPaid ? "Fully Paid" : (partiallyPaid ? "Partially Paid" : "Unpaid");
