@@ -175,8 +175,9 @@
             resendLinkElement.textContent = 'Resend Code';
         };
 
-        const startCountdown = () => {
-            countdownSeconds = 60;
+        const startCountdown = (seconds = 60) => {
+            const parsedSeconds = Number(seconds);
+            countdownSeconds = Number.isFinite(parsedSeconds) ? Math.max(0, Math.floor(parsedSeconds)) : 60;
             updateResendLink();
 
             if (countdownIntervalId) {
@@ -192,6 +193,15 @@
                     countdownIntervalId = null;
                 }
             }, 1000);
+        };
+
+        const extractRemainingSeconds = (message) => {
+            const match = String(message || '').match(/(\d+)\s*second/i);
+            if (!match) {
+                return null;
+            }
+            const value = Number(match[1]);
+            return Number.isFinite(value) ? value : null;
         };
 
         const collectOtp = () => otpInputElements.map((el) => el.value).join('');
@@ -319,9 +329,15 @@
 
                 try {
                     const result = await window.AlixAuth.postJson('/api/auth/otp/request', { email: pendingEmail });
-                    const message = result?.message || 'OTP sent. Please check your email.';
-                    window.AVDialog?.alert(message, { title: 'Success', tone: 'success' }) || alert(message);
-                    startCountdown();
+                    const message = result?.message;
+                    if (message) {
+                        window.AVDialog?.alert(message, { title: 'Please wait', tone: 'warning' }) || alert(message);
+                        const remainingSeconds = extractRemainingSeconds(message);
+                        startCountdown(remainingSeconds ?? 60);
+                    } else {
+                        window.AVDialog?.alert('OTP sent. Please check your email.', { title: 'Success', tone: 'success' }) || alert('OTP sent. Please check your email.');
+                        startCountdown(60);
+                    }
                 } catch (error) {
                     const message = error?.message || 'Failed to resend OTP';
                     setOtpError(message);
@@ -332,7 +348,7 @@
         }
 
         updateResendLink();
-        startCountdown();
+        startCountdown(60);
     </script>
     <script src="../js/nav-auth.js?v=4"></script>
 </body>
