@@ -173,16 +173,16 @@
 
         const onOk = () => close(true);
         const onCancel = () => close(false);
-        const onClose = () => close(safeVariant === "confirm" ? false : true);
+        const onClose = () => close(safeVariant === "confirm" ? null : true);
 
         const onBackdropClick = (e) => {
             if (e.target !== backdrop) return;
-            close(safeVariant === "confirm" ? false : true);
+            close(safeVariant === "confirm" ? null : true);
         };
 
         const onKeyDown = (e) => {
             if (e.key === "Escape") {
-                close(safeVariant === "confirm" ? false : true);
+                close(safeVariant === "confirm" ? null : true);
                 return;
             }
 

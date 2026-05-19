@@ -629,13 +629,14 @@
 
             if (window.AVDialog?.confirm) {
                 // Confirm dialog focuses the Cancel button by default; map Cancel->GCash, OK->COD for safer default.
-                const isCod = await window.AVDialog.confirm(message, {
+                const result = await window.AVDialog.confirm(message, {
                     title: "Payment Method",
                     tone: "info",
                     okText: "COD",
                     cancelText: "GCash",
                 });
-                return isCod ? "COD" : "GCash";
+                if (result === null) return null;
+                return result ? "COD" : "GCash";
             }
 
             const isCod = window.confirm(message + "\n\nOK = COD, Cancel = GCash");
@@ -973,6 +974,12 @@
                     return;
                 }
 
+                const chosenMethod = await selectPaymentMethodPopup();
+                if (!chosenMethod) {
+                    // User closed the dialog; do not submit.
+                    return;
+                }
+
                 const fd = new FormData();
                 const draftId = localStorage.getItem(DRAFT_ID_KEY);
                 if (draftId && String(draftId).trim()) {
@@ -985,9 +992,7 @@
                 fd.append('notes', String(draft.notes || ''));
                 fd.append('design_type', String(draft.designType || 'final'));
                 fd.append('personalization', String(draft.personalization || 'names_numbers'));
-                // Payment method is selected via popup after submission.
-                // Backend requires a value on submit, so we send a safe default and immediately update it.
-                fd.append('payment_preference', 'GCash');
+                fd.append('payment_preference', chosenMethod);
                 fd.append('roster', JSON.stringify(draft.roster || []));
 
                 selectedMainFiles.forEach((f) => fd.append('main_files[]', f));
@@ -1006,16 +1011,6 @@
                 if (!res.ok) {
                     const message = typeof data.error === 'string' ? data.error : 'Failed to submit request.';
                     throw new Error(message);
-                }
-
-                const chosenMethod = await selectPaymentMethodPopup();
-                try {
-                    await updateSubmittedPaymentPreference(data?.request_id, chosenMethod);
-                } catch (e) {
-                    const message = e?.message || "Failed to set payment method.";
-                    await (window.AVDialog?.alert
-                        ? window.AVDialog.alert(message, { title: "Payment Method", tone: "warning" })
-                        : alert(message));
                 }
 
                 localStorage.removeItem(DRAFT_KEY);
