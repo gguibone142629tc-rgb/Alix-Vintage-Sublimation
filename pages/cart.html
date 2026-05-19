@@ -100,6 +100,14 @@
                 <div class="muted cart-payment-note">All orders require a 50% downpayment before proofing/production.</div>
             </section>
 
+            <section class="cart-section" aria-label="Terms and conditions">
+                <h2 class="cart-section-title">Terms and Conditions</h2>
+                <label class="cart-terms">
+                    <input type="checkbox" id="cartTermsAck">
+                    <span>I agree to the Terms and Conditions.</span>
+                </label>
+            </section>
+
             <div class="cart-actions">
                 <button id="checkoutBtn" class="btn btn-primary cart-checkout" type="button">Place Order</button>
                 <button id="clearCartBtn" class="btn btn-danger cart-clear" type="button">Clear Cart</button>
@@ -300,6 +308,72 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
+            const cartTermsAck = document.getElementById('cartTermsAck');
+
+            let cachedTermsHtml = null;
+            const loadTermsHtml = async () => {
+                if (cachedTermsHtml) return cachedTermsHtml;
+                const res = await fetch('terms-of-service.html', { cache: 'no-store' });
+                const text = await res.text();
+                const doc = new DOMParser().parseFromString(text, 'text/html');
+                const article = doc.querySelector('.legal-card') || doc.querySelector('article') || doc.body;
+                const clone = article.cloneNode(true);
+                clone.querySelector('h1')?.remove();
+                cachedTermsHtml = `
+                    <div class="av-legal">
+                        ${clone.innerHTML}
+                        <p class="av-legal-link"><a href="terms-of-service.html" target="_blank" rel="noopener">Open full Terms of Service</a></p>
+                    </div>
+                `;
+                return cachedTermsHtml;
+            };
+
+            const promptTermsAgreement = async () => {
+                try {
+                    const html = await loadTermsHtml();
+                    if (window.AVDialog?.confirmHtml) {
+                        return await window.AVDialog.confirmHtml(html, {
+                            title: 'Terms and Conditions',
+                            tone: 'info',
+                            okText: 'I Agree',
+                            cancelText: 'Cancel',
+                            descClass: 'av-dialog-desc--legal',
+                            icon: 'info',
+                        });
+                    }
+                } catch {
+                    // fall through
+                }
+
+                try {
+                    window.open('terms-of-service.html', '_blank', 'noopener');
+                } catch {
+                    // ignore
+                }
+
+                return await uiConfirm('Please read the Terms of Service. Do you agree to continue?', {
+                    title: 'Terms and Conditions',
+                    tone: 'info',
+                    okText: 'I Agree',
+                    cancelText: 'Cancel',
+                });
+            };
+
+            if (cartTermsAck) {
+                let isHandlingTerms = false;
+                cartTermsAck.addEventListener('change', async () => {
+                    if (isHandlingTerms) return;
+                    if (!cartTermsAck.checked) return;
+
+                    isHandlingTerms = true;
+                    const agreed = await promptTermsAgreement();
+                    if (agreed !== true) {
+                        cartTermsAck.checked = false;
+                    }
+                    isHandlingTerms = false;
+                });
+            }
+
             document.getElementById('clearCartBtn').addEventListener('click', async () => {
                 const ok = await uiConfirm('Clear all items in your cart?', {
                     title: 'Confirm',
@@ -334,6 +408,19 @@
 
                 const addr = await ensureProfileAddressOrRedirect();
                 if (!addr) return;
+
+                if (cartTermsAck && cartTermsAck.checked !== true) {
+                    const agreed = await promptTermsAgreement();
+                    if (agreed === true) {
+                        cartTermsAck.checked = true;
+                    } else {
+                        await uiAlert('You must agree to the Terms and Conditions before placing an order.', {
+                            title: 'Agreement required',
+                            tone: 'info',
+                        });
+                        return;
+                    }
+                }
 
                 const ok = await uiConfirm('Place order for all items in your cart?', {
                     title: 'Confirm',

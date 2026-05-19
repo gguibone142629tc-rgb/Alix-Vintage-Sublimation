@@ -312,6 +312,49 @@ header,
     font-weight: 800;
 }
 
+.av-dialog-desc--legal {
+    text-align: left;
+}
+
+.av-dialog-desc--legal h1,
+.av-dialog-desc--legal h2,
+.av-dialog-desc--legal h3 {
+    color: rgba(255, 255, 255, 0.94);
+    margin: 10px 0 6px;
+    line-height: 1.25;
+}
+
+.av-dialog-desc--legal h1 {
+    font-size: 18px;
+}
+
+.av-dialog-desc--legal h2 {
+    font-size: 14px;
+    letter-spacing: 0.2px;
+}
+
+.av-dialog-desc--legal p {
+    margin: 8px 0;
+}
+
+.av-dialog-desc--legal ul {
+    margin: 8px 0;
+    padding-left: 18px;
+}
+
+.av-dialog-desc--legal li {
+    margin: 6px 0;
+}
+
+.av-dialog-desc--legal .effective {
+    font-weight: 800;
+    color: color-mix(in srgb, var(--theme-text) 70%, var(--theme-muted));
+}
+
+.av-dialog-desc--legal .av-legal-link {
+    margin-top: 12px;
+}
+
 .av-dialog-close {
     position: absolute;
     top: 10px;

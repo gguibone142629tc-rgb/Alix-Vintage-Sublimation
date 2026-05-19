@@ -176,6 +176,25 @@ body {
     margin-top: 10px;
 }
 
+.cart-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(15, 17, 23, 0.55);
+    color: color-mix(in srgb, var(--theme-text) 72%, var(--theme-muted));
+    font-size: 13px;
+    line-height: 1.35;
+    cursor: pointer;
+}
+
+.cart-terms input {
+    margin-top: 2px;
+    accent-color: var(--primary);
+}
+
 .cart-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

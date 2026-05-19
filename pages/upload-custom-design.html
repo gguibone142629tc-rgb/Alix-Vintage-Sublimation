@@ -643,6 +643,73 @@
             return isCod ? "COD" : "GCash";
         };
 
+        let cachedTermsHtml = null;
+        const loadTermsHtml = async () => {
+            if (cachedTermsHtml) return cachedTermsHtml;
+            const res = await fetch('terms-of-service.html', { cache: 'no-store' });
+            const text = await res.text();
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+            const article = doc.querySelector('.legal-card') || doc.querySelector('article') || doc.body;
+            const clone = article.cloneNode(true);
+            clone.querySelector('h1')?.remove();
+            cachedTermsHtml = `
+                <div class="av-legal">
+                    ${clone.innerHTML}
+                    <p class="av-legal-link"><a href="terms-of-service.html" target="_blank" rel="noopener">Open full Terms of Service</a></p>
+                </div>
+            `;
+            return cachedTermsHtml;
+        };
+
+        const promptTermsAgreement = async () => {
+            try {
+                const html = await loadTermsHtml();
+                if (window.AVDialog?.confirmHtml) {
+                    return await window.AVDialog.confirmHtml(html, {
+                        title: 'Terms and Conditions',
+                        tone: 'info',
+                        okText: 'I Agree',
+                        cancelText: 'Cancel',
+                        descClass: 'av-dialog-desc--legal',
+                        icon: 'info',
+                    });
+                }
+            } catch {
+                // fall through
+            }
+
+            // Fallback: open terms in a new tab and ask for confirmation.
+            try {
+                window.open('terms-of-service.html', '_blank', 'noopener');
+            } catch {
+                // ignore
+            }
+            if (window.AVDialog?.confirm) {
+                return await window.AVDialog.confirm('Please read the Terms of Service. Do you agree to continue?', {
+                    title: 'Terms and Conditions',
+                    tone: 'info',
+                    okText: 'I Agree',
+                    cancelText: 'Cancel',
+                });
+            }
+            return window.confirm('Please read the Terms of Service. Do you agree to continue?');
+        };
+
+        if (termsAckInput) {
+            let isHandlingTerms = false;
+            termsAckInput.addEventListener('change', async () => {
+                if (isHandlingTerms) return;
+                if (!termsAckInput.checked) return;
+
+                isHandlingTerms = true;
+                const agreed = await promptTermsAgreement();
+                if (agreed !== true) {
+                    termsAckInput.checked = false;
+                }
+                isHandlingTerms = false;
+            });
+        }
+
         const updateSubmittedPaymentPreference = async (requestId, paymentPreference) => {
             const id = Number(requestId || 0);
             const pref = String(paymentPreference || "").trim();

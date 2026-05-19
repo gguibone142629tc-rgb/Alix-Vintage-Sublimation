@@ -23,7 +23,7 @@
         }
     };
 
-    const openDialog = ({ title, message, tone, variant, okText, cancelText, icon, destructive } = {}) => {
+    const openDialog = ({ title, message, messageHtml, descClass, tone, variant, okText, cancelText, icon, destructive } = {}) => {
         closeActive();
 
         const safeTitle = String(title || "Notice").trim() || "Notice";
@@ -123,7 +123,13 @@
                     <button type="button" class="av-dialog-btn av-dialog-btn--primary" data-av-ok>${escapeHtml(okLabel)}</button>
                 `;
 
-        const messageHtml = escapeHtml(safeMessage).replaceAll("\n", "<br>");
+        const safeDescClass = String(descClass || "").trim();
+        const descClassAttr = safeDescClass ? ` ${escapeHtml(safeDescClass)}` : "";
+
+        const renderedMessageHtml =
+            typeof messageHtml === "string" && messageHtml.trim().length
+                ? messageHtml
+                : escapeHtml(safeMessage).replaceAll("\n", "<br>");
 
         dialog.innerHTML = `
             <button type="button" class="av-dialog-close" aria-label="Close" data-av-close>
@@ -135,7 +141,7 @@
             </div>
 
             <div class="av-dialog-title">${escapeHtml(safeTitle)}</div>
-            <div class="av-dialog-desc">${messageHtml}</div>
+            <div class="av-dialog-desc${descClassAttr}">${renderedMessageHtml}</div>
 
             <div class="av-dialog-actions av-dialog-actions--${escapeHtml(safeVariant)}">
                 ${actionsHtml}
@@ -307,10 +313,32 @@
                 okText: opts.okText || "OK",
                 icon: opts.icon,
             }),
+        alertHtml: (html, opts = {}) =>
+            openDialog({
+                title: opts.title || "Notice",
+                messageHtml: String(html ?? ""),
+                descClass: opts.descClass,
+                tone: opts.tone || "info",
+                variant: "alert",
+                okText: opts.okText || "OK",
+                icon: opts.icon,
+            }),
         confirm: (message, opts = {}) =>
             openDialog({
                 title: opts.title || "Confirm",
                 message,
+                tone: opts.tone || "info",
+                variant: "confirm",
+                okText: opts.okText || "OK",
+                cancelText: opts.cancelText || "Cancel",
+                icon: opts.icon,
+                destructive: opts.destructive,
+            }),
+        confirmHtml: (html, opts = {}) =>
+            openDialog({
+                title: opts.title || "Confirm",
+                messageHtml: String(html ?? ""),
+                descClass: opts.descClass,
                 tone: opts.tone || "info",
                 variant: "confirm",
                 okText: opts.okText || "OK",
