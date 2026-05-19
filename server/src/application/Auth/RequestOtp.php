@@ -29,18 +29,20 @@ final class RequestOtp
             return ['ok' => false, 'status' => 404, 'error' => 'Account not found'];
         }
 
-        // If a valid (unexpired) OTP already exists, do NOT send a new one.
+        // If a valid (unexpired) OTP already exists, allow resending after a short cooldown.
+        // When resending, we overwrite the OTP so any previously sent code becomes invalid.
         $now = new \DateTimeImmutable('now');
-        if (
-            $user->otpCode !== null
-            && $user->otpExpiry !== null
-            && $user->otpExpiry > $now
-        ) {
-            return [
-                'ok' => true,
-                'status' => 200,
-                'message' => 'A verification code has already been sent. Please wait for it to expire before requesting a new one.',
-            ];
+        if ($user->otpCode !== null && $user->otpExpiry !== null && $user->otpExpiry > $now) {
+            $issuedAt = $user->otpExpiry->modify('-5 minutes');
+            $secondsSinceIssued = max(0, $now->getTimestamp() - $issuedAt->getTimestamp());
+            if ($secondsSinceIssued < 60) {
+                $remaining = 60 - $secondsSinceIssued;
+                return [
+                    'ok' => true,
+                    'status' => 200,
+                    'message' => 'Please wait ' . $remaining . ' second(s) before resending a new verification code.',
+                ];
+            }
         }
 
         $otpCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
