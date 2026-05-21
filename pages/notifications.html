@@ -97,7 +97,7 @@
     <script src="../js/ui-dialog.js"></script>
     <script src="../js/auth-client.js?v=3"></script>
     <script src="../js/cart-client.js?v=2"></script>
-    <script src="../js/order-notifications.js?v=2"></script>
+    <script src="../js/order-notifications.js?v=3"></script>
     <script>
         const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
             '&': '&amp;',
@@ -205,7 +205,7 @@
                 return 'Your order is awaiting final payment. Please upload your payment receipt.';
             }
             if (w === 'Proofing') {
-                return 'Your order is in proofing. Please review the proof when available.';
+                return 'Your order is in proofing. Please wait for admin to upload the mockup.';
             }
             if (w === 'In Progress') {
                 return 'Your order is now in production.';
@@ -338,7 +338,8 @@
                             const label = String(n?.summary_label || '').trim();
                             const metaLeft = qty > 0 && label ? `${qty} pcs · ${label}` : (label ? label : (qty > 0 ? `${qty} pcs` : ''));
 
-                            const message = buildMessage(wf, orderLabel);
+                            const customMessage = typeof n?.message === 'string' ? n.message.trim() : '';
+                            const message = customMessage || buildMessage(wf, orderLabel);
                             const unreadAttr = n?.read ? '0' : '1';
 
                             return `
@@ -381,19 +382,43 @@
                 const res = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
                 const apiOrders = Array.isArray(res?.orders) ? res.orders : [];
 
+                const mapDesignProofStatus = (s) => {
+                    const v = String(s || '').toLowerCase();
+                    if (v === 'approved') return 'Approved';
+                    if (v === 'rejected') return 'Revision Requested';
+                    if (v === 'submitted' || v === 'reviewing') return 'Sent';
+                    return 'Not Sent';
+                };
+
                 // Record any new status changes before rendering the list.
                 if (window.AlixOrderNotifications?.recordFromOrders) {
                     const changes = window.AlixOrderNotifications.recordFromOrders(
-                        apiOrders.map((row) => ({
-                            rawId: row?.order?.order_id,
-                            status: row?.order?.status,
-                            items: Array.isArray(row?.items)
-                                ? row.items.map((it) => ({
+                        apiOrders.map((row) => {
+                            const o = row?.order || {};
+                            const items = Array.isArray(row?.items) ? row.items : [];
+                            const metaFromApi = (o.meta && typeof o.meta === 'object') ? o.meta : {};
+
+                            // Keep parity with order tracking page shape (enough for notifications).
+                            return {
+                                rawId: o?.order_id,
+                                status: o?.status,
+                                tracking_number: o?.tracking_number != null ? String(o.tracking_number) : null,
+                                meta: { ...metaFromApi },
+                                items: items.map((it) => ({
+                                    id: it?.order_item_id ?? it?.orderItemId ?? null,
                                     name: it?.meta?.product_name || `Product #${it?.product_id ?? ''}`,
                                     quantity: it?.quantity,
-                                }))
-                                : [],
-                        }))
+                                    design_proof: it?.design_proof && typeof it.design_proof === 'object'
+                                        ? {
+                                            status: mapDesignProofStatus(it.design_proof.proof_status),
+                                            mockup_data_url: String(it.design_proof.proof_file_path || ''),
+                                            revision_note: it.design_proof.revision_note ?? null,
+                                            version_number: it.design_proof.version_number ?? null,
+                                        }
+                                        : null,
+                                })),
+                            };
+                        })
                     );
 
                     if (changes.length && window.AlixOrderNotifications?.showPopups) {
