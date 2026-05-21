@@ -27,13 +27,13 @@
         setDisabledRemembering(uploadReceiptBtnEl, isUiBusy);
         setDisabledRemembering(approveProofBtnEl, isUiBusy);
         setDisabledRemembering(requestRevisionBtnEl, isUiBusy);
-        setDisabledRemembering(sendCommentBtnEl, isUiBusy);
+        setDisabledRemembering(qs("#sendCommentBtn"), isUiBusy);
         setDisabledRemembering(cancelOrderBtnEl, isUiBusy);
 
         // Receipt/proof controls.
         setDisabledRemembering(paymentReceiptUploadEl, isUiBusy);
         setDisabledRemembering(proofItemSelectEl, isUiBusy);
-        setDisabledRemembering(commentInputEl, isUiBusy);
+        setDisabledRemembering(qs("#commentInput"), isUiBusy);
 
         // Non-mutating but still a button (per request: disable while uploading/processing).
         setDisabledRemembering(copyBtn, isUiBusy);
@@ -1688,6 +1688,8 @@
     };
 
     const sendComment = async () => {
+        const commentInputEl = qs("#commentInput");
+        const sendCommentBtnEl = qs("#sendCommentBtn");
         const order = getCurrentOrder();
         if (!order || !order.rawId) {
             uiAlert("Please open an order first.", { title: "Comments", tone: "info" });
