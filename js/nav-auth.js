@@ -705,6 +705,219 @@
     refreshNotificationBadge();
     void refreshCartDot({ force: false });
 
+    // --- Site-wide order update polling (for notifications everywhere) ---
+    const ORDER_NOTIFICATIONS_STATUS_KEY = 'alix_order_status_map_v1';
+    const ORDER_POLL_MIN_VISIBLE_MS = 15_000;
+    const ORDER_POLL_MIN_HIDDEN_MS = 60_000;
+    const ORDER_POLL_MAX_BACKOFF_MS = 120_000;
+
+    const isAdminPage = /(^|\/)(admin-[^/]+\.html)$/i.test(String(window.location.pathname || ''));
+
+    const getAuthToken = () => {
+        if (window.AlixAuth?.getToken) {
+            try {
+                return window.AlixAuth.getToken();
+            } catch {
+                // ignore
+            }
+        }
+        try {
+            return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+        } catch {
+            return localStorage.getItem(TOKEN_KEY);
+        }
+    };
+
+    const getApiBaseUrl = () => {
+        if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === 'function') {
+            try {
+                return window.AlixAuth.apiBaseUrl() || '';
+            } catch {
+                return '';
+            }
+        }
+        const origin = window.location && window.location.origin ? window.location.origin : '';
+        return origin && origin !== 'null' ? origin : '';
+    };
+
+    const orderPollRequestJson = async (path) => {
+        const t = getAuthToken();
+        if (!t) throw new Error('Login required');
+
+        const res = await fetch(getApiBaseUrl() + path, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${t}`,
+            },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const debugMessage = data && data.details && typeof data.details.message === 'string' ? data.details.message : null;
+            const message = debugMessage || (typeof data.error === 'string' ? data.error : 'Request failed');
+            throw new Error(message);
+        }
+        return data;
+    };
+
+    const ensureOrderNotificationsLoaded = () => {
+        if (window.AlixOrderNotifications) return Promise.resolve(true);
+
+        const existing = document.querySelector('script[data-av-order-notifs="1"]');
+        if (existing) {
+            return new Promise((resolve) => {
+                const done = () => resolve(Boolean(window.AlixOrderNotifications));
+                existing.addEventListener('load', done, { once: true });
+                existing.addEventListener('error', () => resolve(false), { once: true });
+                // In case it already loaded.
+                setTimeout(done, 0);
+            });
+        }
+
+        return new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.src = '../js/order-notifications.js?v=3';
+            s.async = true;
+            s.setAttribute('data-av-order-notifs', '1');
+            s.addEventListener('load', () => resolve(Boolean(window.AlixOrderNotifications)), { once: true });
+            s.addEventListener('error', () => resolve(false), { once: true });
+            document.body.appendChild(s);
+        });
+    };
+
+    const mapDesignProofStatus = (s) => {
+        const v = String(s || '').toLowerCase();
+        if (v === 'approved') return 'Approved';
+        if (v === 'rejected') return 'Revision Requested';
+        if (v === 'submitted' || v === 'reviewing') return 'Sent';
+        return 'Not Sent';
+    };
+
+    const mapOrdersForNotifications = (apiOrders) => {
+        const list = Array.isArray(apiOrders) ? apiOrders : [];
+        return list.map((row) => {
+            const o = row?.order || {};
+            const items = Array.isArray(row?.items) ? row.items : [];
+            const metaFromApi = (o.meta && typeof o.meta === 'object') ? o.meta : {};
+
+            // Preserve any provided design_proof envelope.
+            const designProof = row?.design_proof && typeof row.design_proof === 'object' ? row.design_proof : null;
+            const meta = { ...metaFromApi };
+            if (designProof) {
+                meta.proof = {
+                    status: mapDesignProofStatus(designProof.proof_status),
+                    mockup_data_url: String(designProof.proof_file_path || ''),
+                    revision_note: designProof.revision_note ?? null,
+                    version_number: designProof.version_number ?? null,
+                };
+            }
+
+            return {
+                rawId: o?.order_id,
+                status: o?.status,
+                tracking_number: o?.tracking_number != null ? String(o.tracking_number) : null,
+                meta,
+                items: items.map((it) => ({
+                    id: it?.order_item_id ?? it?.orderItemId ?? null,
+                    name: it?.meta?.product_name || `Product #${it?.product_id ?? ''}`,
+                    quantity: it?.quantity,
+                    design_proof: it?.design_proof && typeof it.design_proof === 'object'
+                        ? {
+                            status: mapDesignProofStatus(it.design_proof.proof_status),
+                            mockup_data_url: String(it.design_proof.proof_file_path || ''),
+                            revision_note: it.design_proof.revision_note ?? null,
+                            version_number: it.design_proof.version_number ?? null,
+                        }
+                        : null,
+                })),
+            };
+        });
+    };
+
+    const hadOrderNotificationsBaseline = () => {
+        try {
+            const raw = localStorage.getItem(ORDER_NOTIFICATIONS_STATUS_KEY);
+            if (!raw) return false;
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0;
+        } catch {
+            return false;
+        }
+    };
+
+    let orderPollInFlight = false;
+    let orderPollTimer = null;
+    let orderPollBackoffMs = ORDER_POLL_MIN_VISIBLE_MS;
+
+    const scheduleOrderPoll = (delayMs) => {
+        if (orderPollTimer) {
+            clearTimeout(orderPollTimer);
+            orderPollTimer = null;
+        }
+        const d = Math.max(2_000, Number(delayMs) || 0);
+        orderPollTimer = setTimeout(() => {
+            void pollOrdersForNotifications();
+        }, d);
+    };
+
+    const getDesiredPollIntervalMs = () => {
+        if (document.visibilityState && document.visibilityState !== 'visible') return ORDER_POLL_MIN_HIDDEN_MS;
+        return ORDER_POLL_MIN_VISIBLE_MS;
+    };
+
+    const pollOrdersForNotifications = async ({ immediate } = {}) => {
+        if (!isLoggedIn) return;
+        if (isAdminPage) return;
+        if (orderPollInFlight) return;
+
+        const ok = await ensureOrderNotificationsLoaded();
+        if (!ok || !window.AlixOrderNotifications?.recordFromOrders) {
+            // Try again later.
+            scheduleOrderPoll(getDesiredPollIntervalMs());
+            return;
+        }
+
+        orderPollInFlight = true;
+        const baselineExisted = hadOrderNotificationsBaseline();
+
+        try {
+            const limit = 200;
+            const offset = 0;
+            const data = await orderPollRequestJson(`/api/orders?${new URLSearchParams({ limit: String(limit), offset: String(offset) }).toString()}`);
+            const apiOrders = Array.isArray(data?.orders) ? data.orders : [];
+            const mapped = mapOrdersForNotifications(apiOrders);
+
+            const changes = window.AlixOrderNotifications.recordFromOrders(mapped);
+
+            // Avoid popup spam on the very first baseline run.
+            if (baselineExisted && changes.length && window.AlixOrderNotifications.showPopups) {
+                await window.AlixOrderNotifications.showPopups(changes);
+            }
+
+            orderPollBackoffMs = getDesiredPollIntervalMs();
+        } catch {
+            // Backoff on failures.
+            orderPollBackoffMs = Math.min(ORDER_POLL_MAX_BACKOFF_MS, Math.max(getDesiredPollIntervalMs(), orderPollBackoffMs * 2));
+        } finally {
+            orderPollInFlight = false;
+            if (immediate) {
+                scheduleOrderPoll(getDesiredPollIntervalMs());
+            } else {
+                scheduleOrderPoll(orderPollBackoffMs);
+            }
+        }
+    };
+
+    if (isLoggedIn && !isAdminPage) {
+        // Start shortly after page load so DOM is ready.
+        scheduleOrderPoll(5_000);
+
+        window.addEventListener('focus', () => {
+            void pollOrdersForNotifications({ immediate: true });
+        });
+    }
+
     window.addEventListener('alix:order-notifications-updated', () => {
         refreshNotificationBadge();
     });
@@ -722,6 +935,9 @@
         if (document.visibilityState === 'visible') {
             refreshNotificationBadge();
             void refreshCartDot({ force: false });
+            if (isLoggedIn && !isAdminPage) {
+                void pollOrdersForNotifications({ immediate: true });
+            }
         }
     });
 
