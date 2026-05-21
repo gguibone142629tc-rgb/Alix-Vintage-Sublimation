@@ -707,7 +707,8 @@
 
     // --- Site-wide order update polling (for notifications everywhere) ---
     const ORDER_NOTIFICATIONS_STATUS_KEY = 'alix_order_status_map_v1';
-    const ORDER_POLL_MIN_VISIBLE_MS = 15_000;
+    // "Real-time" feel without websockets: frequent polling while visible.
+    const ORDER_POLL_MIN_VISIBLE_MS = 5_000;
     const ORDER_POLL_MIN_HIDDEN_MS = 60_000;
     const ORDER_POLL_MAX_BACKOFF_MS = 120_000;
 
@@ -777,7 +778,7 @@
 
         return new Promise((resolve) => {
             const s = document.createElement('script');
-                s.src = '../js/order-notifications.js?v=4';
+            s.src = '../js/order-notifications.js?v=6';
             s.async = true;
             s.setAttribute('data-av-order-notifs', '1');
             s.addEventListener('load', () => resolve(Boolean(window.AlixOrderNotifications)), { once: true });
