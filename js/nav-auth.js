@@ -466,7 +466,7 @@
         removeFromAllStorages(LOGIN_AT_KEY);
     }
 
-    const isProtectedPage = /(cart|order-history|order-tracking|account-settings|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
+    const isProtectedPage = /(cart|order-history|order-tracking|account-settings|notifications|product-order-individual|product-order-group|upload-custom-design)\.html$/i.test(
         window.location.pathname
     );
     const loginButtons = document.querySelectorAll(".nav-login-btn-link");
@@ -522,6 +522,35 @@
         link.setAttribute('aria-label', 'Cart');
     });
 
+    // Ensure there is a Notifications icon link beside the Cart icon.
+    document.querySelectorAll('.nav-icons').forEach((wrap) => {
+        const existing = wrap.querySelector('a.nav-notifications-link');
+        if (existing) {
+            existing.classList.toggle('is-hidden', !isLoggedIn);
+            return;
+        }
+
+        const a = document.createElement('a');
+        a.className = 'nav-notifications-link is-hidden';
+        a.href = 'notifications.html';
+        a.setAttribute('aria-label', 'Notifications');
+        a.innerHTML = `
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+        `;
+
+        const cartLink = wrap.querySelector('a.nav-order-link');
+        if (cartLink && cartLink.nextSibling) {
+            wrap.insertBefore(a, cartLink.nextSibling);
+        } else {
+            wrap.appendChild(a);
+        }
+
+        a.classList.toggle('is-hidden', !isLoggedIn);
+    });
+
     const performLogout = (event) => {
         event.stopPropagation();
         event.preventDefault();
@@ -560,6 +589,10 @@
 
     orderLinks.forEach((link) => {
         link.classList.toggle("is-hidden", !isLoggedIn);
+    });
+
+    document.querySelectorAll('a.nav-notifications-link').forEach((link) => {
+        link.classList.toggle('is-hidden', !isLoggedIn);
     });
 
     const closeAllAccountMenus = () => {
@@ -754,6 +787,7 @@
 
         if (isLoggedIn) {
             entries.push({ label: "Cart", href: "cart.html", className: "nav-mobile-cart-link" });
+            entries.push({ label: "Notifications", href: "notifications.html", className: "nav-mobile-notifications-link" });
             entries.push({ label: "Orders", href: "order-tracking.html", className: "nav-mobile-orders-link" });
             entries.push({ label: "Order History", href: "order-history.html", className: "nav-mobile-order-history-link" });
             entries.push({ label: "Account Settings", href: "account-settings.html", className: "nav-mobile-account-link" });
