@@ -875,6 +875,16 @@ main {
     transition: all 0.2s ease;
 }
 
+.btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    background: #ffffff;
+    color: var(--accent);
+}
+
 .btn:hover {
     background: var(--accent);
     color: #ffffff;
@@ -886,6 +896,11 @@ main {
 }
 
 .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.btn-primary:disabled:hover {
     background: var(--accent);
     color: #ffffff;
 }
