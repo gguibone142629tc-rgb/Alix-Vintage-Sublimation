@@ -71,6 +71,7 @@
                     to_workflow: String(n.to_workflow || ""),
                     at: String(n.at || ""),
                     read: Boolean(n.read),
+                    shown: Boolean(n.shown ?? n.popup_shown ?? n.popupShown),
                     event_type: String(n.event_type || n.type || ""),
                     message: typeof n.message === "string" ? n.message : "",
                 }))
@@ -138,6 +139,81 @@
         const meta = order?.meta && typeof order.meta === "object" ? order.meta : {};
         const payment = meta.payment && typeof meta.payment === "object" ? meta.payment : {};
         return payment;
+    };
+
+    const hasPaymentMeta = (order) => {
+        const meta = order?.meta && typeof order.meta === "object" ? order.meta : null;
+        const payment = meta?.payment && typeof meta.payment === "object" ? meta.payment : null;
+        return Boolean(payment && Object.keys(payment).length);
+    };
+
+    const hasTrackingMeta = (order) => {
+        if (order?.tracking_number != null && String(order.tracking_number).trim()) return true;
+        const meta = order?.meta && typeof order.meta === "object" ? order.meta : null;
+        const t1 = meta?.tracking_number != null ? String(meta.tracking_number).trim() : "";
+        const t2 = meta?.trackingNumber != null ? String(meta.trackingNumber).trim() : "";
+        return Boolean(t1 || t2);
+    };
+
+    const hasProofMeta = (order) => {
+        const meta = order?.meta && typeof order.meta === "object" ? order.meta : null;
+        const metaProofUrl = String(meta?.proof?.mockup_data_url || "").trim();
+        if (metaProofUrl) return true;
+
+        const items = Array.isArray(order?.items) ? order.items : [];
+        return items.some((it) => {
+            const dp = it?.design_proof && typeof it.design_proof === "object" ? it.design_proof : null;
+            const url = String(dp?.mockup_data_url || "").trim();
+            return Boolean(url);
+        });
+    };
+
+    const mergeSignals = (prevSignals, nextSignals, order) => {
+        const prev = prevSignals && typeof prevSignals === "object" ? prevSignals : null;
+        if (!prev) return nextSignals;
+
+        const merged = { ...prev, ...nextSignals };
+
+        const keepPrevIfEmpty = (key) => {
+            const nextVal = normalizeText(merged[key]);
+            const prevVal = normalizeText(prev[key]);
+            if (!nextVal && prevVal) merged[key] = prev[key];
+        };
+
+        // Guard against APIs that omit fields or send empty strings.
+        keepPrevIfEmpty("tracking_number");
+        keepPrevIfEmpty("proof_mockup_key");
+        keepPrevIfEmpty("receipt_status");
+        keepPrevIfEmpty("final_receipt_status");
+        keepPrevIfEmpty("receipt_url");
+        keepPrevIfEmpty("final_receipt_url");
+        keepPrevIfEmpty("receipt_uploaded_at");
+        keepPrevIfEmpty("final_receipt_uploaded_at");
+        keepPrevIfEmpty("receipt_rejection_reason");
+        keepPrevIfEmpty("final_receipt_rejection_reason");
+
+        if (!hasPaymentMeta(order)) {
+            merged.receipt_status = prev.receipt_status;
+            merged.final_receipt_status = prev.final_receipt_status;
+            merged.receipt_url = prev.receipt_url;
+            merged.final_receipt_url = prev.final_receipt_url;
+            merged.receipt_uploaded_at = prev.receipt_uploaded_at;
+            merged.final_receipt_uploaded_at = prev.final_receipt_uploaded_at;
+            merged.receipt_rejection_reason = prev.receipt_rejection_reason;
+            merged.final_receipt_rejection_reason = prev.final_receipt_rejection_reason;
+            merged.receipt_verified = prev.receipt_verified;
+            merged.final_receipt_verified = prev.final_receipt_verified;
+        }
+
+        if (!hasTrackingMeta(order)) {
+            merged.tracking_number = prev.tracking_number;
+        }
+
+        if (!hasProofMeta(order)) {
+            merged.proof_mockup_key = prev.proof_mockup_key;
+        }
+
+        return merged;
     };
 
     const normalizeText = (v) => {
@@ -227,6 +303,7 @@
             to_workflow: getWorkflowDisplay(to),
             at,
             read: false,
+            shown: false,
             event_type: "status_change",
             summary_qty: summary.qty,
             summary_label: summary.label,
@@ -247,6 +324,7 @@
             to_workflow: getWorkflowDisplay(status),
             at,
             read: false,
+            shown: false,
             event_type: String(eventType || "event"),
             message: String(message || ""),
             summary_qty: summary.qty,
@@ -281,12 +359,13 @@
 
             const prevSignals = prevStateMap[orderId] && typeof prevStateMap[orderId] === "object" ? prevStateMap[orderId] : null;
             const nextSignals = extractSignals(order);
-            nextStateMap[orderId] = nextSignals;
+            const mergedSignals = mergeSignals(prevSignals, nextSignals, order);
+            nextStateMap[orderId] = mergedSignals;
 
             if (!hadAnyPrev) {
                 // First run: establish baseline, but still emit critical "current state" notifications
                 // so users are informed even if they open Notifications late.
-                if (nextSignals.receipt_status === "rejected") {
+                if (mergedSignals.receipt_status === "rejected") {
                     const reason = normalizeText(nextSignals.receipt_rejection_reason);
                     newItems.push(
                         makeEventNotification({
@@ -298,7 +377,7 @@
                         }),
                     );
                 }
-                if (nextSignals.final_receipt_status === "rejected") {
+                if (mergedSignals.final_receipt_status === "rejected") {
                     const reason = normalizeText(nextSignals.final_receipt_rejection_reason);
                     newItems.push(
                         makeEventNotification({
@@ -310,7 +389,7 @@
                         }),
                     );
                 }
-                if (String(nextSignals.proof_mockup_key || "")) {
+                if (String(mergedSignals.proof_mockup_key || "")) {
                     newItems.push(
                         makeEventNotification({
                             orderId,
@@ -321,13 +400,13 @@
                         }),
                     );
                 }
-                if (nextSignals.tracking_number) {
+                if (mergedSignals.tracking_number) {
                     newItems.push(
                         makeEventNotification({
                             orderId,
                             order,
                             eventType: "tracking_updated",
-                            message: `Tracking number available: ${nextSignals.tracking_number}.`,
+                            message: `Tracking number available: ${mergedSignals.tracking_number}.`,
                             toStatus: order?.status,
                         }),
                     );
@@ -357,14 +436,14 @@
             // Extra event notifications (admin actions + non-status signals).
             if (prevSignals) {
                 const prevReceipt = normalizeLower(prevSignals.receipt_status);
-                const nextReceipt = normalizeLower(nextSignals.receipt_status);
+                const nextReceipt = normalizeLower(mergedSignals.receipt_status);
                 const prevFinalReceipt = normalizeLower(prevSignals.final_receipt_status);
-                const nextFinalReceipt = normalizeLower(nextSignals.final_receipt_status);
+                const nextFinalReceipt = normalizeLower(mergedSignals.final_receipt_status);
 
                 const prevReceiptVerified = String(prevSignals.receipt_verified || "0");
-                const nextReceiptVerified = String(nextSignals.receipt_verified || "0");
+                const nextReceiptVerified = String(mergedSignals.receipt_verified || "0");
                 const prevFinalReceiptVerified = String(prevSignals.final_receipt_verified || "0");
-                const nextFinalReceiptVerified = String(nextSignals.final_receipt_verified || "0");
+                const nextFinalReceiptVerified = String(mergedSignals.final_receipt_verified || "0");
 
                 // Receipt uploaded (customer action) — useful because status may not change.
                 if (!prevSignals.receipt_url && nextSignals.receipt_url) {
@@ -443,7 +522,7 @@
                 }
 
                 // Mockup/proof sent (admin action).
-                if (!String(prevSignals.proof_mockup_key || "") && String(nextSignals.proof_mockup_key || "")) {
+                if (!String(prevSignals.proof_mockup_key || "") && String(mergedSignals.proof_mockup_key || "")) {
                     newItems.push(
                         makeEventNotification({
                             orderId,
@@ -456,13 +535,13 @@
                 }
 
                 // Tracking number set/updated.
-                if (normalizeText(prevSignals.tracking_number) !== normalizeText(nextSignals.tracking_number) && nextSignals.tracking_number) {
+                if (normalizeText(prevSignals.tracking_number) !== normalizeText(mergedSignals.tracking_number) && mergedSignals.tracking_number) {
                     newItems.push(
                         makeEventNotification({
                             orderId,
                             order,
                             eventType: "tracking_updated",
-                            message: `Tracking number updated: ${nextSignals.tracking_number}.`,
+                            message: `Tracking number updated: ${mergedSignals.tracking_number}.`,
                             toStatus: order?.status,
                         }),
                     );
@@ -535,6 +614,27 @@
         });
         if (!changed) return;
         saveNotifications(next);
+        emitUpdated();
+    };
+
+    const markShown = (id) => {
+        const target = String(id || "").trim();
+        if (!target) return;
+        const list = loadNotifications();
+        let changed = false;
+        const next = list.map((n) => {
+            if (String(n.id) !== target) return n;
+            if (n.shown) return n;
+            changed = true;
+            return { ...n, shown: true };
+        });
+        if (!changed) return;
+        saveNotifications(next);
+        emitUpdated();
+    };
+
+    const clearAll = () => {
+        saveNotifications([]);
         emitUpdated();
     };
 
@@ -645,7 +745,13 @@
         const list = Array.isArray(notifications) ? notifications : [];
         if (list.length === 0) return;
 
-        for (const n of list) {
+        // Only show each notification once.
+        const stored = loadNotifications();
+        const storedById = new Map(stored.map((n) => [String(n.id), n]));
+        const toShow = list.filter((n) => !storedById.get(String(n?.id || ""))?.shown);
+        if (toShow.length === 0) return;
+
+        for (const n of toShow) {
             const orderLabel = n?.order_id ? `Order #AV-${n.order_id}` : "Your order";
             const toWf = String(n?.to_workflow || "").trim() || getWorkflowDisplay(n?.to_status);
 
@@ -669,6 +775,8 @@
             } else {
                 await fallbackAlert(message, { title: "Order Update", tone });
             }
+
+            markShown(n?.id);
         }
     };
 
@@ -686,6 +794,7 @@
         markAllRead,
         markOrderRead,
         markRead,
+        clearAll,
         UPDATED_EVENT,
         formatWhen,
         getWorkflowDisplay,
