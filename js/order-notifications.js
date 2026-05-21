@@ -343,10 +343,13 @@
                 const n = makeNotification({ orderId, fromStatus: prev, toStatus: status, order });
                 // Improve Proofing message: if no mockup yet, tell user to wait.
                 const toWf = getWorkflowDisplay(status);
+                const fromWf = getWorkflowDisplay(prev);
                 if (toWf === "Proofing") {
                     n.message = hasAnyMockup(order)
                         ? "Admin sent a design mockup. Please review it on the order tracking page."
                         : "Your payment was verified. Your order is now in proofing. Please wait for admin to upload the mockup.";
+                } else if (fromWf === "Proofing" && toWf === "In Progress") {
+                    n.message = `Order #AV-${orderId} proofing is complete. Your order is now in production.`;
                 }
                 newItems.push(n);
             }

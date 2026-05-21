@@ -1681,7 +1681,6 @@
                 await loadOrders();
                 render();
             });
-            uiAlert("Proof approved.", { title: "Proofing", tone: "success" });
         } catch (e) {
             uiAlert(e?.message || "Failed to approve proof.", { title: "Proofing", tone: "danger" });
         }
