@@ -159,20 +159,35 @@
                 <div id="orderContents"></div>
             </section>
 
-            <section class="panel" id="balancePanel" aria-label="Remaining balance">
-                <div class="panel-title">REMAINING BALANCE</div>
-                <div class="payment-grid" aria-label="Balance summary">
-                    <div class="payment-item">
-                        <div class="payment-k">Total Amount</div>
-                        <div class="payment-v" id="balanceTotal">-</div>
+            <section class="panel pricing-details-panel" id="balancePanel" aria-label="Pricing details">
+                <div class="panel-title">PRICING DETAILS</div>
+
+                <div class="pricing-lines" aria-label="Price breakdown">
+                    <div class="pricing-line">
+                        <div class="pricing-label">Base Price</div>
+                        <div class="pricing-value" id="pricingBase">-</div>
                     </div>
-                    <div class="payment-item">
-                        <div class="payment-k">Amount Paid</div>
-                        <div class="payment-v" id="balancePaid">-</div>
+                    <div class="pricing-line">
+                        <div class="pricing-label">Shipping Fee</div>
+                        <div class="pricing-value" id="pricingShipping">-</div>
                     </div>
-                    <div class="payment-item">
-                        <div class="payment-k">Remaining Balance</div>
-                        <div class="payment-v" id="balanceRemaining">-</div>
+                </div>
+
+                <div class="pricing-lock-note">Pricing details locked after approval.</div>
+
+                <div class="pricing-total-card" aria-label="Balance summary">
+                    <div class="pricing-total-row">
+                        <div class="pricing-total-label">Order Total</div>
+                        <div class="pricing-total-value" id="balanceTotal">-</div>
+                    </div>
+                    <div class="pricing-total-row">
+                        <div class="pricing-total-label">Amount Paid</div>
+                        <div class="pricing-total-value pricing-paid" id="balancePaid">-</div>
+                    </div>
+                    <div class="pricing-total-divider"></div>
+                    <div class="pricing-total-row pricing-total-row--remaining">
+                        <div class="pricing-total-label">REMAINING BALANCE</div>
+                        <div class="pricing-total-value pricing-remaining" id="balanceRemaining">-</div>
                     </div>
                 </div>
             </section>

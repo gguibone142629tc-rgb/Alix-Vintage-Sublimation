@@ -1090,11 +1090,11 @@
                 if (orderId > 0) {
                     await (window.AVDialog?.alert
                         ? window.AVDialog.alert(
-                              `Your custom design request has been submitted successfully. You will now be redirected to the order tracking page.`,
+                              `Your custom design request has been submitted successfully. You will now be redirected to the orders page.`,
                               { title: "Submitted", tone: "success" }
                           )
                         : alert(`Your custom design request has been submitted successfully.`));
-                    window.location.href = `order-tracking.html?id=${encodeURIComponent(String(orderId))}`;
+                    window.location.href = "order-tracking.html";
                     return;
                 }
 
@@ -1104,6 +1104,7 @@
                           tone: "success",
                       })
                     : alert(`Your custom design request has been submitted successfully.`));
+                window.location.href = "order-tracking.html";
             } catch (error) {
                 const message = error?.message || 'Failed to submit request.';
                 window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);

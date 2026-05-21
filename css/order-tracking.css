@@ -687,6 +687,95 @@ main {
     color: var(--ink-strong);
 }
 
+.pricing-details-panel {
+    overflow: hidden;
+}
+
+.pricing-lines {
+    display: grid;
+    gap: 0;
+    margin-top: 18px;
+}
+
+.pricing-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.pricing-line:last-child {
+    border-bottom: 0;
+}
+
+.pricing-label,
+.pricing-total-label {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.pricing-value,
+.pricing-total-value {
+    color: var(--ink-strong);
+    font-size: 18px;
+    font-weight: 900;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pricing-lock-note {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.pricing-total-card {
+    margin-top: 24px;
+    border: 1px solid color-mix(in srgb, var(--theme-brand-2) 52%, var(--line));
+    border-radius: 8px;
+    padding: 18px 24px;
+    background: color-mix(in srgb, var(--theme-brand-2) 20%, var(--theme-panel));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-brand-2) 20%, transparent),
+        0 14px 34px rgba(0, 0, 0, 0.18);
+}
+
+.pricing-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 7px 0;
+}
+
+.pricing-paid {
+    color: var(--theme-ok);
+}
+
+.pricing-total-divider {
+    height: 1px;
+    margin: 9px 0;
+    background: color-mix(in srgb, var(--theme-brand-2) 42%, var(--line));
+}
+
+.pricing-total-row--remaining .pricing-total-label {
+    color: var(--theme-brand-2);
+    letter-spacing: 1.4px;
+    font-size: 13px;
+}
+
+.pricing-remaining {
+    color: var(--theme-brand-2);
+    font-size: 28px;
+    line-height: 1;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: -4px;
+}
+
 .payment-upload {
     margin-top: 10px;
     border-top: 1px solid var(--line);
@@ -1022,6 +1111,19 @@ main {
 
     .payment-grid {
         grid-template-columns: 1fr;
+    }
+
+    .pricing-total-card {
+        padding: 16px;
+    }
+
+    .pricing-total-row,
+    .pricing-line {
+        gap: 12px;
+    }
+
+    .pricing-remaining {
+        font-size: 23px;
     }
 
     .payment-upload {

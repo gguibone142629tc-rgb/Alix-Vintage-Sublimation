@@ -78,6 +78,8 @@
     const paymentRequiredLabelEl = qs("#paymentRequiredLabel");
 
     const balancePanelEl = qs("#balancePanel");
+    const pricingBaseEl = qs("#pricingBase");
+    const pricingShippingEl = qs("#pricingShipping");
     const balanceTotalEl = qs("#balanceTotal");
     const balancePaidEl = qs("#balancePaid");
     const balanceRemainingEl = qs("#balanceRemaining");
@@ -1075,7 +1077,7 @@
         const subtotal = isCustomDesign ? base * effectiveQty : itemsTotal > 0 ? itemsTotal : base;
         const total = Math.round((subtotal + shipping) * 100) / 100;
         const downpayment = Math.round(total * 0.5 * 100) / 100;
-        return { total, downpayment };
+        return { base, shipping, subtotal, total, downpayment };
     };
 
     const computePaymentAmounts = (order) => {
@@ -1103,6 +1105,9 @@
         if (!order) return;
 
         const amounts = computePaymentAmounts(order);
+        const totals = computeTotals(order);
+        if (pricingBaseEl) pricingBaseEl.textContent = formatMoney(totals.subtotal);
+        if (pricingShippingEl) pricingShippingEl.textContent = formatMoney(totals.shipping);
         if (balanceTotalEl) balanceTotalEl.textContent = formatMoney(amounts.total);
         if (balancePaidEl) balancePaidEl.textContent = formatMoney(amounts.amountPaid);
         if (balanceRemainingEl) balanceRemainingEl.textContent = formatMoney(amounts.remaining);

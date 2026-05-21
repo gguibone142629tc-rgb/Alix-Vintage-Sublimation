@@ -433,7 +433,7 @@
                     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'GCash';
                     await window.AlixCart.checkout({ payment_method: paymentMethod });
                     await uiAlert('Order placed successfully.', { title: 'Success', tone: 'success', okText: 'Continue' });
-                    window.location.href = 'order-history.html';
+                    window.location.href = 'order-tracking.html';
                 } catch (e) {
                     await uiAlert(e?.message || 'Checkout failed.', { title: 'Error', tone: 'danger' });
                 }
