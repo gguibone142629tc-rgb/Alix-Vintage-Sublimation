@@ -538,6 +538,109 @@
         emitUpdated();
     };
 
+    // Fallback for environments where ui-dialog.js isn't available (or fails to load).
+    // Avoid using browser alert() so we don't show the native "<site> says" popup.
+    let fallbackCleanup = null;
+    const fallbackAlert = (message, opts = {}) => {
+        try {
+            if (typeof fallbackCleanup === "function") fallbackCleanup();
+        } catch {
+            // ignore
+        }
+
+        const safeTitle = String(opts.title || "Notice").trim() || "Notice";
+        const safeTone = String(opts.tone || "info").trim() || "info"; // info | success | warning | danger
+        const safeMessage = String(message || "").trim();
+
+        const backdrop = document.createElement("div");
+        backdrop.className = "av-dialog-backdrop";
+
+        const dialog = document.createElement("div");
+        dialog.className = `av-dialog av-dialog--${safeTone}`;
+        dialog.setAttribute("role", "dialog");
+        dialog.setAttribute("aria-modal", "true");
+
+        const closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "av-dialog-close";
+        closeBtn.setAttribute("aria-label", "Close");
+        closeBtn.textContent = "×";
+
+        const icon = document.createElement("div");
+        icon.className = "av-dialog-icon";
+        icon.setAttribute("aria-hidden", "true");
+        // simple info icon (matches theme styling)
+        icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path></svg>';
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "av-dialog-title";
+        titleEl.textContent = safeTitle;
+
+        const descEl = document.createElement("div");
+        descEl.className = "av-dialog-desc";
+        descEl.textContent = safeMessage;
+
+        const actions = document.createElement("div");
+        actions.className = "av-dialog-actions av-dialog-actions--alert";
+
+        const okBtn = document.createElement("button");
+        okBtn.type = "button";
+        okBtn.className = "av-dialog-btn av-dialog-btn--primary";
+        okBtn.textContent = "OK";
+
+        actions.appendChild(okBtn);
+        dialog.appendChild(closeBtn);
+        dialog.appendChild(icon);
+        dialog.appendChild(titleEl);
+        dialog.appendChild(descEl);
+        dialog.appendChild(actions);
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        let resolver = null;
+        const p = new Promise((resolve) => {
+            resolver = resolve;
+        });
+
+        const cleanup = () => {
+            window.removeEventListener("keydown", onKeyDown, true);
+            backdrop.removeEventListener("click", onBackdropClick);
+            okBtn.removeEventListener("click", onOk);
+            closeBtn.removeEventListener("click", onOk);
+            backdrop.remove();
+        };
+
+        const close = () => {
+            cleanup();
+            if (fallbackCleanup === cleanup) fallbackCleanup = null;
+            try {
+                resolver?.(true);
+            } catch {
+                // ignore
+            }
+        };
+
+        const onOk = () => close();
+        const onBackdropClick = (e) => {
+            if (e.target !== backdrop) return;
+            close();
+        };
+        const onKeyDown = (e) => {
+            if (e.key === "Escape" || e.key === "Enter") {
+                close();
+            }
+        };
+
+        fallbackCleanup = cleanup;
+        okBtn.addEventListener("click", onOk);
+        closeBtn.addEventListener("click", onOk);
+        backdrop.addEventListener("click", onBackdropClick);
+        window.addEventListener("keydown", onKeyDown, true);
+        setTimeout(() => okBtn.focus(), 0);
+
+        return p;
+    };
+
     const showPopups = async (notifications) => {
         const list = Array.isArray(notifications) ? notifications : [];
         if (list.length === 0) return;
@@ -564,7 +667,7 @@
             if (window.AVDialog?.alert) {
                 await window.AVDialog.alert(message, { title: "Order Update", tone });
             } else {
-                alert(message);
+                await fallbackAlert(message, { title: "Order Update", tone });
             }
         }
     };
