@@ -248,11 +248,38 @@
             header .nav {
                 min-height: 62px;
                 gap: 10px;
+                justify-content: flex-start;
             }
-            header nav,
-            header .nav-icons {
+            header nav {
                 display: none !important;
             }
+
+            /* Keep Cart + Notifications visible on mobile header (outside hamburger). */
+            header .nav-icons {
+                display: flex !important;
+                align-items: center;
+                gap: 10px;
+                margin-left: auto;
+                min-height: 44px;
+            }
+
+            /* Collapse non-essential header links into the hamburger menu. */
+            header .nav-icons .nav-contact-link,
+            header .nav-icons .nav-login-btn-link,
+            header .nav-icons .nav-account-menu,
+            header .nav-icons .nav-account-link {
+                display: none !important;
+            }
+
+            header .nav-icons a.nav-order-link,
+            header .nav-icons a.nav-notifications-link {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+            }
+
             header .logo-wrap {
                 min-height: 48px;
                 gap: 10px;

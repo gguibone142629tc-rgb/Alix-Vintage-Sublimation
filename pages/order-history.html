@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Order History | Alix Vintage</title>
-    <link rel="stylesheet" href="../css/order-history.css?v=4">
+    <link rel="stylesheet" href="../css/order-history.css?v=5">
     <link rel="stylesheet" href="../css/sublimation-theme.css?v=3">
 </head>
 <body>
@@ -101,9 +101,15 @@
                         id="searchInput"
                         placeholder="Search by order ID, item name ..."
                     >
-                    <button class="btn" id="filterBtn">FILTER</button>
-                    <button class="btn" id="dateRangeBtn">THIS MONTH</button>
-                    <button class="btn btn-danger" id="clearBtn">REFRESH</button>
+                    <select id="dateRangeSelect" class="af-input" aria-label="Date range">
+                        <option value="all" selected>All time</option>
+                        <option value="month">This month</option>
+                        <option value="year">This year</option>
+                    </select>
+                    <select id="sortSelect" class="af-input" aria-label="Sort">
+                        <option value="date_desc" selected>Newest</option>
+                        <option value="date_asc">Oldest</option>
+                    </select>
                 </div>
 
                 <!-- Filter Tabs -->
@@ -113,33 +119,6 @@
                         <option value="completed" selected>Completed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
-                    <button class="tab-btn" data-workflow="all">All</button>
-                    <button class="tab-btn active" data-workflow="completed">Completed</button>
-                    <button class="tab-btn" data-workflow="cancelled">Cancelled</button>
-                </div>
-
-                <div id="advancedFilters" class="advanced-filters is-hidden" aria-label="Advanced filters">
-                    <div class="advanced-filters-row">
-                        <label class="af-field">
-                            <span class="af-label">Min Amount</span>
-                            <input id="minAmountInput" class="af-input" type="number" inputmode="decimal" min="0" step="1" placeholder="0">
-                        </label>
-
-                        <label class="af-field">
-                            <span class="af-label">Max Amount</span>
-                            <input id="maxAmountInput" class="af-input" type="number" inputmode="decimal" min="0" step="1" placeholder="Any">
-                        </label>
-
-                        <label class="af-field">
-                            <span class="af-label">Sort</span>
-                            <select id="sortSelect" class="af-input">
-                                <option value="date_desc" selected>Newest</option>
-                                <option value="date_asc">Oldest</option>
-                                <option value="amount_desc">Amount (High ? Low)</option>
-                                <option value="amount_asc">Amount (Low ? High)</option>
-                            </select>
-                        </label>
-                    </div>
                 </div>
             </div>
 
@@ -226,9 +205,7 @@
         let orders = [];
         let currentStatusFilter = 'completed';
         let currentSearchTerm = '';
-        let currentMonthOnly = false;
-        let minAmountFilter = null;
-        let maxAmountFilter = null;
+        let currentDateRange = 'all';
         let sortKey = 'date_desc';
 
         const isHistoryStatus = (status) => {
@@ -281,10 +258,12 @@
             return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
         };
 
-        const asNumberOrNull = (value) => {
-            if (value === '' || value === null || value === undefined) return null;
-            const n = Number(value);
-            return Number.isFinite(n) ? n : null;
+        const isInCurrentYear = (dateString) => {
+            if (!dateString) return false;
+            const dt = new Date(dateString);
+            if (Number.isNaN(dt.getTime())) return false;
+            const now = new Date();
+            return dt.getFullYear() === now.getFullYear();
         };
 
         const loadAndDisplay = async () => {
@@ -332,31 +311,16 @@
                 });
             }
 
-            if (currentMonthOnly) {
+            if (currentDateRange === 'month') {
                 filtered = filtered.filter((o) => isInCurrentMonth(o.date));
-            }
-
-            if (minAmountFilter !== null) {
-                filtered = filtered.filter((o) => Number(o.total || 0) >= minAmountFilter);
-            }
-
-            if (maxAmountFilter !== null) {
-                filtered = filtered.filter((o) => Number(o.total || 0) <= maxAmountFilter);
+            } else if (currentDateRange === 'year') {
+                filtered = filtered.filter((o) => isInCurrentYear(o.date));
             }
 
             const cmpDateDesc = (a, b) => String(b.date || '').localeCompare(String(a.date || ''));
             const cmpDateAsc = (a, b) => String(a.date || '').localeCompare(String(b.date || ''));
-            const cmpAmountDesc = (a, b) => Number(b.total || 0) - Number(a.total || 0);
-            const cmpAmountAsc = (a, b) => Number(a.total || 0) - Number(b.total || 0);
 
-            const cmp =
-                sortKey === 'date_asc'
-                    ? cmpDateAsc
-                    : sortKey === 'amount_desc'
-                        ? cmpAmountDesc
-                        : sortKey === 'amount_asc'
-                            ? cmpAmountAsc
-                            : cmpDateDesc;
+            const cmp = sortKey === 'date_asc' ? cmpDateAsc : cmpDateDesc;
 
             return filtered.sort(cmp);
         };
@@ -448,24 +412,9 @@
         const setupEventListeners = () => {
             const workflowSelect = document.getElementById('workflowSelect');
 
-            document.querySelectorAll('.tab-btn').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentStatusFilter = btn.dataset.workflow || 'all';
-                    if (workflowSelect) workflowSelect.value = currentStatusFilter;
-                    renderRows();
-                    updateStats();
-                });
-            });
-
             if (workflowSelect) {
                 workflowSelect.addEventListener('change', (e) => {
                     currentStatusFilter = String(e.target.value || 'all');
-                    document.querySelectorAll('.tab-btn').forEach((b) => {
-                        const v = b.dataset.workflow || 'all';
-                        b.classList.toggle('active', v === currentStatusFilter);
-                    });
                     renderRows();
                     updateStats();
                 });
@@ -476,40 +425,10 @@
                 renderRows();
             });
 
-            const filterBtn = document.getElementById('filterBtn');
-            const advancedFilters = document.getElementById('advancedFilters');
-
-            if (filterBtn && advancedFilters) {
-                filterBtn.addEventListener('click', () => {
-                    const willShow = advancedFilters.classList.contains('is-hidden');
-                    advancedFilters.classList.toggle('is-hidden');
-                    filterBtn.classList.toggle('is-active', willShow);
-                    filterBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
-                });
-            }
-
-            const dateRangeBtn = document.getElementById('dateRangeBtn');
-            if (dateRangeBtn) {
-                dateRangeBtn.addEventListener('click', () => {
-                    currentMonthOnly = !currentMonthOnly;
-                    dateRangeBtn.classList.toggle('is-active', currentMonthOnly);
-                    dateRangeBtn.setAttribute('aria-pressed', currentMonthOnly ? 'true' : 'false');
-                    renderRows();
-                });
-            }
-
-            const minAmountInput = document.getElementById('minAmountInput');
-            if (minAmountInput) {
-                minAmountInput.addEventListener('input', (e) => {
-                    minAmountFilter = asNumberOrNull(e.target.value);
-                    renderRows();
-                });
-            }
-
-            const maxAmountInput = document.getElementById('maxAmountInput');
-            if (maxAmountInput) {
-                maxAmountInput.addEventListener('input', (e) => {
-                    maxAmountFilter = asNumberOrNull(e.target.value);
+            const dateRangeSelect = document.getElementById('dateRangeSelect');
+            if (dateRangeSelect) {
+                dateRangeSelect.addEventListener('change', (e) => {
+                    currentDateRange = String(e.target.value || 'all');
                     renderRows();
                 });
             }
@@ -521,10 +440,6 @@
                     renderRows();
                 });
             }
-
-            document.getElementById('clearBtn')?.addEventListener('click', () => {
-                loadAndDisplay();
-            });
         };
 
         if (document.readyState === 'loading') {
@@ -538,7 +453,7 @@
         }
 
     </script>
-    <script src="../js/nav-auth.js?v=6"></script>
+    <script src="../js/nav-auth.js?v=7"></script>
 </body>
 </html>
 

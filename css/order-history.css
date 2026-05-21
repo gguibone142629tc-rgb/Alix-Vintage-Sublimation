@@ -296,8 +296,12 @@ nav a.active {
         }
 
         .workflow-select {
-            display: none;
-            width: 100%;
+            display: block;
+            width: min(260px, 100%);
+        }
+
+        .search-row .af-input {
+            min-height: 44px;
         }
 
         .advanced-filters {
@@ -603,6 +607,11 @@ nav a.active {
                 min-height: 40px;
             }
 
+            .search-row .af-input {
+                width: 100%;
+                min-height: 44px;
+            }
+
             .filter-tabs {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -691,10 +700,6 @@ nav a.active {
 
             .filter-tabs .tab-btn {
                 display: none;
-            }
-
-            .filter-tabs .workflow-select {
-                display: block;
             }
         }
 
