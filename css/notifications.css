@@ -1,0 +1,281 @@
+/* Notifications page (customer) */
+
+.notifications-page .content {
+    padding-top: 24px;
+}
+
+.notifications-page .notifications-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.notifications-page .notifications-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notifications-page .notifications-title h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: none;
+    border: 0;
+    padding: 0;
+}
+
+.notifications-page .notifications-title .title-icon {
+    width: 20px;
+    height: 20px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    opacity: 0.95;
+}
+
+.notifications-page .new-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    background: color-mix(in srgb, var(--theme-brand) 20%, rgba(0, 0, 0, 0.35));
+    border: 1px solid color-mix(in srgb, var(--theme-brand) 35%, rgba(255, 255, 255, 0.12));
+    color: #fff;
+}
+
+.notifications-page .new-badge.is-hidden {
+    display: none;
+}
+
+.notifications-page .mark-all-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, #ffffff 18%, rgba(0, 0, 0, 0.65));
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.notifications-page .mark-all-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.notifications-page .mark-all-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.notifications-page .notif-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 18px 0;
+}
+
+.notifications-page .notif-tab {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.28);
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.notifications-page .notif-tab:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.notifications-page .notif-tab.active {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(0, 0, 0, 0.42);
+    color: #fff;
+}
+
+.notifications-page .notif-day {
+    margin-top: 18px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.notifications-page .notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notifications-page .notif-card {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    padding: 16px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    text-decoration: none;
+    color: #fff;
+}
+
+.notifications-page .notif-card:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.notifications-page .notif-card[data-unread="1"] {
+    box-shadow: inset 3px 0 0 0 var(--theme-brand);
+}
+
+.notifications-page .notif-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.notifications-page .notif-avatar svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    opacity: 0.95;
+}
+
+.notifications-page .notif-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notifications-page .notif-topline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.notifications-page .notif-order {
+    font-weight: 900;
+    letter-spacing: 0.2px;
+}
+
+.notifications-page .notif-message {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.35;
+}
+
+.notifications-page .notif-meta {
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.65);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.notifications-page .notif-meta .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.notifications-page .notif-unread-dot {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--theme-danger);
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18);
+    opacity: 0;
+}
+
+.notifications-page .notif-card[data-unread="1"] .notif-unread-dot {
+    opacity: 1;
+}
+
+/* Status badge (copied from order tracking so we can reuse tone classes) */
+.notifications-page .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    --status-fg: var(--ink-strong);
+    --status-bg: color-mix(in srgb, var(--status-fg) 14%, rgba(0, 0, 0, 0.2));
+    --status-border: color-mix(in srgb, var(--status-fg) 34%, rgba(255, 255, 255, 0.15));
+    background: var(--status-bg);
+    border: 1px solid var(--status-border);
+    color: var(--status-fg);
+}
+
+.notifications-page .status-badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.75;
+}
+
+.notifications-page .tone-pending { --status-fg: var(--theme-brand); }
+.notifications-page .tone-payment { --status-fg: color-mix(in srgb, var(--theme-brand-2) 55%, var(--theme-muted)); }
+.notifications-page .tone-final-payment { --status-fg: color-mix(in srgb, var(--theme-brand-3) 55%, var(--theme-muted)); }
+.notifications-page .tone-proofing { --status-fg: color-mix(in srgb, var(--theme-brand-2) 55%, var(--theme-ok)); }
+.notifications-page .tone-progress { --status-fg: color-mix(in srgb, var(--theme-brand) 55%, var(--theme-ok)); }
+.notifications-page .tone-ready { --status-fg: color-mix(in srgb, var(--theme-brand-3) 72%, var(--theme-ok)); }
+.notifications-page .tone-transit { --status-fg: color-mix(in srgb, var(--theme-brand-3) 62%, var(--theme-danger)); }
+.notifications-page .tone-completed { --status-fg: var(--theme-ok); }
+.notifications-page .tone-cancelled { --status-fg: var(--theme-muted); }
+
+.notifications-page .empty-state {
+    padding: 36px 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.notifications-page .empty-state h3 {
+    margin: 10px 0 6px;
+}
+
+@media (max-width: 640px) {
+    .notifications-page .notifications-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .notifications-page .notif-card {
+        padding: 14px;
+    }
+}

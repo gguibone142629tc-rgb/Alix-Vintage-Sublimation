@@ -541,6 +541,11 @@
             </svg>
         `;
 
+        const badge = document.createElement('span');
+        badge.className = 'nav-notifications-badge is-hidden';
+        badge.setAttribute('aria-label', 'Unread notifications');
+        a.appendChild(badge);
+
         const cartLink = wrap.querySelector('a.nav-order-link');
         if (cartLink && cartLink.nextSibling) {
             wrap.insertBefore(a, cartLink.nextSibling);
@@ -550,6 +555,37 @@
 
         a.classList.toggle('is-hidden', !isLoggedIn);
     });
+
+    const NOTIFICATIONS_KEY = 'alix_order_notifications_v1';
+
+    const getUnreadNotificationCount = () => {
+        try {
+            const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+            if (!raw) return 0;
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return 0;
+            return parsed.reduce((sum, n) => sum + (n && typeof n === 'object' && n.read ? 0 : 1), 0);
+        } catch {
+            return 0;
+        }
+    };
+
+    const refreshNotificationBadge = () => {
+        const count = getUnreadNotificationCount();
+        document.querySelectorAll('a.nav-notifications-link').forEach((link) => {
+            let badge = link.querySelector('.nav-notifications-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'nav-notifications-badge is-hidden';
+                badge.setAttribute('aria-label', 'Unread notifications');
+                link.appendChild(badge);
+            }
+
+            const display = count > 99 ? '99+' : String(count);
+            badge.textContent = display;
+            badge.classList.toggle('is-hidden', !isLoggedIn || count <= 0);
+        });
+    };
 
     const performLogout = (event) => {
         event.stopPropagation();
@@ -593,6 +629,18 @@
 
     document.querySelectorAll('a.nav-notifications-link').forEach((link) => {
         link.classList.toggle('is-hidden', !isLoggedIn);
+    });
+
+    refreshNotificationBadge();
+
+    window.addEventListener('alix:order-notifications-updated', () => {
+        refreshNotificationBadge();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            refreshNotificationBadge();
+        }
     });
 
     const closeAllAccountMenus = () => {
