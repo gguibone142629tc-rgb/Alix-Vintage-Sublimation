@@ -522,6 +522,18 @@
         link.setAttribute('aria-label', 'Cart');
     });
 
+    // Ensure cart red-dot exists (no counter) when cart has items.
+    document.querySelectorAll('a.nav-order-link').forEach((link) => {
+        let dot = link.querySelector('.nav-cart-dot');
+        if (!dot) {
+            dot = document.createElement('span');
+            dot.className = 'nav-cart-dot is-hidden';
+            dot.setAttribute('aria-label', 'Cart has items');
+            link.appendChild(dot);
+        }
+        dot.classList.add('is-hidden');
+    });
+
     // Ensure there is a Notifications icon link beside the Cart icon.
     document.querySelectorAll('.nav-icons').forEach((wrap) => {
         const existing = wrap.querySelector('a.nav-notifications-link');
@@ -558,6 +570,10 @@
 
     const NOTIFICATIONS_KEY = 'alix_order_notifications_v1';
 
+    const CART_HAS_ITEMS_KEY = 'alix_cart_has_items_v1';
+    const CART_HAS_ITEMS_AT_KEY = 'alix_cart_has_items_at_v1';
+    const CART_UPDATED_EVENT = 'alix:cart-updated';
+
     const getUnreadNotificationCount = () => {
         try {
             const raw = localStorage.getItem(NOTIFICATIONS_KEY);
@@ -585,6 +601,61 @@
             badge.textContent = display;
             badge.classList.toggle('is-hidden', !isLoggedIn || count <= 0);
         });
+    };
+
+    const readCartHasItemsCache = () => {
+        try {
+            const v = localStorage.getItem(CART_HAS_ITEMS_KEY);
+            const at = Number(localStorage.getItem(CART_HAS_ITEMS_AT_KEY) || 0) || 0;
+            return {
+                hasItems: v === '1',
+                at,
+            };
+        } catch {
+            return { hasItems: false, at: 0 };
+        }
+    };
+
+    const setCartDot = (hasItems) => {
+        document.querySelectorAll('a.nav-order-link').forEach((link) => {
+            const dot = link.querySelector('.nav-cart-dot');
+            if (!dot) return;
+            dot.classList.toggle('is-hidden', !isLoggedIn || !hasItems);
+        });
+    };
+
+    let cartDotRefreshInFlight = false;
+    const refreshCartDot = async ({ force } = {}) => {
+        const cached = readCartHasItemsCache();
+        if (cached.at) {
+            setCartDot(cached.hasItems);
+        }
+
+        if (!isLoggedIn) {
+            setCartDot(false);
+            return;
+        }
+
+        const isFresh = cached.at && (Date.now() - cached.at) < 60_000;
+        if (!force && isFresh) {
+            return;
+        }
+
+        if (cartDotRefreshInFlight) return;
+        if (!window.AlixCart?.getCart) return;
+        cartDotRefreshInFlight = true;
+
+        try {
+            const env = await window.AlixCart.getCart();
+            const cart = env?.cart && typeof env.cart === 'object' ? env.cart : env;
+            const items = Array.isArray(cart?.items) ? cart.items : [];
+            const hasItems = items.length > 0;
+            setCartDot(hasItems);
+        } catch {
+            // ignore
+        } finally {
+            cartDotRefreshInFlight = false;
+        }
     };
 
     const performLogout = (event) => {
@@ -632,14 +703,25 @@
     });
 
     refreshNotificationBadge();
+    void refreshCartDot({ force: false });
 
     window.addEventListener('alix:order-notifications-updated', () => {
         refreshNotificationBadge();
     });
 
+    window.addEventListener(CART_UPDATED_EVENT, (event) => {
+        const hasItems = Boolean(event?.detail?.hasItems);
+        setCartDot(hasItems);
+    });
+
+    window.addEventListener('load', () => {
+        void refreshCartDot({ force: false });
+    });
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             refreshNotificationBadge();
+            void refreshCartDot({ force: false });
         }
     });
 

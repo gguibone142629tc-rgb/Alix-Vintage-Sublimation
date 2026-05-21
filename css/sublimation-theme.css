@@ -223,6 +223,24 @@ header .nav-notifications-badge {
     box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.18);
 }
 
+header .nav-order-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+header .nav-cart-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--theme-danger);
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.16);
+}
+
 header .nav-contact-link {
     color: #ffffff;
     text-decoration: none;

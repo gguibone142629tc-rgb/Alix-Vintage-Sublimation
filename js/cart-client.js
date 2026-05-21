@@ -1,6 +1,33 @@
 (function () {
     "use strict";
 
+    const CART_HAS_ITEMS_KEY = "alix_cart_has_items_v1";
+    const CART_HAS_ITEMS_AT_KEY = "alix_cart_has_items_at_v1";
+    const CART_UPDATED_EVENT = "alix:cart-updated";
+
+    const setCartHasItemsCache = (hasItems) => {
+        try {
+            localStorage.setItem(CART_HAS_ITEMS_KEY, hasItems ? "1" : "0");
+            localStorage.setItem(CART_HAS_ITEMS_AT_KEY, String(Date.now()));
+        } catch {
+            // ignore
+        }
+    };
+
+    const emitCartUpdated = (hasItems) => {
+        try {
+            window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { hasItems: Boolean(hasItems) } }));
+        } catch {
+            // ignore
+        }
+    };
+
+    const extractHasItems = (cartEnvelope) => {
+        const cart = cartEnvelope?.cart && typeof cartEnvelope.cart === "object" ? cartEnvelope.cart : cartEnvelope;
+        const items = Array.isArray(cart?.items) ? cart.items : [];
+        return items.length > 0;
+    };
+
     function getApiBaseUrl() {
         if (window.AlixAuth && typeof window.AlixAuth.apiBaseUrl === "function") {
             return window.AlixAuth.apiBaseUrl();
@@ -58,19 +85,68 @@
         return data;
     }
 
-    const getCart = () => requestJson("/api/cart", { method: "GET" });
+    const getCartRaw = () => requestJson("/api/cart", { method: "GET" });
 
-    const addItem = (payload) => requestJson("/api/cart/items", { method: "POST", body: payload || {} });
+    const addItemRaw = (payload) => requestJson("/api/cart/items", { method: "POST", body: payload || {} });
 
-    const removeItem = (cartItemId) =>
+    const removeItemRaw = (cartItemId) =>
         requestJson("/api/cart/items", { method: "DELETE", body: { cart_item_id: cartItemId } });
 
-    const updateItemQuantity = (cartItemId, quantity) =>
+    const updateItemQuantityRaw = (cartItemId, quantity) =>
         requestJson("/api/cart/items", { method: "PATCH", body: { cart_item_id: cartItemId, quantity } });
 
-    const clearCart = () => requestJson("/api/cart", { method: "DELETE" });
+    const clearCartRaw = () => requestJson("/api/cart", { method: "DELETE" });
 
-    const checkout = (payload) => requestJson("/api/cart/checkout", { method: "POST", body: payload || {} });
+    const checkoutRaw = (payload) => requestJson("/api/cart/checkout", { method: "POST", body: payload || {} });
+
+    const getCart = async () => {
+        const data = await getCartRaw();
+        const hasItems = extractHasItems(data);
+        setCartHasItemsCache(hasItems);
+        emitCartUpdated(hasItems);
+        return data;
+    };
+
+    const addItem = async (payload) => {
+        const data = await addItemRaw(payload);
+        setCartHasItemsCache(true);
+        emitCartUpdated(true);
+        return data;
+    };
+
+    const removeItem = async (cartItemId) => {
+        const data = await removeItemRaw(cartItemId);
+        try {
+            await getCart();
+        } catch {
+            // ignore
+        }
+        return data;
+    };
+
+    const updateItemQuantity = async (cartItemId, quantity) => {
+        const data = await updateItemQuantityRaw(cartItemId, quantity);
+        try {
+            await getCart();
+        } catch {
+            // ignore
+        }
+        return data;
+    };
+
+    const clearCart = async () => {
+        const data = await clearCartRaw();
+        setCartHasItemsCache(false);
+        emitCartUpdated(false);
+        return data;
+    };
+
+    const checkout = async (payload) => {
+        const data = await checkoutRaw(payload);
+        setCartHasItemsCache(false);
+        emitCartUpdated(false);
+        return data;
+    };
 
     const listOrders = (params) => {
         const limit = params && params.limit ? Number(params.limit) : 50;
@@ -103,5 +179,6 @@
         respondOrderProof,
         addOrderComment,
         cancelOrder,
+        CART_UPDATED_EVENT,
     };
 })();
