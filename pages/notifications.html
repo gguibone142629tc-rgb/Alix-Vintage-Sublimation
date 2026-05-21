@@ -100,7 +100,7 @@
     <script src="../js/ui-dialog.js"></script>
     <script src="../js/auth-client.js?v=3"></script>
     <script src="../js/cart-client.js?v=2"></script>
-    <script src="../js/order-notifications.js?v=6"></script>
+    <script src="../js/order-notifications.js?v=7"></script>
     <script>
         const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
             '&': '&amp;',
@@ -331,7 +331,7 @@
                     const cards = g.items
                         .map((n) => {
                             const orderId = String(n?.order_id || '').trim();
-                            const orderLabel = orderId ? `Order #AV-${orderId}` : 'Order';
+                            const orderLabel = orderId ? `Order #${orderId}` : 'Order';
                             const wf = String(n?.to_workflow || '').trim() || (window.AlixOrderNotifications?.getWorkflowDisplay ? window.AlixOrderNotifications.getWorkflowDisplay(n?.to_status) : String(n?.to_status || ''));
                             const tone = workflowToTone(wf);
                             const statusLabel = statusLabelFor(wf);

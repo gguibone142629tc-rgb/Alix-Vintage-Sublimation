@@ -428,7 +428,7 @@
                         ? "Admin sent a design mockup. Please review it on the order tracking page."
                         : "Your payment was verified. Your order is now in proofing. Please wait for admin to upload the mockup.";
                 } else if (fromWf === "Proofing" && toWf === "In Progress") {
-                    n.message = `Order #AV-${orderId} proofing is complete. Your order is now in production.`;
+                    n.message = `Order #${orderId} proofing is complete. Your order is now in production.`;
                 }
                 newItems.push(n);
             }
@@ -752,7 +752,7 @@
         if (toShow.length === 0) return;
 
         for (const n of toShow) {
-            const orderLabel = n?.order_id ? `Order #AV-${n.order_id}` : "Your order";
+            const orderLabel = n?.order_id ? `Order #${n.order_id}` : "Your order";
             const toWf = String(n?.to_workflow || "").trim() || getWorkflowDisplay(n?.to_status);
 
             let message = typeof n?.message === "string" && n.message.trim()

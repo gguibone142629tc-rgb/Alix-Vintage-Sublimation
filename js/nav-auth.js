@@ -778,7 +778,7 @@
 
         return new Promise((resolve) => {
             const s = document.createElement('script');
-            s.src = '../js/order-notifications.js?v=6';
+            s.src = '../js/order-notifications.js?v=7';
             s.async = true;
             s.setAttribute('data-av-order-notifs', '1');
             s.addEventListener('load', () => resolve(Boolean(window.AlixOrderNotifications)), { once: true });
