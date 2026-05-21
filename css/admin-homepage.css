@@ -564,6 +564,29 @@ body.admin-nav-open {
     align-items: start;
 }
 
+.order-details-right {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+}
+
+.receipt-sidebar {
+    display: grid;
+    gap: 12px;
+}
+
+.order-details-right .pricing-box {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.order-details-right .pricing-box + .pricing-box {
+    border-top: 1px solid var(--line);
+    margin-top: 14px;
+    padding-top: 14px;
+}
+
 .order-item-block {
     border: 1px solid var(--line);
     border-radius: 12px;

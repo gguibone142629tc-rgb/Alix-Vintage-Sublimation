@@ -132,6 +132,8 @@
     const commentInput = qs("#commentInput");
     const sendCommentBtn = qs("#sendCommentBtn");
 
+    const receiptSidebar = qs("#receiptSidebar");
+
     const escapeHtml = (s) =>
         String(s)
             .replaceAll("&", "&amp;")
@@ -394,7 +396,8 @@
     };
 
     const appendReceiptPanel = ({ title, dataUrl, uploadedAt, viewBtnId, emptyTitle, emptySub } = {}) => {
-        if (!stageUploads) return;
+        const target = receiptSidebar || stageUploads;
+        if (!target) return;
         const safeTitle = String(title || "Receipt");
         const safeBtnId = String(viewBtnId || "viewReceiptBtn");
         const url = typeof dataUrl === "string" ? String(dataUrl).trim() : "";
@@ -403,7 +406,7 @@
 
         if (!url) {
             if (!emptyTitle && !emptySub) return;
-            stageUploads.insertAdjacentHTML(
+            target.insertAdjacentHTML(
                 "beforeend",
                 `
                     <div class="receipt-panel">
@@ -420,7 +423,7 @@
             return;
         }
 
-        stageUploads.insertAdjacentHTML(
+        target.insertAdjacentHTML(
             "beforeend",
             `
                 <div class="receipt-panel">
@@ -1148,8 +1151,8 @@
                 const uploadedAt = meta.uploadedAt ? formatDate(meta.uploadedAt) : null;
                 const receiptLine = uploadedAt ? uploadedAt : "";
 
-                if (stageUploads) {
-                    stageUploads.innerHTML = `
+                if (receiptSidebar) {
+                    receiptSidebar.innerHTML = `
                         <div class="receipt-panel">
                             <div class="receipt-head">
                                 <div class="receipt-title">Payment Receipt</div>
@@ -1158,7 +1161,7 @@
                                 </div>
                             </div>
                             ${hasReceipt ? `<div class="receipt-meta">Uploaded: ${escapeHtml(receiptLine || "-")}</div>` : ""}
-                            ${hasReceipt ? `<div class="receipt-preview"><img src="${order.admin.payment.receiptDataUrl}" alt="Payment receipt" loading="lazy"></div>` : `
+                            ${hasReceipt ? `<div class="receipt-preview"><img src="${escapeHtml(order.admin.payment.receiptDataUrl)}" alt="Payment receipt" loading="lazy"></div>` : `
                                 <div class="receipt-wait">
                                     <div class="receipt-wait-title">Waiting for customer receipt</div>
                                     <div class="receipt-wait-sub">Customer uploads the receipt screenshot. Verify it here once available.</div>
@@ -1174,6 +1177,8 @@
                         openReceiptUrl(url);
                     });
                 }
+
+                if (stageUploads) stageUploads.innerHTML = "";
 
                 stageButtons.innerHTML = `
                     <button class="table-btn" type="button" id="verifyDownBtn">Verify 50% Downpayment</button>
@@ -2479,6 +2484,7 @@
     const clearStageArea = () => {
         if (stageUploads) stageUploads.innerHTML = "";
         if (stageButtons) stageButtons.innerHTML = "";
+        if (receiptSidebar) receiptSidebar.innerHTML = "";
     };
 
     const addStageUpload = (label, inputId, accept) => {

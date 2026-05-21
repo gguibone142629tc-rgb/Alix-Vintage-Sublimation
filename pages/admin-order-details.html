@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Admin | Order Details</title>
-    <link rel="stylesheet" href="../css/admin-homepage.css?v=4">
+    <link rel="stylesheet" href="../css/admin-homepage.css?v=5">
     <link rel="stylesheet" href="../css/sublimation-theme.css?v=4">
 </head>
 <body class="admin-page">
@@ -162,6 +162,28 @@
 
                             <div id="orderContents"></div>
 
+                            <div class="stage-actions" aria-label="Stage actions">
+                                <div class="field" id="stockWrap">
+                                    <label class="checkline">
+                                        <input type="checkbox" id="stockConfirmed">
+                                        <span>Stock confirmed</span>
+                                    </label>
+                                </div>
+
+                                <div class="field" id="stageUploads"></div>
+
+                                <div class="form-actions" id="stageButtons"></div>
+                                <div class="mini-note" id="stageHint">-</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="order-details-right">
+                        <section class="panel panel-wide" aria-label="Pricing details">
+                            <div class="panel-head">
+                                <h2 class="panel-title">Pricing Details</h2>
+                            </div>
+
                             <div class="pricing-box" id="pricingBox" aria-label="Pricing details">
                                 <div class="pricing-title">Pricing Details</div>
                                 <div class="pricing-grid">
@@ -195,24 +217,15 @@
                                 </div>
                                 <div class="mini-note" id="balanceHint">-</div>
                             </div>
-
-                            <div class="stage-actions" aria-label="Stage actions">
-                                <div class="field" id="stockWrap">
-                                    <label class="checkline">
-                                        <input type="checkbox" id="stockConfirmed">
-                                        <span>Stock confirmed</span>
-                                    </label>
-                                </div>
-
-                                <div class="field" id="stageUploads"></div>
-
-                                <div class="form-actions" id="stageButtons"></div>
-                                <div class="mini-note" id="stageHint">-</div>
-                            </div>
                         </section>
-                    </div>
 
-                    <div class="order-details-right">
+                        <section class="panel panel-wide" aria-label="Receipts">
+                            <div class="panel-head">
+                                <h2 class="panel-title">Receipt</h2>
+                            </div>
+                            <div class="receipt-sidebar" id="receiptSidebar"></div>
+                        </section>
+
                         <section class="panel panel-wide" aria-label="Order comments and revisions">
                             <div class="panel-head">
                                 <h2 class="panel-title">Order Comments &amp; Revisions</h2>
@@ -238,7 +251,7 @@
     <script src="../js/admin-auth.js?v=6"></script>
     <script src="../js/admin-realtime-messages.js"></script>
     <script src="../js/admin-store.js"></script>
-    <script src="../js/admin-order-details.js"></script>
+    <script src="../js/admin-order-details.js?v=2"></script>
 </body>
 </html>
 
