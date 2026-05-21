@@ -62,6 +62,10 @@
                 <img class="sidebar-icon" src="../assets/icons/Order_History.png" alt="">
                 Order History
             </a>
+            <a href="notifications.html" class="sidebar-item">
+                <img class="sidebar-icon" src="../assets/icons/Order.png" alt="">
+                Notifications
+            </a>
             <a href="account-settings.html" class="sidebar-item">
                 <img class="sidebar-icon" src="../assets/icons/Settings.png" alt="">
                 Account Settings
@@ -202,6 +206,7 @@
     <script src="../js/ui-dialog.js"></script>
     <script src="../js/auth-client.js?v=3"></script>
     <script src="../js/cart-client.js"></script>
+    <script src="../js/order-notifications.js?v=1"></script>
     <script>
         const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
             '&': '&amp;',
@@ -297,6 +302,14 @@
             try {
                 const ordersRes = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
                 orders = normalizeOrders(ordersRes?.orders);
+
+                const changes = window.AlixOrderNotifications?.recordFromOrders
+                    ? window.AlixOrderNotifications.recordFromOrders(orders)
+                    : [];
+
+                if (changes.length && window.AlixOrderNotifications?.showPopups) {
+                    await window.AlixOrderNotifications.showPopups(changes);
+                }
             } catch (error) {
                 const message = error?.message || 'Failed to load orders.';
                 window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);

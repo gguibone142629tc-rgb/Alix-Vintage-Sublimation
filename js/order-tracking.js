@@ -689,6 +689,14 @@
         try {
             const res = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
             orders = normalizeOrders(res?.orders);
+
+            const changes = window.AlixOrderNotifications?.recordFromOrders
+                ? window.AlixOrderNotifications.recordFromOrders(orders)
+                : [];
+
+            if (changes.length && window.AlixOrderNotifications?.showPopups) {
+                await window.AlixOrderNotifications.showPopups(changes);
+            }
         } catch (error) {
             const message = error?.message || "Failed to load orders.";
             uiAlert(message, { tone: "danger" });

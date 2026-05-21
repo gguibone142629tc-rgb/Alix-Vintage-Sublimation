@@ -11,11 +11,28 @@ use App\Domain\Users\UserRepository;
 
 final class RegisterUser
 {
+    private const PASSWORD_REQUIREMENTS_MESSAGE =
+        'Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.';
+
     public function __construct(
         private readonly UserRepository $users,
         private readonly RoleRepository $roles,
         private readonly PasswordHasher $passwordHasher,
     ) {
+    }
+
+    private static function isPasswordStrong(string $password): bool
+    {
+        if (strlen($password) < 8) {
+            return false;
+        }
+
+        $hasUppercase = preg_match('/[A-Z]/', $password) === 1;
+        $hasLowercase = preg_match('/[a-z]/', $password) === 1;
+        $hasNumber = preg_match('/\d/', $password) === 1;
+        $hasSpecial = preg_match('/[^A-Za-z0-9\s]/', $password) === 1;
+
+        return $hasUppercase && $hasLowercase && $hasNumber && $hasSpecial;
     }
 
     /** @param array<string,mixed> $input */
@@ -37,8 +54,8 @@ final class RegisterUser
             return ['ok' => false, 'status' => 422, 'error' => 'Invalid email'];
         }
 
-        if (strlen($password) < 8) {
-            return ['ok' => false, 'status' => 422, 'error' => 'Password must be at least 8 characters'];
+        if (!self::isPasswordStrong($password)) {
+            return ['ok' => false, 'status' => 422, 'error' => self::PASSWORD_REQUIREMENTS_MESSAGE];
         }
 
         if ($this->users->findByEmail($email) !== null) {

@@ -418,6 +418,24 @@
 
         const normalizeNamePart = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 
+        const PASSWORD_REQUIREMENTS_MESSAGE =
+            'Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.';
+
+        const isPasswordStrong = (password) => {
+            const value = String(password || '');
+
+            if (value.length < 8) {
+                return false;
+            }
+
+            const hasUppercase = /[A-Z]/.test(value);
+            const hasLowercase = /[a-z]/.test(value);
+            const hasNumber = /\d/.test(value);
+            const hasSpecial = /[^A-Za-z0-9\s]/.test(value);
+
+            return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+        };
+
         if (registerFormElement) {
             registerFormElement.addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -448,6 +466,12 @@
                 if (!termsCheckboxElement?.checked) {
                     setTermsError('Please read and accept the Terms and Conditions before registering.');
                     termsCheckboxElement?.focus();
+                    return;
+                }
+
+                if (!isPasswordStrong(password)) {
+                    setRegisterFormError(PASSWORD_REQUIREMENTS_MESSAGE);
+                    document.getElementById('password')?.focus();
                     return;
                 }
 

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="../assets/reallogo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
+    <title>Notifications | Alix Vintage</title>
+    <link rel="stylesheet" href="../css/order-history.css?v=4">
+    <link rel="stylesheet" href="../css/sublimation-theme.css?v=3">
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <a class="logo-wrap" href="homepage.html" aria-label="Go to homepage">
+                <img src="../assets/reallogo.png" alt="Alix Vintage logo">
+                <span>ALIX VINTAGE</span>
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="categories.html" class="nav-shop-link">SHOP NOW</a></li>
+                </ul>
+            </nav>
+            <div class="nav-icons" aria-label="Account and cart">
+                <a class="nav-contact-link" href="contact-us.html">Contact</a>
+                <a class="nav-login-btn-link is-hidden" href="login.html">Log In</a>
+                <div class="nav-account-menu">
+                    <a class="nav-account-link is-hidden" href="#" aria-label="Account menu">
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                            <path d="M4 20a8 8 0 0 1 16 0" />
+                        </svg>
+                    </a>
+                    <div class="nav-account-dropdown is-hidden" role="menu">
+                        <a class="nav-logout-btn-link" href="#" role="menuitem">Log Out</a>
+                    </div>
+                </div>
+                <a class="nav-order-link is-hidden" href="order-history.html" aria-label="Order history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6h14l-2 9H8L6 6z" />
+                        <path d="M6 6H4" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="17" cy="19" r="1" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <aside class="sidebar">
+            <a href="order-tracking.html" class="sidebar-item">
+                <img class="sidebar-icon" src="../assets/icons/Order.png" alt="">
+                Orders
+            </a>
+            <a href="order-history.html" class="sidebar-item">
+                <img class="sidebar-icon" src="../assets/icons/Order_History.png" alt="">
+                Order History
+            </a>
+            <a href="notifications.html" class="sidebar-item active">
+                <img class="sidebar-icon" src="../assets/icons/Order.png" alt="">
+                Notifications
+            </a>
+            <a href="account-settings.html" class="sidebar-item">
+                <img class="sidebar-icon" src="../assets/icons/Settings.png" alt="">
+                Account Settings
+            </a>
+        </aside>
+
+        <section class="content">
+            <h1 class="page-title">NOTIFICATIONS</h1>
+            <p class="subtitle" style="margin-top:-8px; opacity:0.85;">Order workflow updates (Pending → Completed) will appear here.</p>
+
+            <div class="table-container">
+                <table id="notificationsTable">
+                    <thead>
+                        <tr>
+                            <th>ORDER ID</th>
+                            <th>FROM</th>
+                            <th>TO</th>
+                            <th>DATE</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notificationsTableBody">
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div class="empty-state-icon">\uD83D\uDD14</div>
+                                <h3>No Notifications Yet</h3>
+                                <p>We’ll show updates here when your order status changes.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contact-us" class="site-footer"></footer>
+
+    <script src="../js/nav-auth.js?v=4"></script>
+    <script src="../js/ui-dialog.js"></script>
+    <script src="../js/auth-client.js?v=3"></script>
+    <script src="../js/cart-client.js"></script>
+    <script src="../js/order-notifications.js?v=1"></script>
+    <script>
+        const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+        }[ch] || ch));
+
+        const isAuthed = () => {
+            if (window.AlixAuth?.getToken) {
+                const token = window.AlixAuth.getToken();
+                if (!token) return false;
+                return window.AlixAuth.isTokenValid ? window.AlixAuth.isTokenValid(token) : true;
+            }
+
+            try {
+                const token = sessionStorage.getItem('alix_auth_token') || localStorage.getItem('alix_auth_token');
+                return Boolean(token);
+            } catch {
+                return Boolean(localStorage.getItem('alix_auth_token'));
+            }
+        };
+
+        const renderNotifications = () => {
+            const tbody = document.getElementById('notificationsTableBody');
+            const list = window.AlixOrderNotifications?.getAll ? window.AlixOrderNotifications.getAll() : [];
+
+            if (!Array.isArray(list) || list.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-state-icon">\uD83D\uDD14</div>
+                            <h3>No Notifications Yet</h3>
+                            <p>We’ll show updates here when your order status changes.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = list
+                .map((n) => {
+                    const orderId = String(n?.order_id || '').trim();
+                    const orderLabel = orderId ? `ORD-${orderId}` : 'ORD-?';
+                    const fromWf = String(n?.from_workflow || '').trim() || (window.AlixOrderNotifications?.getWorkflowDisplay ? window.AlixOrderNotifications.getWorkflowDisplay(n?.from_status) : String(n?.from_status || '-'));
+                    const toWf = String(n?.to_workflow || '').trim() || (window.AlixOrderNotifications?.getWorkflowDisplay ? window.AlixOrderNotifications.getWorkflowDisplay(n?.to_status) : String(n?.to_status || '-'));
+                    const when = window.AlixOrderNotifications?.formatWhen ? window.AlixOrderNotifications.formatWhen(n?.at) : String(n?.at || '-');
+                    const href = orderId ? `order-tracking.html?id=${encodeURIComponent(orderId)}` : 'order-tracking.html';
+
+                    return `
+                        <tr class="order-row">
+                            <td data-label="Order ID"><strong>${escapeHtml(orderLabel)}</strong></td>
+                            <td data-label="From">${escapeHtml(fromWf)}</td>
+                            <td data-label="To">${escapeHtml(toWf)}</td>
+                            <td data-label="Date">${escapeHtml(when)}</td>
+                            <td data-label="Action"><a class="action-btn" href="${escapeHtml(href)}">VIEW</a></td>
+                        </tr>
+                    `;
+                })
+                .join('');
+        };
+
+        const refreshOrdersForLatestChanges = async () => {
+            if (!isAuthed()) {
+                const message = 'Please log in first to view notifications.';
+                window.AVDialog?.alert(message, { title: 'Notice', tone: 'info' }) || alert(message);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const res = await window.AlixCart.listOrders({ limit: 200, offset: 0 });
+                const apiOrders = Array.isArray(res?.orders) ? res.orders : [];
+
+                // Record any new status changes before rendering the list.
+                if (window.AlixOrderNotifications?.recordFromOrders) {
+                    const changes = window.AlixOrderNotifications.recordFromOrders(
+                        apiOrders.map((row) => ({
+                            rawId: row?.order?.order_id,
+                            status: row?.order?.status,
+                        }))
+                    );
+
+                    if (changes.length && window.AlixOrderNotifications?.showPopups) {
+                        await window.AlixOrderNotifications.showPopups(changes);
+                    }
+                }
+            } catch (error) {
+                const message = error?.message || 'Failed to load notifications.';
+                window.AVDialog?.alert(message, { title: 'Error', tone: 'danger' }) || alert(message);
+            }
+
+            renderNotifications();
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                refreshOrdersForLatestChanges();
+            });
+        } else {
+            refreshOrdersForLatestChanges();
+        }
+    </script>
+</body>
+</html>

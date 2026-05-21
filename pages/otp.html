@@ -300,6 +300,12 @@
                     window.AlixAuth.setSession(result.token, result.user);
                     localStorage.removeItem('alix_pending_email');
                     localStorage.removeItem('alix_pending_phone');
+                    const successMessage = 'You have successfully created and registered an account.';
+                    if (window.AVDialog?.alert) {
+                        await window.AVDialog.alert(successMessage, { title: 'Success', tone: 'success' });
+                    } else {
+                        alert(successMessage);
+                    }
                     window.location.href = 'homepage.html';
                 } catch (error) {
                     const message = error?.message || 'OTP verification failed';
