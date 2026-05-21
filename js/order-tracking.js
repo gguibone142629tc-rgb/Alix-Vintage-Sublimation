@@ -3,6 +3,58 @@
 
     const qs = (sel) => document.querySelector(sel);
 
+    let isUiBusy = false;
+
+    const setDisabledRemembering = (el, disabled) => {
+        if (!el) return;
+        if (disabled) {
+            if (el.dataset.avPrevDisabled == null) {
+                el.dataset.avPrevDisabled = el.disabled ? "1" : "0";
+            }
+            el.disabled = true;
+            return;
+        }
+        if (el.dataset.avPrevDisabled != null) {
+            el.disabled = el.dataset.avPrevDisabled === "1";
+            delete el.dataset.avPrevDisabled;
+        }
+    };
+
+    const setUiBusy = (busy) => {
+        isUiBusy = Boolean(busy);
+
+        // Buttons that mutate state or could conflict with uploads.
+        setDisabledRemembering(uploadReceiptBtnEl, isUiBusy);
+        setDisabledRemembering(approveProofBtnEl, isUiBusy);
+        setDisabledRemembering(requestRevisionBtnEl, isUiBusy);
+        setDisabledRemembering(sendCommentBtnEl, isUiBusy);
+        setDisabledRemembering(cancelOrderBtnEl, isUiBusy);
+
+        // Receipt/proof controls.
+        setDisabledRemembering(paymentReceiptUploadEl, isUiBusy);
+        setDisabledRemembering(proofItemSelectEl, isUiBusy);
+        setDisabledRemembering(commentInputEl, isUiBusy);
+
+        // Non-mutating but still a button (per request: disable while uploading/processing).
+        setDisabledRemembering(copyBtn, isUiBusy);
+
+        const order = getCurrentOrder();
+        if (order) {
+            // Re-apply per-workflow disabled logic.
+            renderStagePanels(order);
+        }
+    };
+
+    const withUiBusy = async (fn) => {
+        if (isUiBusy) return;
+        setUiBusy(true);
+        try {
+            return await fn();
+        } finally {
+            setUiBusy(false);
+        }
+    };
+
     const orderTitleEl = qs("#orderTitle");
     const orderPlacedAtEl = qs("#orderPlacedAt");
     const orderPillEl = qs("#orderPill");
@@ -1112,6 +1164,21 @@
                 const verified = isFinal
                     ? (paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified")
                     : (paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified");
+
+                // Lock upload controls once a receipt is submitted, unless admin requested a new one (Rejected).
+                const hasReceipt = Boolean(String(receiptUrl || "").trim());
+                const lockUpload = hasReceipt && !isRejected;
+                const hasSelectedFile = Boolean(paymentReceiptUploadEl?.files && paymentReceiptUploadEl.files[0]);
+                if (paymentReceiptUploadEl) {
+                    paymentReceiptUploadEl.disabled = isUiBusy || verified || lockUpload;
+                    if (verified || lockUpload) {
+                        // Prevent confusion: don't keep a local file selection while upload is locked.
+                        paymentReceiptUploadEl.value = "";
+                    }
+                }
+                if (uploadReceiptBtnEl) {
+                    uploadReceiptBtnEl.disabled = isUiBusy || verified || lockUpload || !hasSelectedFile;
+                }
                 if (paymentStateEl) {
                     if (!receiptUrl) {
                         paymentStateEl.textContent = "No receipt uploaded yet.";
@@ -1127,6 +1194,13 @@
                 if (uploadReceiptBtnEl) {
                     uploadReceiptBtnEl.textContent = isRejected ? "UPLOAD NEW RECEIPT" : "UPLOAD RECEIPT";
                 }
+            } else {
+                // When payment panel is hidden, keep upload controls inert.
+                if (paymentReceiptUploadEl) {
+                    paymentReceiptUploadEl.value = "";
+                    paymentReceiptUploadEl.disabled = true;
+                }
+                if (uploadReceiptBtnEl) uploadReceiptBtnEl.disabled = true;
             }
         }
 
@@ -1461,6 +1535,27 @@
             return;
         }
 
+        // Prevent overwriting an existing (non-rejected) receipt.
+        const paymentMeta = order?.meta?.payment && typeof order.meta.payment === "object" ? order.meta.payment : {};
+        const existingReceiptUrl = stage === "final"
+            ? (typeof paymentMeta.final_receipt_data_url === "string" ? paymentMeta.final_receipt_data_url : "")
+            : (typeof paymentMeta.receipt_data_url === "string" ? paymentMeta.receipt_data_url : "");
+        const existingStatus = stage === "final"
+            ? String(paymentMeta.final_receipt_status || "").toLowerCase()
+            : String(paymentMeta.receipt_status || "").toLowerCase();
+        const isRejected = existingStatus === "rejected";
+        const isVerified = stage === "final"
+            ? (paymentMeta.final_verified === true || String(paymentMeta.final_receipt_status || "").toLowerCase() === "verified")
+            : (paymentMeta.verified === true || String(paymentMeta.receipt_status || "").toLowerCase() === "verified");
+        const alreadyUploaded = Boolean(String(existingReceiptUrl || "").trim());
+        if ((alreadyUploaded && !isRejected) || isVerified) {
+            uiAlert("Receipt upload is locked because a receipt is already submitted. You can only upload again if admin requests a new receipt.", {
+                title: "Receipt Upload",
+                tone: "info",
+            });
+            return;
+        }
+
         const file = paymentReceiptUploadEl?.files && paymentReceiptUploadEl.files[0] ? paymentReceiptUploadEl.files[0] : null;
         if (!file) {
             uiAlert("Please choose an image file first.", { title: "Receipt Upload", tone: "info" });
@@ -1478,31 +1573,34 @@
             return;
         }
 
-        const oldLabel = uploadReceiptBtnEl ? uploadReceiptBtnEl.textContent : null;
-        if (uploadReceiptBtnEl) {
-            uploadReceiptBtnEl.disabled = true;
-            uploadReceiptBtnEl.textContent = "UPLOADING...";
-        }
-
-        try {
-            const dataUrl = await readFileAsDataUrl(file);
-            const res = await window.AlixCart.uploadOrderReceipt({
-                order_id: order.rawId,
-                receipt_data_url: dataUrl,
-                receipt_stage: stage,
-            });
-
-            order.meta = order.meta && typeof order.meta === "object" ? order.meta : {};
-            order.meta.payment = res?.payment && typeof res.payment === "object" ? res.payment : { receipt_data_url: dataUrl };
-
-            renderStagePanels(order);
-            uiAlert("Receipt uploaded successfully.", { title: "Receipt Upload", tone: "success" });
-        } finally {
+        await withUiBusy(async () => {
+            const oldLabel = uploadReceiptBtnEl ? uploadReceiptBtnEl.textContent : null;
             if (uploadReceiptBtnEl) {
-                uploadReceiptBtnEl.disabled = false;
-                uploadReceiptBtnEl.textContent = oldLabel || "UPLOAD RECEIPT";
+                uploadReceiptBtnEl.textContent = "UPLOADING...";
             }
-        }
+
+            try {
+                const dataUrl = await readFileAsDataUrl(file);
+                const res = await window.AlixCart.uploadOrderReceipt({
+                    order_id: order.rawId,
+                    receipt_data_url: dataUrl,
+                    receipt_stage: stage,
+                });
+
+                order.meta = order.meta && typeof order.meta === "object" ? order.meta : {};
+                order.meta.payment = res?.payment && typeof res.payment === "object" ? res.payment : { receipt_data_url: dataUrl };
+
+                // Clear local file selection so the UI reflects the locked state after upload.
+                if (paymentReceiptUploadEl) paymentReceiptUploadEl.value = "";
+
+                renderStagePanels(order);
+                uiAlert("Receipt uploaded successfully.", { title: "Receipt Upload", tone: "success" });
+            } finally {
+                if (uploadReceiptBtnEl) {
+                    uploadReceiptBtnEl.textContent = oldLabel || "UPLOAD RECEIPT";
+                }
+            }
+        });
     };
 
     const requestRevision = async () => {
@@ -1532,16 +1630,18 @@
         }
 
         try {
-            const selectedItem = getSelectedProofItem(order);
-            const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
-            await window.AlixCart.respondOrderProof({
-                order_id: order.rawId,
-                action: "revision",
-                message: msg,
-                ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+            await withUiBusy(async () => {
+                const selectedItem = getSelectedProofItem(order);
+                const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
+                await window.AlixCart.respondOrderProof({
+                    order_id: order.rawId,
+                    action: "revision",
+                    message: msg,
+                    ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+                });
+                await loadOrders();
+                render();
             });
-            await loadOrders();
-            render();
             uiAlert("Revision requested.", { title: "Proofing", tone: "success" });
         } catch (e) {
             uiAlert(e?.message || "Failed to request revision.", { title: "Proofing", tone: "danger" });
@@ -1570,15 +1670,17 @@
         if (!ok) return;
 
         try {
-            const selectedItem = getSelectedProofItem(order);
-            const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
-            await window.AlixCart.respondOrderProof({
-                order_id: order.rawId,
-                action: "approve",
-                ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+            await withUiBusy(async () => {
+                const selectedItem = getSelectedProofItem(order);
+                const selectedOrderItemId = selectedItem?.id != null ? Number(selectedItem.id) : null;
+                await window.AlixCart.respondOrderProof({
+                    order_id: order.rawId,
+                    action: "approve",
+                    ...(Number.isFinite(selectedOrderItemId) && selectedOrderItemId > 0 ? { order_item_id: selectedOrderItemId } : {}),
+                });
+                await loadOrders();
+                render();
             });
-            await loadOrders();
-            render();
             uiAlert("Proof approved.", { title: "Proofing", tone: "success" });
         } catch (e) {
             uiAlert(e?.message || "Failed to approve proof.", { title: "Proofing", tone: "danger" });
@@ -1608,10 +1710,12 @@
         }
 
         try {
-            await window.AlixCart.addOrderComment({ order_id: order.rawId, message: msg });
-            if (commentInputEl) commentInputEl.value = "";
-            await loadOrders();
-            render();
+            await withUiBusy(async () => {
+                await window.AlixCart.addOrderComment({ order_id: order.rawId, message: msg });
+                if (commentInputEl) commentInputEl.value = "";
+                await loadOrders();
+                render();
+            });
             uiAlert("Comment sent.", { title: "Comments", tone: "success" });
         } catch (e) {
             uiAlert(e?.message || "Failed to send comment.", { title: "Comments", tone: "danger" });
@@ -1632,16 +1736,21 @@
     });
 
     paymentReceiptUploadEl?.addEventListener("change", () => {
+        if (isUiBusy) return;
         const file = paymentReceiptUploadEl.files && paymentReceiptUploadEl.files[0] ? paymentReceiptUploadEl.files[0] : null;
         if (!file) {
             renderImagePreview(paymentReceiptPreviewEl, "", "Payment receipt");
             if (paymentStateEl) paymentStateEl.textContent = "No receipt selected.";
+            const order = getCurrentOrder();
+            if (order) renderStagePanels(order);
             return;
         }
 
         if (!String(file.type || "").startsWith("image/")) {
             renderImagePreview(paymentReceiptPreviewEl, "", "Payment receipt");
             if (paymentStateEl) paymentStateEl.textContent = "Please select an image file.";
+            const order = getCurrentOrder();
+            if (order) renderStagePanels(order);
             return;
         }
 
@@ -1649,9 +1758,13 @@
             .then((dataUrl) => {
                 renderImagePreview(paymentReceiptPreviewEl, dataUrl, "Payment receipt");
                 if (paymentStateEl) paymentStateEl.textContent = "Ready to upload.";
+                const order = getCurrentOrder();
+                if (order) renderStagePanels(order);
             })
             .catch(() => {
                 if (paymentStateEl) paymentStateEl.textContent = "Failed to read file.";
+                const order = getCurrentOrder();
+                if (order) renderStagePanels(order);
             });
     });
 

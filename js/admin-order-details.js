@@ -20,6 +20,54 @@
         return window.confirm(message);
     };
 
+    let readOnlyBusyDepth = 0;
+
+    const setDisabledRemembering = (el, disabled) => {
+        if (!el) return;
+        if (disabled) {
+            if (el.dataset.avPrevDisabled == null) {
+                el.dataset.avPrevDisabled = el.disabled ? "1" : "0";
+            }
+            el.disabled = true;
+            return;
+        }
+        if (el.dataset.avPrevDisabled != null) {
+            el.disabled = el.dataset.avPrevDisabled === "1";
+            delete el.dataset.avPrevDisabled;
+        }
+    };
+
+    const setStageBusy = (busy) => {
+        const disabled = Boolean(busy);
+
+        const toggleContainer = (container) => {
+            if (!container) return;
+            const controls = container.querySelectorAll("button, input, select, textarea");
+            controls.forEach((el) => setDisabledRemembering(el, disabled));
+        };
+
+        toggleContainer(stageUploads);
+        toggleContainer(stageButtons);
+
+        // Other workflow-affecting controls.
+        setDisabledRemembering(stockConfirmedInput, disabled);
+        setDisabledRemembering(basePriceInput, disabled);
+        setDisabledRemembering(shippingFeeInput, disabled);
+        setDisabledRemembering(commentInput, disabled);
+        setDisabledRemembering(sendCommentBtn, disabled);
+    };
+
+    const withStageBusy = async (fn) => {
+        readOnlyBusyDepth += 1;
+        if (readOnlyBusyDepth === 1) setStageBusy(true);
+        try {
+            return await fn();
+        } finally {
+            readOnlyBusyDepth = Math.max(0, readOnlyBusyDepth - 1);
+            if (readOnlyBusyDepth === 0) setStageBusy(false);
+        }
+    };
+
     const orderIdEl = qs("#orderId");
     const customerNameEl = qs("#customerName");
     const customerMobileEl = qs("#customerMobile");
@@ -1071,16 +1119,18 @@
                     });
                     if (!ok) return;
                     try {
-                        const ship = shippingFeeInput?.value === "" ? 0 : Number(shippingFeeInput?.value);
-                        if (order?.admin?.orderType === "custom") {
-                            const base = Number(basePriceInput?.value);
-                            await updateDbPricing(numericId, { basePrice: base, shippingFee: ship });
-                        } else {
-                            await updateDbPricing(numericId, { shippingFee: ship });
-                        }
-                        await approveDbOrder(numericId);
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
+                        await withStageBusy(async () => {
+                            const ship = shippingFeeInput?.value === "" ? 0 : Number(shippingFeeInput?.value);
+                            if (order?.admin?.orderType === "custom") {
+                                const base = Number(basePriceInput?.value);
+                                await updateDbPricing(numericId, { basePrice: base, shippingFee: ship });
+                            } else {
+                                await updateDbPricing(numericId, { shippingFee: ship });
+                            }
+                            await approveDbOrder(numericId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        });
                     } catch (e) {
                         uiAlert(e?.message || "Failed to approve order.", { title: "Order", tone: "danger" });
                     }
@@ -1155,9 +1205,11 @@
                     });
                     if (!ok) return;
                     try {
-                        await verifyDbPayment(numericId, "downpayment");
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
+                        await withStageBusy(async () => {
+                            await verifyDbPayment(numericId, "downpayment");
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        });
                     } catch (e) {
                         uiAlert(e?.message || "Failed to verify downpayment.", { title: "Payment", tone: "danger" });
                     }
@@ -1172,9 +1224,11 @@
                     });
                     if (!ok) return;
                     try {
-                        await rejectDbReceipt(numericId, "initial");
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
+                        await withStageBusy(async () => {
+                            await rejectDbReceipt(numericId, "initial");
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        });
                     } catch (e) {
                         uiAlert(e?.message || "Failed to request new receipt.", { title: "Payment", tone: "danger" });
                     }
@@ -1399,9 +1453,11 @@
                     if (!ok) return;
 
                     try {
-                        await sendDbProof(numericId, pendingMockup, pendingOrderItemId);
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
+                        await withStageBusy(async () => {
+                            await sendDbProof(numericId, pendingMockup, pendingOrderItemId);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        });
                     } catch (e) {
                         uiAlert(e?.message || "Failed to send proof.", { title: "Proofing", tone: "danger" });
                     }
@@ -1432,9 +1488,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await requestJson("PATCH", "/api/admin/orders/status", { order_id: numericId, status: "awaiting_final_payment" });
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await requestJson("PATCH", "/api/admin/orders/status", { order_id: numericId, status: "awaiting_final_payment" });
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
                         }
@@ -1455,9 +1513,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await markDbReadyToShip(numericId);
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await markDbReadyToShip(numericId);
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
                         }
@@ -1488,9 +1548,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await markDbReadyToShip(numericId);
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await markDbReadyToShip(numericId);
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to update status.", { title: "Order", tone: "danger" });
                         }
@@ -1538,9 +1600,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await verifyDbPayment(numericId, "final");
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await verifyDbPayment(numericId, "final");
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to verify final payment.", { title: "Payment", tone: "danger" });
                         }
@@ -1555,9 +1619,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await rejectDbReceipt(numericId, "final");
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await rejectDbReceipt(numericId, "final");
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to request new receipt.", { title: "Payment", tone: "danger" });
                         }
@@ -1602,9 +1668,11 @@
                     if (!ok) return;
 
                     try {
-                        await setDbOnTransit(numericId, tracking);
-                        const refreshed = await loadDbOrderById(numericId);
-                        if (refreshed) renderReadOnly(numericId, refreshed);
+                        await withStageBusy(async () => {
+                            await setDbOnTransit(numericId, tracking);
+                            const refreshed = await loadDbOrderById(numericId);
+                            if (refreshed) renderReadOnly(numericId, refreshed);
+                        });
                     } catch (e) {
                         uiAlert(e?.message || "Failed to set On Transit.", { title: "Shipping", tone: "danger" });
                     }
@@ -1645,9 +1713,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await markDbCodFinalReceived(numericId);
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await markDbCodFinalReceived(numericId);
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to mark COD final payment.", { title: "Payment", tone: "danger" });
                         }
@@ -1667,9 +1737,11 @@
                         });
                         if (!ok) return;
                         try {
-                            await markDbCompleted(numericId);
-                            const refreshed = await loadDbOrderById(numericId);
-                            if (refreshed) renderReadOnly(numericId, refreshed);
+                            await withStageBusy(async () => {
+                                await markDbCompleted(numericId);
+                                const refreshed = await loadDbOrderById(numericId);
+                                if (refreshed) renderReadOnly(numericId, refreshed);
+                            });
                         } catch (e) {
                             uiAlert(e?.message || "Failed to mark completed.", { title: "Order", tone: "danger" });
                         }
