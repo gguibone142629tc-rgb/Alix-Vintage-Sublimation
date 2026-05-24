@@ -9,6 +9,7 @@
     --accent: #333333;
     --danger: #d32f2f;
     --danger-dark: #b71c1c;
+    --success: #1f9d55;
 }
 
 * {
@@ -582,9 +583,115 @@ body.admin-nav-open {
 }
 
 .order-details-right .pricing-box + .pricing-box {
-    border-top: 1px solid var(--line);
-    margin-top: 14px;
-    padding-top: 14px;
+    border-top: 0;
+    margin-top: 24px;
+    padding-top: 0;
+}
+
+.admin-pricing-details {
+    overflow: hidden;
+}
+
+.admin-pricing-details .pricing-lines {
+    display: grid;
+    gap: 0;
+    margin-top: 4px;
+}
+
+.admin-pricing-details .pricing-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.admin-pricing-details .pricing-line:last-child {
+    border-bottom: 0;
+}
+
+.admin-pricing-details .pricing-label,
+.admin-pricing-details .field-label,
+.admin-balance-box .pricing-total-label {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.admin-pricing-input {
+    width: min(180px, 48%);
+    min-width: 130px;
+    height: 40px;
+    color: var(--ink-strong);
+    font-size: 18px;
+    font-weight: 900;
+    text-align: right;
+}
+
+.admin-pricing-input:disabled {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.admin-pricing-details .pricing-lock-note {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.admin-balance-box .pricing-total-card {
+    border: 1px solid color-mix(in srgb, var(--danger) 52%, var(--line));
+    border-radius: 8px;
+    padding: 18px 24px;
+    background: color-mix(in srgb, var(--danger) 20%, var(--panel));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 20%, transparent),
+        0 14px 34px rgba(15, 23, 42, 0.1);
+}
+
+.admin-balance-box .pricing-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 7px 0;
+}
+
+.admin-balance-box .pricing-total-value {
+    color: var(--ink-strong);
+    font-size: 18px;
+    font-weight: 900;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.admin-balance-box .pricing-paid {
+    color: var(--success);
+}
+
+.admin-balance-box .pricing-total-divider {
+    height: 1px;
+    margin: 9px 0;
+    background: color-mix(in srgb, var(--danger) 42%, var(--line));
+}
+
+.admin-balance-box .pricing-total-row--remaining .pricing-total-label {
+    color: var(--danger);
+    font-size: 13px;
+    letter-spacing: 1.4px;
+}
+
+.admin-balance-box .pricing-remaining {
+    color: var(--danger);
+    font-size: 28px;
+    line-height: 1;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: -4px;
 }
 
 .order-item-block {

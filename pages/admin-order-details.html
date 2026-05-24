@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=optional">
     <title>Admin | Order Details</title>
-    <link rel="stylesheet" href="../css/admin-homepage.css?v=5">
+    <link rel="stylesheet" href="../css/admin-homepage.css?v=6">
     <link rel="stylesheet" href="../css/sublimation-theme.css?v=4">
 </head>
 <body class="admin-page">
@@ -184,35 +184,34 @@
                                 <h2 class="panel-title">Pricing Details</h2>
                             </div>
 
-                            <div class="pricing-box" id="pricingBox" aria-label="Pricing details">
-                                <div class="pricing-title">Pricing Details</div>
-                                <div class="pricing-grid">
-                                    <div class="field">
+                            <div class="pricing-box admin-pricing-details" id="pricingBox" aria-label="Pricing details">
+                                <div class="pricing-lines" aria-label="Price breakdown">
+                                    <div class="pricing-line admin-pricing-line">
                                         <label class="field-label" for="basePrice">Base Price (₱)</label>
-                                        <input class="field-input" id="basePrice" type="number" min="0" step="1" placeholder="0">
+                                        <input class="field-input admin-pricing-input" id="basePrice" type="number" min="0" step="1" placeholder="0" aria-label="Base Price">
                                     </div>
-                                    <div class="field">
+                                    <div class="pricing-line admin-pricing-line">
                                         <label class="field-label" for="shippingFee">Shipping Fee (₱)</label>
-                                        <input class="field-input" id="shippingFee" type="number" min="0" step="1" placeholder="0">
+                                        <input class="field-input admin-pricing-input" id="shippingFee" type="number" min="0" step="1" placeholder="0" aria-label="Shipping Fee">
                                     </div>
                                 </div>
-                                <div class="mini-note" id="pricingHint">-</div>
+                                <div class="pricing-lock-note" id="pricingHint">-</div>
                             </div>
 
-                            <div class="pricing-box" id="balanceBox" aria-label="Remaining balance">
-                                <div class="pricing-title">Remaining Balance</div>
-                                <div class="pricing-grid">
-                                    <div class="field">
-                                        <label class="field-label" for="balanceTotal">Order Total</label>
-                                        <input class="field-input" id="balanceTotal" type="text" readonly>
+                            <div class="pricing-box admin-balance-box" id="balanceBox" aria-label="Remaining balance">
+                                <div class="pricing-total-card" aria-label="Balance summary">
+                                    <div class="pricing-total-row">
+                                        <div class="pricing-total-label">Order Total</div>
+                                        <div class="pricing-total-value" id="balanceTotal">-</div>
                                     </div>
-                                    <div class="field">
-                                        <label class="field-label" for="balancePaid">Amount Paid</label>
-                                        <input class="field-input" id="balancePaid" type="text" readonly>
+                                    <div class="pricing-total-row">
+                                        <div class="pricing-total-label">Amount Paid</div>
+                                        <div class="pricing-total-value pricing-paid" id="balancePaid">-</div>
                                     </div>
-                                    <div class="field">
-                                        <label class="field-label" for="balanceRemaining">Remaining Balance</label>
-                                        <input class="field-input" id="balanceRemaining" type="text" readonly>
+                                    <div class="pricing-total-divider"></div>
+                                    <div class="pricing-total-row pricing-total-row--remaining">
+                                        <div class="pricing-total-label">REMAINING BALANCE</div>
+                                        <div class="pricing-total-value pricing-remaining" id="balanceRemaining">-</div>
                                     </div>
                                 </div>
                                 <div class="mini-note" id="balanceHint">-</div>
@@ -251,7 +250,7 @@
     <script src="../js/admin-auth.js?v=6"></script>
     <script src="../js/admin-realtime-messages.js"></script>
     <script src="../js/admin-store.js"></script>
-    <script src="../js/admin-order-details.js?v=2"></script>
+    <script src="../js/admin-order-details.js?v=3"></script>
 </body>
 </html>
 

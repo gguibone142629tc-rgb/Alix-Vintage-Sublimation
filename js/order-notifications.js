@@ -183,6 +183,7 @@
         // Guard against APIs that omit fields or send empty strings.
         keepPrevIfEmpty("tracking_number");
         keepPrevIfEmpty("proof_mockup_key");
+        keepPrevIfEmpty("proof_file_key");
         keepPrevIfEmpty("receipt_status");
         keepPrevIfEmpty("final_receipt_status");
         keepPrevIfEmpty("receipt_url");
@@ -211,6 +212,7 @@
 
         if (!hasProofMeta(order)) {
             merged.proof_mockup_key = prev.proof_mockup_key;
+            merged.proof_file_key = prev.proof_file_key;
         }
 
         return merged;
@@ -250,6 +252,30 @@
         return keys.join("|");
     };
 
+    const getProofFileKey = (order) => {
+        const items = Array.isArray(order?.items) ? order.items : [];
+        const keys = [];
+        for (const it of items) {
+            const dp = it?.design_proof && typeof it.design_proof === "object" ? it.design_proof : null;
+            const url = normalizeText(dp?.mockup_data_url);
+            if (url) {
+                const itemId = it?.id != null ? String(it.id) : "?";
+                const version = normalizeText(dp?.version_number);
+                keys.push(`${itemId}:${version}:${url}`);
+            }
+        }
+
+        const metaProof = order?.meta?.proof && typeof order.meta.proof === "object" ? order.meta.proof : null;
+        const metaUrl = normalizeText(metaProof?.mockup_data_url);
+        if (metaUrl) {
+            const version = normalizeText(metaProof?.version_number);
+            keys.push(`meta:${version}:${metaUrl}`);
+        }
+
+        keys.sort();
+        return keys.join("|");
+    };
+
     const hasAnyMockup = (order) => Boolean(getProofMockupKey(order));
 
     const extractSignals = (order) => {
@@ -283,6 +309,7 @@
             receipt_verified: receiptVerified ? "1" : "0",
             final_receipt_verified: finalReceiptVerified ? "1" : "0",
             proof_mockup_key: getProofMockupKey(order),
+            proof_file_key: getProofFileKey(order),
         };
     };
 
@@ -444,6 +471,8 @@
                 const nextReceiptVerified = String(mergedSignals.receipt_verified || "0");
                 const prevFinalReceiptVerified = String(prevSignals.final_receipt_verified || "0");
                 const nextFinalReceiptVerified = String(mergedSignals.final_receipt_verified || "0");
+                const prevProofFileKey = normalizeText(prevSignals.proof_file_key || prevSignals.proof_mockup_key);
+                const nextProofFileKey = normalizeText(mergedSignals.proof_file_key || mergedSignals.proof_mockup_key);
 
                 // Receipt uploaded (customer action) — useful because status may not change.
                 if (!prevSignals.receipt_url && nextSignals.receipt_url) {
@@ -529,6 +558,17 @@
                             order,
                             eventType: "mockup_sent",
                             message: "Admin sent a design mockup. Please review it on the order tracking page.",
+                            toStatus: order?.status,
+                        }),
+                    );
+                }
+                if (prevProofFileKey && nextProofFileKey && prevProofFileKey !== nextProofFileKey) {
+                    newItems.push(
+                        makeEventNotification({
+                            orderId,
+                            order,
+                            eventType: "mockup_updated",
+                            message: "Admin sent an updated design mockup. Please review the new proof on the order tracking page.",
                             toStatus: order?.status,
                         }),
                     );

@@ -639,12 +639,18 @@
         return { total, amountPaid, remaining };
     };
 
+    const setValueOrText = (el, value) => {
+        if (!el) return;
+        if ("value" in el) el.value = value;
+        else el.textContent = value;
+    };
+
     const renderRemainingBalance = (order) => {
         if (!balanceTotalInput || !balancePaidInput || !balanceRemainingInput) return;
         const amounts = computePaymentAmounts(order);
-        balanceTotalInput.value = formatMoney(amounts.total);
-        balancePaidInput.value = formatMoney(amounts.amountPaid);
-        balanceRemainingInput.value = formatMoney(amounts.remaining);
+        setValueOrText(balanceTotalInput, formatMoney(amounts.total));
+        setValueOrText(balancePaidInput, formatMoney(amounts.amountPaid));
+        setValueOrText(balanceRemainingInput, formatMoney(amounts.remaining));
         if (balanceHint) balanceHint.textContent = amounts.remaining <= 0.009 ? "Fully paid." : "Remaining balance must be paid before shipping.";
     };
 
@@ -1007,6 +1013,17 @@
             } else {
                 pricingHint.textContent = "Set Shipping Fee for this order before approving.";
             }
+        }
+
+        if (basePriceInput) basePriceInput.type = editable ? "number" : "text";
+        if (shippingFeeInput) shippingFeeInput.type = editable ? "number" : "text";
+
+        if (!editable) {
+            const displayBasePrice = getDisplayBasePrice(order);
+            if (basePriceInput) basePriceInput.value = formatMoney(displayBasePrice != null ? displayBasePrice : 0);
+            if (shippingFeeInput) shippingFeeInput.value = formatMoney(order?.admin?.quote?.shippingFee ?? 0);
+            renderRemainingBalance(order);
+            return;
         }
 
         const syncQuoteFromInputs = () => {
