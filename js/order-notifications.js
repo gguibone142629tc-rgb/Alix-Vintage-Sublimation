@@ -225,6 +225,29 @@
 
     const normalizeLower = (v) => normalizeText(v).toLowerCase();
 
+    const hashText = (value) => {
+        const s = normalizeText(value);
+        let h = 5381;
+        for (let i = 0; i < s.length; i += 1) {
+            h = ((h << 5) + h) ^ s.charCodeAt(i);
+        }
+        return (h >>> 0).toString(36);
+    };
+
+    const normalizeProofFileKeyPart = (value) => {
+        const raw = normalizeText(value);
+        if (!raw) return "";
+
+        if (/^data:/i.test(raw) || /^blob:/i.test(raw)) return raw;
+
+        try {
+            const url = new URL(raw, window.location.origin);
+            return `${url.origin}${url.pathname}`;
+        } catch {
+            return raw.split("#")[0].split("?")[0];
+        }
+    };
+
     const getTrackingNumber = (order) => {
         const raw = order?.tracking_number ?? order?.meta?.tracking_number ?? order?.meta?.trackingNumber;
         return normalizeText(raw);
@@ -257,7 +280,7 @@
         const keys = [];
         for (const it of items) {
             const dp = it?.design_proof && typeof it.design_proof === "object" ? it.design_proof : null;
-            const url = normalizeText(dp?.mockup_data_url);
+            const url = normalizeProofFileKeyPart(dp?.mockup_data_url);
             if (url) {
                 const itemId = it?.id != null ? String(it.id) : "?";
                 const version = normalizeText(dp?.version_number);
@@ -266,7 +289,7 @@
         }
 
         const metaProof = order?.meta?.proof && typeof order.meta.proof === "object" ? order.meta.proof : null;
-        const metaUrl = normalizeText(metaProof?.mockup_data_url);
+        const metaUrl = normalizeProofFileKeyPart(metaProof?.mockup_data_url);
         if (metaUrl) {
             const version = normalizeText(metaProof?.version_number);
             keys.push(`meta:${version}:${metaUrl}`);
@@ -337,9 +360,11 @@
         };
     };
 
-    const makeEventNotification = ({ orderId, atIso, order, eventType, message, toStatus }) => {
+    const makeEventNotification = ({ orderId, atIso, order, eventType, message, toStatus, signalKey }) => {
         const at = atIso || new Date().toISOString();
-        const id = `${orderId}:${String(eventType || "event")}:${at}`;
+        const eventName = String(eventType || "event");
+        const stableSignal = normalizeText(signalKey);
+        const id = stableSignal ? `${orderId}:${eventName}:${hashText(stableSignal)}` : `${orderId}:${eventName}:${at}`;
         const summary = summarizeItems(order);
         const status = String(toStatus || order?.status || "");
         return {
@@ -352,7 +377,7 @@
             at,
             read: false,
             shown: false,
-            event_type: String(eventType || "event"),
+            event_type: eventName,
             message: String(message || ""),
             summary_qty: summary.qty,
             summary_label: summary.label,
@@ -401,6 +426,7 @@
                             eventType: "receipt_rejected",
                             message: `Admin requested a new downpayment receipt. Please upload a new receipt screenshot.${reason ? ` Reason: ${reason}` : ""}`,
                             toStatus: order?.status,
+                            signalKey: `receipt:${mergedSignals.receipt_status}:${reason}`,
                         }),
                     );
                 }
@@ -413,6 +439,7 @@
                             eventType: "final_receipt_rejected",
                             message: `Admin requested a new final payment receipt. Please upload a new receipt screenshot.${reason ? ` Reason: ${reason}` : ""}`,
                             toStatus: order?.status,
+                            signalKey: `final-receipt:${mergedSignals.final_receipt_status}:${reason}`,
                         }),
                     );
                 }
@@ -424,6 +451,7 @@
                             eventType: "mockup_sent",
                             message: "Admin sent a design mockup. Please review it on the order tracking page.",
                             toStatus: order?.status,
+                            signalKey: mergedSignals.proof_file_key || mergedSignals.proof_mockup_key,
                         }),
                     );
                 }
@@ -435,6 +463,7 @@
                             eventType: "tracking_updated",
                             message: `Tracking number available: ${mergedSignals.tracking_number}.`,
                             toStatus: order?.status,
+                            signalKey: mergedSignals.tracking_number,
                         }),
                     );
                 }
@@ -471,8 +500,8 @@
                 const nextReceiptVerified = String(mergedSignals.receipt_verified || "0");
                 const prevFinalReceiptVerified = String(prevSignals.final_receipt_verified || "0");
                 const nextFinalReceiptVerified = String(mergedSignals.final_receipt_verified || "0");
-                const prevProofFileKey = normalizeText(prevSignals.proof_file_key || prevSignals.proof_mockup_key);
-                const nextProofFileKey = normalizeText(mergedSignals.proof_file_key || mergedSignals.proof_mockup_key);
+                const prevProofFileKey = normalizeText(prevSignals.proof_file_key);
+                const nextProofFileKey = normalizeText(mergedSignals.proof_file_key);
 
                 // Receipt uploaded (customer action) — useful because status may not change.
                 if (!prevSignals.receipt_url && nextSignals.receipt_url) {
@@ -484,6 +513,7 @@
                             eventType: "receipt_uploaded",
                             message: "Receipt uploaded. Awaiting admin verification.",
                             toStatus: order?.status,
+                            signalKey: nextSignals.receipt_url,
                         }),
                     );
                 }
@@ -496,6 +526,7 @@
                             eventType: "final_receipt_uploaded",
                             message: "Final payment receipt uploaded. Awaiting admin verification.",
                             toStatus: order?.status,
+                            signalKey: nextSignals.final_receipt_url,
                         }),
                     );
                 }
@@ -510,6 +541,7 @@
                             eventType: "receipt_rejected",
                             message: `Admin requested a new downpayment receipt. Please upload a new receipt screenshot.${reason ? ` Reason: ${reason}` : ""}`,
                             toStatus: order?.status,
+                            signalKey: `receipt:${nextReceipt}:${reason}`,
                         }),
                     );
                 }
@@ -522,6 +554,7 @@
                             eventType: "final_receipt_rejected",
                             message: `Admin requested a new final payment receipt. Please upload a new receipt screenshot.${reason ? ` Reason: ${reason}` : ""}`,
                             toStatus: order?.status,
+                            signalKey: `final-receipt:${nextFinalReceipt}:${reason}`,
                         }),
                     );
                 }
@@ -535,6 +568,7 @@
                             eventType: "receipt_verified",
                             message: "Your downpayment receipt was verified.",
                             toStatus: order?.status,
+                            signalKey: `receipt:${nextReceiptVerified}:${mergedSignals.receipt_url}`,
                         }),
                     );
                 }
@@ -546,6 +580,7 @@
                             eventType: "final_receipt_verified",
                             message: "Your final payment receipt was verified.",
                             toStatus: order?.status,
+                            signalKey: `final-receipt:${nextFinalReceiptVerified}:${mergedSignals.final_receipt_url}`,
                         }),
                     );
                 }
@@ -559,6 +594,7 @@
                             eventType: "mockup_sent",
                             message: "Admin sent a design mockup. Please review it on the order tracking page.",
                             toStatus: order?.status,
+                            signalKey: mergedSignals.proof_file_key || mergedSignals.proof_mockup_key,
                         }),
                     );
                 }
@@ -570,6 +606,7 @@
                             eventType: "mockup_updated",
                             message: "Admin sent an updated design mockup. Please review the new proof on the order tracking page.",
                             toStatus: order?.status,
+                            signalKey: nextProofFileKey,
                         }),
                     );
                 }
@@ -583,6 +620,7 @@
                             eventType: "tracking_updated",
                             message: `Tracking number updated: ${mergedSignals.tracking_number}.`,
                             toStatus: order?.status,
+                            signalKey: mergedSignals.tracking_number,
                         }),
                     );
                 }
