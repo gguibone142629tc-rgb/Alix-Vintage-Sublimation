@@ -771,9 +771,6 @@ main {
     color: var(--theme-brand-2);
     font-size: 28px;
     line-height: 1;
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: -4px;
 }
 
 .payment-upload {
