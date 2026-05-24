@@ -6,7 +6,9 @@
     const STATUS_MAP_KEY = "alix_order_status_map_v1";
     const STATE_MAP_KEY = "alix_order_state_map_v1";
     const NOTIFICATIONS_KEY = "alix_order_notifications_v1";
+    const DISMISSED_KEY = "alix_order_notifications_dismissed_v1";
     const NOTIFICATIONS_LIMIT = 120;
+    const DISMISSED_LIMIT = 300;
     const UPDATED_EVENT = "alix:order-notifications-updated";
 
     const safeJsonParse = (value, fallback) => {
@@ -87,6 +89,39 @@
         } catch {
             // ignore
         }
+    };
+
+    const loadDismissedIds = () => {
+        try {
+            const raw = localStorage.getItem(DISMISSED_KEY);
+            const parsed = safeJsonParse(raw, []);
+            if (!Array.isArray(parsed)) return new Set();
+            return new Set(parsed.map((id) => String(id || "").trim()).filter(Boolean));
+        } catch {
+            return new Set();
+        }
+    };
+
+    const saveDismissedIds = (ids) => {
+        try {
+            const source = ids instanceof Set ? Array.from(ids) : Array.isArray(ids) ? ids : [];
+            const clean = source.map((id) => String(id || "").trim()).filter(Boolean).slice(-DISMISSED_LIMIT);
+            localStorage.setItem(DISMISSED_KEY, JSON.stringify(clean));
+        } catch {
+            // ignore
+        }
+    };
+
+    const rememberDismissed = (ids) => {
+        const dismissed = loadDismissedIds();
+        let changed = false;
+        (Array.isArray(ids) ? ids : []).forEach((id) => {
+            const clean = String(id || "").trim();
+            if (!clean || dismissed.has(clean)) return;
+            dismissed.add(clean);
+            changed = true;
+        });
+        if (changed) saveDismissedIds(dismissed);
     };
 
     const emitUpdated = () => {
@@ -633,14 +668,21 @@
         if (newItems.length) {
             const existing = loadNotifications();
             const existingById = new Map(existing.map((n) => [String(n.id), n]));
-            const dedupedNew = newItems.filter((n) => !existingById.has(String(n.id)));
+            const dismissedIds = loadDismissedIds();
+            const dedupedNew = newItems.filter((n) => {
+                const id = String(n?.id || "");
+                return id && !existingById.has(id) && !dismissedIds.has(id);
+            });
+
+            if (dedupedNew.length === 0) return [];
 
             const merged = [...dedupedNew, ...existing].slice(0, NOTIFICATIONS_LIMIT);
             saveNotifications(merged);
             emitUpdated();
+            return dedupedNew;
         }
 
-        return newItems;
+        return [];
     };
 
     const getUnreadCount = () => {
@@ -712,6 +754,8 @@
     };
 
     const clearAll = () => {
+        const list = loadNotifications();
+        rememberDismissed(list.map((n) => n.id));
         saveNotifications([]);
         emitUpdated();
     };
